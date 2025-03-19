@@ -1,5 +1,5 @@
-import util
 import scenario
+import util
 
 def main():
     args = util.get_args()

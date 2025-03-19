@@ -1,9 +1,7 @@
 import numpy as np
-import random
 import torch
 
 from ..base import BaseSolver
-import simulator
 
 class Solver(BaseSolver):
 

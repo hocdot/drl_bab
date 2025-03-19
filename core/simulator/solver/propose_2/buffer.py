@@ -24,7 +24,7 @@ class ReplayBuffer:
     def push(self, *args):
         # convert all items to cpu
         args_cpu = [_.detach().cpu() for _ in args]
-        self.memory.append(FullFeedbackTransition(*args_cpu))
+        self.memory.append(OfflineTransition(*args_cpu))
 
     def sample(self, batch_size):
         batch_size = np.min([batch_size, len(self)])

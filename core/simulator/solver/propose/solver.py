@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torch.optim as optim
 import pandas as pd
@@ -8,12 +7,11 @@ import torch
 import tqdm
 import os
 
-from .buffer import OfflineBuffer, OfflineTransition
+from .buffer import OfflineTransition
 from .critic import Critic
 from .actor import Actor
 
 from ..base import BaseSolver
-import simulator
 
 def get_onnx_to_id(args):
     path = os.path.join(args.onnx_dir, 'train_instance.csv')

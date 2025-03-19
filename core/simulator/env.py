@@ -3,11 +3,7 @@ import neuralsat as ns
 import pandas as pd
 import numpy as np
 import torch
-import json
-import tqdm
 import os
-
-import simulator
 
 class Env(gym.Env):
 

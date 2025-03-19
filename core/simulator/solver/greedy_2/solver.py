@@ -1,10 +1,7 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import os
 
 from ..base import BaseSolver
-import simulator
 
 class Solver(BaseSolver):
 
@@ -36,7 +33,7 @@ class Solver(BaseSolver):
             # print(score.shape, observation.shape)
             idx = torch.argmax(score).detach().cpu().numpy()
             _action = actions[i, idx]
-            _reward = rewards[i, idx]
+            # _reward = rewards[i, idx]
             _actions.append(_action)
         action = np.array(_actions)
         if args.verbose:
