@@ -134,9 +134,10 @@ class Solver(BaseSolver):
         indices                 = torch.where(mask == 0)
         reward[indices]         = -10
         next_observation        = on.normalize_torch(torch.stack(batch.next_observation).to(args.device))
-        x = torch.stack(batch.next_observation)
-        x = next_observation
+        # x = torch.stack(batch.next_observation)
+        # x = next_observation
         edge_index, edge_weight = self.edge_indices[onnx_id], self.edge_weights[onnx_id]
+
         # ============
         # train critic
         # ============
@@ -156,37 +157,40 @@ class Solver(BaseSolver):
         critic_optimizer.zero_grad()
         critic_loss.backward()
         critic_optimizer.step()
-        # ===========
-        # train actor
-        # ===========
+        
         total_actor_loss = 0
-#         for i in range(10):
-#             # compute actor score
-#             score = actor(observation, edge_index, edge_weight)
-#             # print(f'{score.max().item()=} {score.min().item()=}')
-#             old_shape = score.shape
-#             bs, n_layer, n_neuron = score.shape
-#             score = score.flatten(1)
-#             prob = F.softmax(score).view(old_shape)
-#             # compute full feedback from critic
-#             with torch.no_grad():
-#                 q_value1 = critic1(observation, edge_index, edge_weight)
-#                 q_value2 = critic2(observation, edge_index, edge_weight)
-#                 min_q_value = torch.min(q_value1, q_value2)
-#             actor_loss = - (min_q_value * prob).sum(dim=(1, 2)).mean()
-#             # optimize actor
-#             actor_optimizer.zero_grad()
-#             actor_loss.backward()
-#             actor_optimizer.step()
-#             total_actor_loss += actor_loss.item()
-        # ===============================
-        # update target_network of critic
-        # ===============================
-        if self.step % args.target_update_interval == 0:
-            for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
-                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
-            for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
-                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+        if self.step > 2000:
+            # ===========
+            # train actor
+            # ===========
+            for _ in range(10):
+                # compute actor score
+                score = actor(observation, edge_index, edge_weight)
+                # print(f'{score.max().item()=} {score.min().item()=}')
+                old_shape = score.shape
+                # bs, n_layer, n_neuron = score.shape
+                score = score.flatten(1)
+                prob = F.softmax(score).view(old_shape)
+                # compute full feedback from critic
+                with torch.no_grad():
+                    q_value1 = critic1(observation, edge_index, edge_weight)
+                    q_value2 = critic2(observation, edge_index, edge_weight)
+                    min_q_value = torch.min(q_value1, q_value2)
+                actor_loss = - (min_q_value * prob).sum(dim=(1, 2)).mean()
+                # optimize actor
+                actor_optimizer.zero_grad()
+                actor_loss.backward()
+                actor_optimizer.step()
+                total_actor_loss += actor_loss.item()
+                
+            # ===============================
+            # update target_network of critic
+            # ===============================
+            if self.step % args.target_update_interval == 0:
+                for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
+                    target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+                for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
+                    target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
         # report data
         return total_actor_loss / 10, critic_loss.item()
 
@@ -202,13 +206,13 @@ class Solver(BaseSolver):
         self.train_offline_load_buffer()
         # load train_offline actor/critic model
         if args.load_state_dict:
-            path = os.path.join(args.model_dir, f'train_offline_critic_{args.solver}_{args.gnn_class}.pth')
+            path = os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
             print(f'[+] loaded {path=}')
             self.critic1.load_state_dict(torch.load(path))
             self.critic2.load_state_dict(torch.load(path))
             self.critic1_target.load_state_dict(self.critic1.state_dict())
             self.critic2_target.load_state_dict(self.critic2.state_dict())
-            path = os.path.join(args.model_dir, f'train_offline_actor_{args.solver}_{args.gnn_class}.pth')
+            path = os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
             print(f'[+] loaded {path=}')
             self.actor.load_state_dict(torch.load(path))
         # optimization loop
@@ -283,9 +287,8 @@ class Solver(BaseSolver):
 
         # get best action of topk
         iv_score = [score[:, lid].flatten(1) for lid in range(score.shape[1])]
-        action = env.topk_action(iv_score, topk=5)
+        action = env.topk_action(iv_score, topk=10)
         # print(f'===========\n{action=}')
-        
         # initialize action
         # action = []
         # for i in range(bs):

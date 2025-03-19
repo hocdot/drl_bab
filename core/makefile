@@ -6,9 +6,9 @@ prepare:
 	# python3 main.py --scenario=prepare_train_offline_buffer --mode=train --n_prepare_episode=113 --clear_buffer
 
 train_offline:
-	python3 main.py --solver=propose --mode=train_offline --gnn_class=Linear --n_train_offline_step=10000 # fail to learn
+	python3 main.py --solver=propose_2 --mode=train_offline --gnn_class=SSGConv --n_train_offline_step=2000 # fail to learn
 	# python3 main.py --solver=propose --mode=train_offline --gnn_class=ChebConv --n_train_offline_step=800 # fail to learn
-	python3 main.py --solver=propose --mode=train_offline --gnn_class=TAGConv --n_train_offline_step=100 # ok
+	# python3 main.py --solver=propose --mode=train_offline --gnn_class=TAGConv --n_train_offline_step=100 # ok
 	# python3 main.py --solver=propose --mode=train_offline --gnn_class=ARMAConv # ok
 	# python3 main.py --solver=propose --mode=train_offline --gnn_class=SSGConv # ok
 	# python3 main.py --solver=propose --mode=train_offline --gnn_class=Linear --load_state_dict
@@ -22,6 +22,9 @@ test:
 	# python3 main.py --mode=test --solver=propose --score=critic --gnn_class=Linear
 	# python3 main.py --mode=test --solver=propose --score=combined --gnn_class=Linear
 	# python3 main.py --mode=test --solver=propose --score=actor --gnn_class=ChebConv
+
+	# python3 main.py --mode=test --solver=heuristic --verbose --n_test_episode=1 --n_step 200
+	# python3 main.py --mode=test --solver=propose_2 --score=actor --gnn_class=SSGConv --verbose --n_test_episode=1 --n_step 200
 
 boxplot:
 	clear

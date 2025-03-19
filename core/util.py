@@ -21,7 +21,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='test')
     # environment
     parser.add_argument('--iwb_threshold', type=int, default=-5.1)
-    parser.add_argument('--ns_batch_size', type=int, default=128)
+    parser.add_argument('--ns_batch_size', type=int, default=64)
     parser.add_argument('--n_train_episode', type=int, default=113)
     parser.add_argument('--n_test_episode', type=int, default=28)
     parser.add_argument('--n_prepare_episode', type=int, default=810)
