@@ -81,9 +81,8 @@ class Solver(BaseSolver):
         n_visited = 0
         d = os.path.join(args.data_dir, 'train')
         for name in tqdm.tqdm(list(sorted(set(os.listdir(d)))), desc='train_offline load buffer'):
-            # instance_id = int(name.split('.')[0].split('_')[-2])
-            # if instance_id >= 112: # TODO: remove this
-            if 1:
+            instance_id, iter_id = name.split('.')[0].split('_')[-2:]
+            if int(instance_id) < 1 and int(iter_id) <= 3: # TODO: remove this
                 path = os.path.join(d, name)
                 if args.verbose:
                     print(f'[+] Loading {path=}')
@@ -91,21 +90,23 @@ class Solver(BaseSolver):
                     buffer = pickle.load(fp)
                     n_visited += len(buffer)
                     for i, transition in enumerate(buffer.memory):
-                        done = torch.tensor(0)
-                        if i == len(buffer.memory) - 1:
-                            done = torch.tensor(1)
-                        self.train_offline_buffer.push(transition.observation,
-                                                       transition.mask,
-                                                       transition.min_reward,
-                                                       transition.max_reward,
-                                                       transition.next_observation,
-                                                       transition.iwb,
-                                                       transition.onnx_id,
-                                                       done)
+                        # TODO: done is not 100% correct
+                        done = torch.tensor(1) if (i == len(buffer.memory) - 1) else torch.tensor(0)
+                            
+                        self.train_offline_buffer.push(
+                            transition.observation,
+                            transition.mask,
+                            transition.min_reward,
+                            transition.max_reward,
+                            transition.next_observation,
+                            transition.iwb,
+                            transition.onnx_id,
+                            done,
+                        )
                         on.update(transition.observation.detach().cpu().numpy())
                         rn.update((0.5 * (transition.min_reward + transition.max_reward).detach().cpu().numpy()))
         print(f'[+] loaded {n_visited=}')
-
+        
     def train_offline_step(self):
         # extract args
         args             = self.args
