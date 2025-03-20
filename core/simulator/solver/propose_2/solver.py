@@ -81,9 +81,12 @@ class Solver(BaseSolver):
         n_visited = 0
         d = os.path.join(args.data_dir, 'train')
         for name in tqdm.tqdm(list(sorted(set(os.listdir(d)))), desc='train_offline load buffer'):
-            instance_id = int(name.split('.')[0].split('_')[-1])
-            if instance_id >= 112: # TODO: remove this
+            # instance_id = int(name.split('.')[0].split('_')[-2])
+            # if instance_id >= 112: # TODO: remove this
+            if 1:
                 path = os.path.join(d, name)
+                if args.verbose:
+                    print(f'[+] Loading {path=}')
                 with open(path, 'rb') as fp:
                     buffer = pickle.load(fp)
                     n_visited += len(buffer)

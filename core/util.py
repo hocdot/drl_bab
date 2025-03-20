@@ -22,9 +22,10 @@ def get_args():
     # environment
     parser.add_argument('--iwb_threshold', type=int, default=-5.1)
     parser.add_argument('--ns_batch_size', type=int, default=64)
+    
     parser.add_argument('--n_train_episode', type=int, default=113)
     parser.add_argument('--n_test_episode', type=int, default=28)
-    parser.add_argument('--n_prepare_episode', type=int, default=810)
+    parser.add_argument('--n_prepare_episode', type=int, default=140)
     parser.add_argument('--n_train_offline_step', type=int, default=10000)
     parser.add_argument('--n_step', type=int, default=100) # maximum number of step per episode
     parser.add_argument('--attacker_timeout', type=float, default=2.0) # maximum number of step per episode
@@ -56,8 +57,6 @@ def get_args():
     parser.add_argument('--target_update_interval', type=int, default=1)
     # gnn solver
     parser.add_argument('--gnn_class', type=str, default='GCNConv')
-    # ldas
-    parser.add_argument('--top_action_ratio', type=float, default=0.1)
     # data directory
     parser.add_argument('--instance_dir', type=str, default='../data/instance')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')

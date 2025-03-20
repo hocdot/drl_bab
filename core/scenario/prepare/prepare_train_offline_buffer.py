@@ -85,7 +85,7 @@ def select_action_2(observation, env, args):
     mask = observation[..., -1]
     return action, min_rewards_, max_rewards_, mask
 
-def prepare_episode(env, train_offline_buffer, args):
+def prepare_episode(env, train_offline_buffer, iteration, args):
     # reset environment
     observation, done = env.reset()
     assert not done, 'cho hai generate ban the nhi'
@@ -97,7 +97,10 @@ def prepare_episode(env, train_offline_buffer, args):
         try:
             # extract all rewards
             # action, min_rewards, max_rewards, mask = select_action(observation, env, args)
-            action, min_rewards, max_rewards, mask = select_action_2(observation, env, args)
+            if iteration == 0:
+                action, min_rewards, max_rewards, mask = select_action_2(observation, env, args)
+            else:
+                action, min_rewards, max_rewards, mask = select_action(observation, env, args)
             # send to env
             next_observation, reward, done, info = env.step(action)
         except:
@@ -137,15 +140,17 @@ def prepare_train_offline_buffer(args):
         d = os.path.join(args.data_dir, args.mode)
         if not os.path.exists(d):
             os.makedirs(d)
-        path = os.path.join(d, f'offline_buffer_{episode}.pkl')
-        if os.path.exists(path):
-            env.reset()
-            print(f'[-] offline_buffer_{episode}.pkl existed, skipping')
-        else:
-            info = prepare_episode(env, train_offline_buffer, args)
-            if len(train_offline_buffer):
-                with open(path, 'wb') as fp:
-                    pickle.dump(train_offline_buffer, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                # reset buffer
-                train_offline_buffer.reset()
-                print(f'[+] created offline_buffer_{episode}.pkl')
+        
+        for iter in range(10):
+            path = os.path.join(d, f'offline_buffer_{episode}_{iter}.pkl')
+            if os.path.exists(path):
+                env.reset()
+                print(f'[-] {os.path.basename(path)} existed, skipping')
+            else:
+                prepare_episode(env, train_offline_buffer, iter, args)
+                if len(train_offline_buffer):
+                    with open(path, 'wb') as fp:
+                        pickle.dump(train_offline_buffer, fp, protocol=pickle.HIGHEST_PROTOCOL)
+                    # reset buffer
+                    train_offline_buffer.reset()
+                    print(f'[+] created {os.path.basename(path)}')
