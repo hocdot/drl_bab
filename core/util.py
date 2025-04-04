@@ -41,7 +41,7 @@ def get_args():
     # top-k for propose solver
     parser.add_argument('--top_k_actor', type=int, default=10000)
     # sac solver
-    parser.add_argument('--gamma', type=float, default=0.0)
+    parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--actor_n_hidden', type=int, default=64)
     parser.add_argument('--critic_n_hidden', type=int, default=64)
@@ -53,6 +53,7 @@ def get_args():
     parser.add_argument('--actor_lr', type=float, default=3e-4)
     parser.add_argument('--critic_lr', type=float, default=5e-4)
     parser.add_argument('--actor_iter', type=int, default=1)
+    parser.add_argument('--n_delay_gradient', type=int, default=30)
     parser.add_argument('--buffer_size', type=int, default=100000000)
     parser.add_argument('--start_learning', type=int, default=30) # frames
     parser.add_argument('--end_guiding', type=int, default=3000) # frames

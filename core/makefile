@@ -6,10 +6,10 @@ prepare:
 	python3 main.py --scenario=prepare_train_offline_buffer --mode=train --n_prepare_episode=1 --top_k=3 --n_prepare_iter=5 --clear_buffer
 
 train_offline:
-	python3 main.py --solver=propose --mode=train_offline --gnn_class=TAGConv --embed_class=Linear --n_train_offline_step=200
+	python3 main.py --solver=propose --mode=train_offline --gnn_class=Linear --embed_class=Linear --n_train_offline_step=500
 
 test:
-	python3 main.py --mode=test --solver=propose --score=critic --gnn_class=TAGConv --embed_class=Linear --verbose
+	python3 main.py --mode=test --solver=propose --score=critic --gnn_class=Linear --embed_class=Linear --verbose
 	# python3 main.py --mode=test --solver=heuristic --verbose
 	# python3 main.py --mode=test --solver=greedy --verbose
 

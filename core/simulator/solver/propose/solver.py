@@ -65,15 +65,21 @@ class Solver(BaseSolver):
         # normalizer
         self.observation_normalizer = RunningMeanStd(shape=[args.n_observation])
         # self.reward_normalizer      = RunningMeanStd(shape=[1])
-    
+
     # =========================================================
     # PRETRAIN
     # =========================================================
     def train_offline_add_info(self, actor_loss, critic_loss):
+        if critic_loss < self.min_critic_loss:
+            self.save()
+        self.min_critic_loss = min(critic_loss, self.min_critic_loss)
+        self.max_critic_loss = max(critic_loss, self.max_critic_loss)
         info = {
             'step': self.step,
             'actor_loss': actor_loss,
             'critic_loss': critic_loss,
+            'min_critic_loss': self.min_critic_loss,
+            'max_critic_loss': self.max_critic_loss,
         }
         return info
 
@@ -128,55 +134,56 @@ class Solver(BaseSolver):
         critic_optimizer = self.critic_optimizer
         on               = self.observation_normalizer
         # rn               = self.reward_normalizer
-        
+
         actor.train()
         critic1.train()
         critic2.train()
         critic1_target.train()
         critic2_target.train()
         embedding.train()
-        
-        # n_batch = len(buffer) // args.batch_size // 10 + 1
-        critic_loss = 0
-        # for _ in range(n_batch):
-        # =====================
-        # extract batch of data
-        # =====================
-        transitions             = buffer.sample(args.batch_size)
-        batch                   = OfflineTransition(*zip(*transitions))
-        observation             = torch.stack(batch.observation).to(args.device)
-        observation             = on.normalize_torch(observation)
-        # augment observation
-        mask                    = torch.stack(batch.mask).to(args.device)
-        reward                  = torch.stack(batch.reward).to(args.device)
-        onnx_id                 = batch.onnx_id[0].to(args.device)
-        done                    = torch.tensor(batch.done).to(args.device)[:, None, None]
-        # reward                  = rn.normalize_torch(reward)
 
-        uno_1                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_1).to(args.device))
-        uno_2                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_2).to(args.device))
-        edge_index, edge_weight = self.edge_indices[onnx_id], self.edge_weights[onnx_id]
-        
-        # ============
-        # train critic
-        # ============
-        # compute target
-        bs = reward.shape[0]
-        with torch.no_grad():
-            # indices = torch.where(mask == 1)
-            # target_q_value1        = critic1_target(next_observation, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True)
-            # target_q_value2        = critic2_target(next_observation, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True)
-            # min_max_target_q_value = torch.min(target_q_value1, target_q_value2)
-            # min_max_target_q_value = min_max_target_q_value[indices]
-            next_q_value = reward # + args.gamma * min_max_target_q_value * (1 - done) # Trick
-        # compute estimate
-        es            = embedding(observation, edge_index, edge_weight)
-        q_value1      = critic1(es, edge_index, edge_weight)
-        q_value2      = critic2(es, edge_index, edge_weight)
-        critic1_loss  = F.mse_loss(q_value1 * mask, next_q_value * mask)
-        critic2_loss  = F.mse_loss(q_value2 * mask, next_q_value * mask)
-        critic_loss  += (critic1_loss + critic2_loss)
-        # critic_loss /= n_batch
+        critic_loss = 0
+        for _ in range(args.n_delay_gradient):
+            # =====================
+            # extract batch of data
+            # =====================
+            transitions             = buffer.sample(args.batch_size)
+            batch                   = OfflineTransition(*zip(*transitions))
+            observation             = torch.stack(batch.observation).to(args.device)
+            observation             = on.normalize_torch(observation)
+            # augment observation
+            mask                    = torch.stack(batch.mask).to(args.device)
+            reward                  = torch.stack(batch.reward).to(args.device)
+            onnx_id                 = batch.onnx_id[0].to(args.device)
+            done                    = torch.tensor(batch.done).to(args.device)[:, None, None]
+            # reward                  = rn.normalize_torch(reward)
+
+            uno_1                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_1).to(args.device))
+            uno_2                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_2).to(args.device))
+            edge_index, edge_weight = self.edge_indices[onnx_id], self.edge_weights[onnx_id]
+
+            # ============
+            # train critic
+            # ============
+            # compute target
+            bs = reward.shape[0]
+            nes_1 = embedding(uno_1, edge_index, edge_weight) # next embeddings 1
+            nes_2 = embedding(uno_2, edge_index, edge_weight) # next embeddings 2
+            with torch.no_grad():
+                target_q_value1        = 0.5 * (critic1_target(nes_1, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True) + \
+                                                critic1_target(nes_2, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True))
+                target_q_value2        = 0.5 * (critic2_target(nes_1, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True) + \
+                                                critic2_target(nes_2, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True))
+                min_max_target_q_value = torch.min(target_q_value1, target_q_value2)
+                next_q_value = reward + args.gamma * min_max_target_q_value # * (1 - done) # Trick
+            # compute estimate
+            es            = embedding(observation, edge_index, edge_weight)
+            q_value1      = critic1(es, edge_index, edge_weight)
+            q_value2      = critic2(es, edge_index, edge_weight)
+            critic1_loss  = F.mse_loss(q_value1 * mask, next_q_value * mask)
+            critic2_loss  = F.mse_loss(q_value2 * mask, next_q_value * mask)
+            critic_loss  += (critic1_loss + critic2_loss)
+        critic_loss /= args.n_delay_gradient
         # optimize the critic
         critic_optimizer.zero_grad()
         critic_loss.backward()
@@ -209,14 +216,14 @@ class Solver(BaseSolver):
 #                 total_actor_loss += actor_loss.item()
 #             total_actor_loss = total_actor_loss / 10.0
 
-#         # ===============================
-#         # update target_network of critic
-#         # ===============================
-#         if self.step % args.target_update_interval == 0:
-#             for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
-#                 target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
-#             for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
-#                 target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+        # ===============================
+        # update target_network of critic
+        # ===============================
+        if self.step % args.target_update_interval == 0:
+            for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
+                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+            for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
+                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
         # report data
         return total_actor_loss, critic_loss.item()
 
@@ -233,7 +240,10 @@ class Solver(BaseSolver):
         self.train_offline_load_buffer()
         # load pretrained paths
         paths = self.get_pretrained_paths()
-        
+        # init
+        self.min_critic_loss = torch.inf
+        self.max_critic_loss = -torch.inf
+
         # load train_offline actor/critic model
         if args.load_state_dict:
             path = paths['critic']
@@ -266,28 +276,8 @@ class Solver(BaseSolver):
         except KeyboardInterrupt:
             pass
         finally:
-            # save train_offline actor/critic model
-            path = paths['critic']
-            torch.save(critic.state_dict(), path)
-            print(f'[+] saved {path=}')
-            
-            path = paths['actor']
-            torch.save(actor.state_dict(), path)
-            print(f'[+] saved {path=}')
-
-            path = paths['embedding']
-            torch.save(embedding.state_dict(), path)
-            print(f'[+] saved {path=}')
-            
-            # save normalizer
-            path = paths['on']
-            with open(path, 'wb') as fp:
-                pickle.dump(on, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                print(f'[+] saved {path=}')
-#             path = paths['rn']
-#             with open(path, 'wb') as fp:
-#                 pickle.dump(rn, fp, protocol=pickle.HIGHEST_PROTOCOL)
-#                 print(f'[+] saved {path=}')
+            # self.save()
+            pass
     # =========================================================
 
     # =========================================================
@@ -314,7 +304,7 @@ class Solver(BaseSolver):
         mask        = observation[..., -1].clone()
         observation = on.normalize_torch(observation)
         assert not observation.isnan().any()
-        
+
         es          = embedding(observation, edge_index, edge_weight)
         assert not es.isnan().any()
         # combined score
@@ -372,7 +362,7 @@ class Solver(BaseSolver):
     def get_pretrained_paths(self):
         # extract args
         args = self.args
-        
+
         paths = {
             'critic'   : os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth'),
             'actor'    : os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth'),
@@ -381,38 +371,65 @@ class Solver(BaseSolver):
             'rn'       : os.path.join(args.model_dir, f'rn_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
         }
         return paths
-    
+
     def test(self):
         # load pretrained paths
         paths = self.get_pretrained_paths()
-        
+
         # critic
         path = paths['critic']
         self.critic1.load_state_dict(torch.load(path, weights_only=True))
         self.critic1.eval()
         print(f'[+] loaded {path=}')
-        
+
         # actor
         path = paths['actor']
         self.actor.load_state_dict(torch.load(path, weights_only=True))
         self.actor.eval()
         print(f'[+] loaded {path=}')
-        
+
         # embedding
         path = paths['embedding']
         self.embedding.load_state_dict(torch.load(path, weights_only=True))
         self.embedding.eval()
         print(f'[+] loaded {path=}')
-        
+
         # normalizer
         path = paths['on']
         with open(path, 'rb') as fp:
             self.observation_normalizer = pickle.load(fp)
         print(f'[+] loaded {path=}')
-        
+
 #         path = paths['rn']
 #         with open(path, 'rb') as fp:
 #             self.reward_normalizer = pickle.load(fp)
 #             print(f'[+] loaded {path=}')
-        
+
         super().test()
+
+    def save(self):
+        # load pretrained paths
+        paths = self.get_pretrained_paths()
+        # save train_offline actor/critic model
+        path = paths['critic']
+        torch.save(self.critic1.state_dict(), path)
+        print(f'[+] saved {path=}')
+
+        path = paths['actor']
+        torch.save(self.actor.state_dict(), path)
+        # print(f'[+] saved {path=}')
+
+        path = paths['embedding']
+        torch.save(self.embedding.state_dict(), path)
+        # print(f'[+] saved {path=}')
+
+        # save normalizer
+        path = paths['on']
+        with open(path, 'wb') as fp:
+            pickle.dump(self.observation_normalizer, fp, protocol=pickle.HIGHEST_PROTOCOL)
+            # print(f'[+] saved {path=}')
+
+#             path = paths['rn']
+#             with open(path, 'wb') as fp:
+#                 pickle.dump(rn, fp, protocol=pickle.HIGHEST_PROTOCOL)
+#                 print(f'[+] saved {path=}')
