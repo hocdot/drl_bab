@@ -39,9 +39,11 @@ make main
 - [x] Gen 2,3,4,5,6 layers
 - [x] Terminate state trick
 - [-] Learn on heuristic, generate mixed between heuristic and greedy
+- [-] Lightweight, hidden bound update
+- [ ] Test whether load trained model is correct by printing sub weight layerwise
 - [ ] In step of greedy_2 and heuristic as lower and upper bound
-- [ ] Choose top-k score, convert to iv action
-- [ ] Normalize data offline
+- [x] Choose top-k score, convert to iv action
+- [x] Normalize data offline
 - [ ] Learn on sequence of previous states
 - [ ] Solve data skewness problem, select problem with less n_visited more for balance distribution
 - [ ] Importance sampling (lấy actor cũ để làm prob_old)

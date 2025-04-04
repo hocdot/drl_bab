@@ -91,11 +91,14 @@ class Env(gym.Env):
         iv_action = self.convert_action(action)
         # interact with interactive verifier
         reward, done, info = self.iv.step(iv_action)
-        # goi ham rieng khac step
-        split_observation = self.convert_iv_observation(info['split_observation'])
-        assert not split_observation.isnan().any()
-        so1, so2 = torch.chunk(split_observation, 2)
-        info['next_observation_train'] = torch.stack((so1, so2))[info['reward_indices']][0]
+        
+        unpruned_next_observations = self.convert_iv_observation(info['unpruned_next_observations'])
+        assert not unpruned_next_observations.isnan().any()
+        
+        uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)
+        info['unpruned_next_observation_1'] = uno_1 
+        info['unpruned_next_observation_2'] = uno_2 
+        
         if not done:
             iv_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
             next_observation = self.convert_iv_observation(iv_observation)
@@ -103,8 +106,6 @@ class Env(gym.Env):
         else:
             next_observation = None
         info['reward'] = reward
-        info['iwb']    = self.initial_worst_bound
-        # convert to device
         reward = reward.to(args.device)
         return next_observation, reward, done, info
 
@@ -116,11 +117,17 @@ class Env(gym.Env):
         indices  = torch.where(mask == 0)
         feature0 = feature[..., 0] # score 1
         feature0[indices] = 0
-        feature1 = 1 - feature[..., 1] # score 2
+        feature1 = - feature[..., 1] # score 2
         feature1[indices] = 0
+        feature2 = feature[..., 2] # score 3
+        feature2[indices] = 0
+        feature3 = feature[..., 3] # score 4
+        feature3[indices] = 0
+        feature4 = feature[..., 4] # score 4
+        feature4[indices] = 0
         feature5 = feature[..., 5] # abs
         feature5[indices] = 0
-        observation = torch.stack([feature0, feature1, feature5, mask], dim=-1)
+        observation = torch.stack([feature0, feature1, feature2, feature3, feature4, feature5, mask], dim=-1)
         return observation
 
     def convert_action(self, action):
@@ -139,17 +146,16 @@ class Env(gym.Env):
             action.append(a)
         return action
 
-    def full_feedback(self):
-        min_rewards, iv_actions = self.iv.get_rewards(self.subproblems, reduce_op=torch.min)
-        max_rewards, iv_actions = self.iv.get_rewards(self.subproblems, reduce_op=torch.max)
-        min_rewards = min_rewards.permute(1, 0)
-        max_rewards = max_rewards.permute(1, 0)
+    def full_feedback(self, return_min_max_rewards=False):
+        active_neuron_rewards, iv_actions = self.iv.full_feedback(self.subproblems, 
+                                                                  return_min_max_rewards=return_min_max_rewards)
         # n_subproblem, n_active_neuron
         actions = np.array([self.convert_iv_action(iv_action) for iv_action in iv_actions])
-        actions = actions.transpose(1, 0, 2)
-        # n_subproblem, n_active_neuron, 2
-        return min_rewards, max_rewards, actions
-
+        actions = actions.transpose(1, 0, 2) # n_subproblem, n_active_neuron, 2
+        if return_min_max_rewards:
+            assert isinstance(active_neuron_rewards, tuple)
+            return active_neuron_rewards[0], active_neuron_rewards[1], actions
+        return active_neuron_rewards, actions
 
     def topk_action(self, scores, topk=1):
         actions = self.iv.topk_action(scores, self.subproblems, topk)

@@ -3,40 +3,21 @@ all: prepare test plot
 prepare:
 	# python3 main.py --scenario=split_train_test
 	# python3 main.py --scenario=prepare_graph
-	# python3 main.py --scenario=prepare_train_offline_buffer --mode=train --n_prepare_episode=140 --top_k=3 --clear_buffer
-	python3 main.py --scenario=prepare_train_offline_buffer --mode=train --n_prepare_episode=140 --top_k=3
+	python3 main.py --scenario=prepare_train_offline_buffer --mode=train --n_prepare_episode=1 --top_k=3 --n_prepare_iter=5 --clear_buffer
 
 train_offline:
-	python3 main.py --solver=propose_2 --mode=train_offline --gnn_class=Linear --n_train_offline_step=20000
-	python3 main.py --solver=propose_2 --mode=train_offline --gnn_class=SSGConv --n_train_offline_step=20000
-	# python3 main.py --solver=propose --mode=train_offline --gnn_class=ChebConv --n_train_offline_step=800 # fail to learn
-	# python3 main.py --solver=propose --mode=train_offline --gnn_class=TAGConv --n_train_offline_step=100 # ok
-	# python3 main.py --solver=propose --mode=train_offline --gnn_class=ARMAConv # ok
-	# python3 main.py --solver=propose --mode=train_offline --gnn_class=SSGConv # ok
-	# python3 main.py --solver=propose --mode=train_offline --gnn_class=Linear --load_state_dict
-	# python3 main.py --solver=propose_2 --mode=train_offline --gnn_class=TAGConv --n_train_offline_step=2000 --verbose
+	python3 main.py --solver=propose --mode=train_offline --gnn_class=TAGConv --embed_class=Linear --n_train_offline_step=200
 
 test:
-	python3 main.py --mode=test --solver=heuristic
-	python3 main.py --mode=test --solver=greedy_2
-	python3 main.py --mode=test --solver=propose --score=actor --gnn_class=Linear
-	# python3 main.py --mode=test --solver=greedy_3
-	# python3 main.py --mode=test --solver=greedy
-	# python3 main.py --mode=test --solver=propose --score=critic --gnn_class=Linear
-	# python3 main.py --mode=test --solver=propose --score=combined --gnn_class=Linear
-	# python3 main.py --mode=test --solver=propose --score=actor --gnn_class=ChebConv
-
-	python3 main.py --mode=test --solver=greedy_2 --verbose --n_test_episode=1 --n_step 200
-	python3 main.py --mode=test --solver=heuristic --verbose --n_test_episode=1 --n_step 200
-	python3 main.py --mode=test --solver=propose_2 --score=actor --gnn_class=TAGConv --verbose --n_test_episode=1 --n_step 200
-	python3 main.py --mode=test --solver=propose_2 --score=actor --gnn_class=Linear --verbose --n_test_episode=1 --n_step 200
+	python3 main.py --mode=test --solver=propose --score=critic --gnn_class=TAGConv --embed_class=Linear --verbose
+	# python3 main.py --mode=test --solver=heuristic --verbose
+	# python3 main.py --mode=test --solver=greedy --verbose
 
 boxplot:
 	clear
 	python3 main.py --scenario=plot_boxplot --mode=test --metric=n_step & \
 	python3 main.py --scenario=plot_boxplot --mode=test --metric=n_visited & \
 	wait
-
 
 plot:
 	clear

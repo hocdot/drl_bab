@@ -1,10 +1,7 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import os
 
 from ..base import BaseSolver
-import simulator
 
 class Solver(BaseSolver):
 
@@ -16,26 +13,28 @@ class Solver(BaseSolver):
         env  = self.env
         args = self.args
         # compute optimal myopic action
-        min_rewards, max_rewards, actions = env.full_feedback()
-        rewards = 0.5 * (min_rewards + max_rewards)
-        bs, _ = rewards.shape
+        min_rewards, max_rewards, actions = env.full_feedback(return_min_max_rewards=True)
+        bs = min_rewards.shape[0]
         _actions = []
         for i in range(bs):
-            idx = torch.argmax(rewards[i]).detach().cpu().numpy()
+            # filter node with both min_reward and max_reward positive
+            mask = torch.logical_and(min_rewards[i] >= 0, max_rewards[i] >= 0).int()
+            if mask.sum() > 0:
+                score = min_rewards[i] * mask + args.iwb_threshold * (1 - mask)
+            else:
+                # filter node with one among min_reward and max_reward positive
+                mask = torch.logical_or(min_rewards[i] >= 0, max_rewards[i] >= 0).int()
+                if mask.sum() > 0:
+                    score = min_rewards[i] * mask + args.iwb_threshold * (1 - mask)
+                # filter node with both min_reward and max_reward positive
+                else:
+                    score = max_rewards[i]
+            # print(score.shape, observation.shape)
+            idx = torch.argmax(score).detach().cpu().numpy()
             _action = actions[i, idx]
-            _reward = rewards[i, idx]
+            # _reward = rewards[i, idx]
             _actions.append(_action)
-            if args.verbose and i == 0:
-                layer, neuron = _action
-                print(f'{layer=} {neuron=} {observation[i, layer, neuron]=} {_reward=}')
-                plt.hist(rewards[i].detach().cpu().numpy())
-                step = self.step
-                path = os.path.join(args.figure_dir, f'reward_hist_{step=}.pdf')
-                plt.savefig(path)
-                plt.cla()
-                plt.clf()
-            # DEBUG
         action = np.array(_actions)
-        if args.verbose:
-            print(action)
+        # if args.verbose:
+            # print(action)
         return action

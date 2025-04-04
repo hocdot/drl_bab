@@ -1,6 +1,6 @@
-from . import greedy, greedy_2, greedy_3
+from . import greedy
+from . import propose
 from . import heuristic
-from . import propose, propose_2
 
 from .propose import OfflineBuffer
 

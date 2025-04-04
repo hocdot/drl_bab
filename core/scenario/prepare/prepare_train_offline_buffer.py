@@ -18,39 +18,39 @@ def get_onnx_to_id(args):
 
 def select_action(observation, env, args):
     # compute optimal randomized top-k action
-    min_rewards, max_rewards, actions = env.full_feedback()
-    rewards = 0.5 * (min_rewards + max_rewards)
-    bs = rewards.shape[0]
+    active_neuron_rewards, actions = env.full_feedback()
+    bs = active_neuron_rewards.shape[0]
     _actions = []
     for i in range(bs):
-        indices = torch.argsort(rewards[i], descending=True)
+        indices = torch.argsort(active_neuron_rewards[i], descending=True)
         indices = indices.detach().cpu().numpy()
         indices = indices[:args.top_k]
         idx     = np.random.choice(indices)
         _actions.append(actions[i, idx])
     action = np.array(_actions)
+    
     # convert reward to desired format
     # actions.shape=(bs, n_active_neuron, 2) rewards.shape=(bs, n_active_neuron)
     # want rewards.shape=(bs,n_layer,n_hidden), inactive neuron's reward = 0
-    min_rewards_    = torch.zeros(list(observation.shape[:-1]))
-    max_rewards_    = torch.zeros(list(observation.shape[:-1]))
-    n_active_neuron = rewards.shape[-1]
+    bs, n_active_neuron = active_neuron_rewards.shape
+    rewards = torch.zeros(list(observation.shape[:-1])) # n_subproblem, n_layer, n_neuron
     for i in range(bs):
         for j in range(n_active_neuron):
             layer  = actions[i, j, 0]
             neuron = actions[i, j, 1]
-            min_rewards_[i, layer, neuron] = min_rewards[i, j]
-            max_rewards_[i, layer, neuron] = max_rewards[i, j]
+            rewards[i, layer, neuron] = active_neuron_rewards[i, j]
+            
     # extract mask
     mask = observation[..., -1]
-    return action, min_rewards_, max_rewards_, mask
+    return action, rewards, mask
 
 def select_action_2(observation, env, args):
     # compute optimal myopic action
-    min_rewards, max_rewards, actions = env.full_feedback()
+    min_rewards, max_rewards, actions = env.full_feedback(return_min_max_rewards=True)
     rewards = 0.5 * (min_rewards + max_rewards)
-    bs, _ = rewards.shape
+    bs = min_rewards.shape[0]
     _actions = []
+    rewards = torch.zeros(list(observation.shape[:-1])) # n_subproblem, n_layer, n_neuron
     for i in range(bs):
         # filter node with both min_reward and max_reward positive
         mask = torch.logical_and(min_rewards[i] >= 0, max_rewards[i] >= 0).int()
@@ -65,16 +65,15 @@ def select_action_2(observation, env, args):
             else:
                 score = max_rewards[i]
         idx = torch.argmax(score).detach().cpu().numpy()
-        _action = actions[i, idx]
-        _reward = rewards[i, idx]
-        _actions.append(_action)
+        _actions.append(actions[i, idx])
     action = np.array(_actions)
     # convert reward to desired format
     # actions.shape=(bs, n_active_neuron, 2) rewards.shape=(bs, n_active_neuron)
     # want rewards.shape=(bs,n_layer,n_hidden), inactive neuron's reward = 0
     min_rewards_    = torch.zeros(list(observation.shape[:-1]))
     max_rewards_    = torch.zeros(list(observation.shape[:-1]))
-    n_active_neuron = rewards.shape[-1]
+    n_active_neuron = min_rewards.shape[-1]
+    # print(f'{actions.shape=}')
     for i in range(bs):
         for j in range(n_active_neuron):
             layer  = actions[i, j, 0]
@@ -83,44 +82,49 @@ def select_action_2(observation, env, args):
             max_rewards_[i, layer, neuron] = max_rewards[i, j]
     # extract mask
     mask = observation[..., -1]
-    return action, min_rewards_, max_rewards_, mask
+    return action, rewards, mask
 
 def prepare_episode(env, train_offline_buffer, iteration, args):
     # reset environment
     observation, done = env.reset()
     assert not done, 'cho hai generate ban the nhi'
     # extract onnx_id
-    iwb     = torch.tensor(env.initial_worst_bound)
     onnx_id = torch.tensor(env.onnx_to_id[env.onnx])
     # iteratively run environment until done
     for step in range(args.n_step):
         try:
             # extract all rewards
-            # action, min_rewards, max_rewards, mask = select_action(observation, env, args)
             if iteration == 0:
-                action, min_rewards, max_rewards, mask = select_action_2(observation, env, args)
+                action, rewards, mask = select_action_2(observation, env, args)
             else:
-                action, min_rewards, max_rewards, mask = select_action(observation, env, args)
+                action, rewards, mask = select_action(observation, env, args)
+                
             # send to env
-            next_observation, reward, done, info = env.step(action)
+            next_observation, reward_to_print, done, info = env.step(action)
         except:
+            raise
             print(f'[+] error: {env.onnx},{env.vnnlib}')
             path = os.path.join(args.onnx_dir, 'error.csv')
             with open(path, 'a') as fp:
                 fp.write(f'{env.onnx},{env.vnnlib}\n')
             break
-        next_observation_train = info['next_observation_train']
+        uno_1 = info['unpruned_next_observation_1']
+        uno_2 = info['unpruned_next_observation_1']
+        
+        assert rewards.shape == mask.shape, f'{rewards.shape=} {mask.shape=}'
         for i in range(len(observation)):
-            train_offline_buffer.push(observation[i], min_rewards[i],
-                                 max_rewards[i], mask[i],
-                                 next_observation_train[i],
-                                 iwb, onnx_id)
+            train_offline_buffer.push(observation[i],
+                                      uno_1[i],
+                                      uno_2[i],
+                                      mask[i],
+                                      rewards[i],
+                                      onnx_id,
+                                      done)
         # update observation
         observation = next_observation
-        assert min_rewards.shape == mask.shape
         # display
         if args.verbose:
-            print(f'{step=} {reward=}')
+            print(f'{step=} {reward_to_print.shape=}')
         # stopping condition
         if done:
             break
@@ -140,8 +144,7 @@ def prepare_train_offline_buffer(args):
         d = os.path.join(args.data_dir, args.mode)
         if not os.path.exists(d):
             os.makedirs(d)
-        
-        for iter in range(10):
+        for iter in range(args.n_prepare_iter):
             path = os.path.join(d, f'offline_buffer_{episode}_{iter}.pkl')
             if os.path.exists(path):
                 env.reset()

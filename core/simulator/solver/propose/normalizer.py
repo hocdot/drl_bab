@@ -51,6 +51,9 @@ class RunningMeanStd:
     def normalize(self, x):
         return (x - self.mean) / np.sqrt(self.var + self.epsilon)
 
+    def unnormalize(self, x):
+        return x * np.sqrt(self.var + self.epsilon) + self.mean
+
     def normalize_torch(self, x):
         shape = x.shape
         x = x.view(-1, shape[-1])

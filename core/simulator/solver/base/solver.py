@@ -24,7 +24,6 @@ class BaseSolver:
             'runtime': np.mean(episode_info['runtime']),
             'n_visited': episode_info['visited'][-1],
             'n_step': len(episode_info['visited']),
-            'iwb': episode_info['iwb'][0],
         }
         return info
 
@@ -69,8 +68,12 @@ class BaseSolver:
                     episode_info[k].append(info[k])
             # display
             if args.verbose:
-                print(f'{self.step=} {reward=}')
-                print()
+                if observation is not None:
+                    mask = observation[..., -1]
+                    n_active_neuron = float(mask.sum(dim=[1, 2]).detach().cpu().numpy().mean())
+                    print(f'{self.step=} {reward.mean()=:0.2f} {n_active_neuron=:0.2f}')
+                # print(f'{self.step=} {reward=} {n_active_neuron=:0.2f}')
+                # print()
 
         return episode_info
 

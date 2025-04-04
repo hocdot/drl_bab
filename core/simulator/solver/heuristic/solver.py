@@ -22,6 +22,6 @@ class Solver(BaseSolver):
             index      = np.random.choice(np.arange(len(candidates[0])))
             a          = [_[index].item() for _ in candidates]
             action.append(a)
-        if args.verbose:
-            print(f'{action=}')
+        # if args.verbose:
+            # print(f'{action=}')
         return np.array(action)

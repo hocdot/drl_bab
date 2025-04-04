@@ -7,8 +7,7 @@ import torch
 import tqdm
 import os
 
-from .normalizer import RunningMeanStd
-from .buffer import OfflineBuffer2, OfflineTransition2
+from .buffer import OfflineTransition
 from .critic import Critic
 from .actor import Actor
 
@@ -57,9 +56,6 @@ class Solver(BaseSolver):
         for onnx in self.onnx_to_id:
             self.edge_indices.append(torch.load(os.path.join(args.onnx_dir, f'{onnx}.index.pth')))
             self.edge_weights.append(torch.load(os.path.join(args.onnx_dir, f'{onnx}.weight.pth')))
-        # normalizer
-        self.observation_normalizer = RunningMeanStd(shape=[args.n_observation])
-        self.reward_normalizer      = RunningMeanStd(shape=[1])
     # =========================================================
     # PRETRAIN
     # =========================================================
@@ -73,45 +69,28 @@ class Solver(BaseSolver):
 
     def train_offline_load_buffer(self):
         # extract args
-        args = self.args
-        on   = self.observation_normalizer
-        rn   = self.reward_normalizer
+        args    = self.args
         #
-        self.train_offline_buffer = OfflineBuffer2(args.buffer_size)
+        self.train_offline_buffers = []
         n_visited = 0
         d = os.path.join(args.data_dir, 'train')
         for name in tqdm.tqdm(list(sorted(set(os.listdir(d)))), desc='train_offline load buffer'):
-            instance_id, iter_id = name.split('.')[0].split('_')[-2:]
-            if int(instance_id) < 1 and int(iter_id) <= 3: # TODO: remove this
+            instance_id = int(name.split('.')[0].split('_')[-1])
+            if instance_id >= 112:
                 path = os.path.join(d, name)
-                if args.verbose:
-                    print(f'[+] Loading {path=}')
                 with open(path, 'rb') as fp:
                     buffer = pickle.load(fp)
-                    n_visited += len(buffer)
-                    for i, transition in enumerate(buffer.memory):
-                        # TODO: done is not 100% correct
-                        done = torch.tensor(1) if (i == len(buffer.memory) - 1) else torch.tensor(0)
-                            
-                        self.train_offline_buffer.push(
-                            transition.observation,
-                            transition.mask,
-                            transition.min_reward,
-                            transition.max_reward,
-                            transition.next_observation,
-                            transition.iwb,
-                            transition.onnx_id,
-                            done,
-                        )
-                        on.update(transition.observation.detach().cpu().numpy())
-                        rn.update((0.5 * (transition.min_reward + transition.max_reward).detach().cpu().numpy()))
-        print(f'[+] loaded {n_visited=}')
-        
+                    if len(buffer) <= 5000:
+                        n_visited += len(buffer)
+                        self.train_offline_buffers.append(buffer)
+        n_buffer = len(self.train_offline_buffers)
+        print(f'[+] loaded {n_buffer=} {n_visited=}')
+
     def train_offline_step(self):
         # extract args
         args             = self.args
         env              = self.env
-        buffer           = self.train_offline_buffer
+        buffer           = np.random.choice(self.train_offline_buffers)
         actor            = self.actor
         actor_optimizer  = self.actor_optimizer
         critic1          = self.critic1
@@ -119,29 +98,22 @@ class Solver(BaseSolver):
         critic1_target   = self.critic1_target
         critic2_target   = self.critic2_target
         critic_optimizer = self.critic_optimizer
-        on               = self.observation_normalizer
-        rn               = self.reward_normalizer
         # =====================
         # extract batch of data
         # =====================
-        transitions             = buffer.sample(args.batch_size)
-        batch                   = OfflineTransition2(*zip(*transitions))
-        observation             = torch.stack(batch.observation).to(args.device)
-        observation             = on.normalize_torch(observation)
-        mask                    = torch.stack(batch.mask).to(args.device)
-        min_reward              = torch.stack(batch.min_reward).to(args.device)
-        max_reward              = torch.stack(batch.max_reward).to(args.device)
-        iwb                     = batch.iwb[0].to(args.device)
-        onnx_id                 = batch.onnx_id[0].to(args.device)
-        done                    = torch.tensor(batch.done).to(args.device)[:, None, None]
-        reward                  = rn.normalize_torch(0.5 * (min_reward + max_reward))
-        indices                 = torch.where(mask == 0)
-        reward[indices]         = -10
-        next_observation        = on.normalize_torch(torch.stack(batch.next_observation).to(args.device))
-        # x = torch.stack(batch.next_observation)
-        # x = next_observation
+        transitions         = buffer.sample(args.batch_size)
+        batch               = OfflineTransition(*zip(*transitions))
+        observation         = torch.stack(batch.observation).to(args.device)
+        mask                = torch.stack(batch.mask).to(args.device)
+        min_reward          = torch.stack(batch.min_reward).to(args.device)
+        max_reward          = torch.stack(batch.max_reward).to(args.device)
+        iwb                 = batch.iwb[0].to(args.device)
+        onnx_id             = batch.onnx_id[0].to(args.device)
+        reward              = 0.5 * (min_reward + max_reward)
+        indices             = torch.where(mask == 0)
+        reward[indices]     = args.iwb_threshold
+        next_observation    = torch.stack(batch.next_observation).to(args.device)
         edge_index, edge_weight = self.edge_indices[onnx_id], self.edge_weights[onnx_id]
-
         # ============
         # train critic
         # ============
@@ -150,7 +122,7 @@ class Solver(BaseSolver):
             target_q_value1        = critic1_target(next_observation, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True)
             target_q_value2        = critic2_target(next_observation, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True)
             min_max_target_q_value = torch.min(target_q_value1, target_q_value2)
-            next_q_value           = reward + args.gamma * min_max_target_q_value * (1 - done) # Trick
+            next_q_value           = reward + args.gamma * min_max_target_q_value
         # compute estimate
         q_value1     = critic1(observation, edge_index, edge_weight)
         q_value2     = critic2(observation, edge_index, edge_weight)
@@ -161,40 +133,37 @@ class Solver(BaseSolver):
         critic_optimizer.zero_grad()
         critic_loss.backward()
         critic_optimizer.step()
-        
+        # ===========
+        # train actor
+        # ===========
         total_actor_loss = 0
-        if self.step > 2000:
-            # ===========
-            # train actor
-            # ===========
-            for _ in range(10):
-                # compute actor score
-                score = actor(observation, edge_index, edge_weight)
-                # print(f'{score.max().item()=} {score.min().item()=}')
-                old_shape = score.shape
-                # bs, n_layer, n_neuron = score.shape
-                score = score.flatten(1)
-                prob = F.softmax(score).view(old_shape)
-                # compute full feedback from critic
-                with torch.no_grad():
-                    q_value1 = critic1(observation, edge_index, edge_weight)
-                    q_value2 = critic2(observation, edge_index, edge_weight)
-                    min_q_value = torch.min(q_value1, q_value2)
-                actor_loss = - (min_q_value * prob).sum(dim=(1, 2)).mean()
-                # optimize actor
-                actor_optimizer.zero_grad()
-                actor_loss.backward()
-                actor_optimizer.step()
-                total_actor_loss += actor_loss.item()
-                
-            # ===============================
-            # update target_network of critic
-            # ===============================
-            if self.step % args.target_update_interval == 0:
-                for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
-                    target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
-                for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
-                    target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+        for i in range(10):
+            # compute actor score
+            score = actor(observation, edge_index, edge_weight)
+            # print(f'{score.max().item()=} {score.min().item()=}')
+            old_shape = score.shape
+            bs, n_layer, n_neuron = score.shape
+            score = score.flatten(1)
+            prob = F.softmax(score).view(old_shape)
+            # compute full feedback from critic
+            with torch.no_grad():
+                q_value1 = critic1(observation, edge_index, edge_weight)
+                q_value2 = critic2(observation, edge_index, edge_weight)
+                min_q_value = torch.min(q_value1, q_value2)
+            actor_loss = - (min_q_value * prob).sum(dim=(1, 2)).mean()
+            # optimize actor
+            actor_optimizer.zero_grad()
+            actor_loss.backward()
+            actor_optimizer.step()
+            total_actor_loss += actor_loss.item()
+        # ===============================
+        # update target_network of critic
+        # ===============================
+        if self.step % args.target_update_interval == 0:
+            for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
+                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+            for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
+                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
         # report data
         return total_actor_loss / 10, critic_loss.item()
 
@@ -204,19 +173,17 @@ class Solver(BaseSolver):
         monitor = self.monitor
         actor   = self.actor
         critic  = self.critic1
-        on      = self.observation_normalizer
-        rn      = self.reward_normalizer
         # load full feedback buffer
         self.train_offline_load_buffer()
         # load train_offline actor/critic model
         if args.load_state_dict:
-            path = os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
+            path = os.path.join(args.model_dir, f'train_offline_critic_{args.solver}_{args.gnn_class}.pth')
             print(f'[+] loaded {path=}')
             self.critic1.load_state_dict(torch.load(path))
             self.critic2.load_state_dict(torch.load(path))
             self.critic1_target.load_state_dict(self.critic1.state_dict())
             self.critic2_target.load_state_dict(self.critic2.state_dict())
-            path = os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
+            path = os.path.join(args.model_dir, f'train_offline_actor_{args.solver}_{args.gnn_class}.pth')
             print(f'[+] loaded {path=}')
             self.actor.load_state_dict(torch.load(path))
         # optimization loop
@@ -236,21 +203,12 @@ class Solver(BaseSolver):
             pass
         finally:
             # save train_offline actor/critic model
-            path = os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
+            path = os.path.join(args.model_dir, f'train_offline_critic_{args.solver}_{args.gnn_class}.pth')
+            print(f'[+] saved {path=}')
             torch.save(critic.state_dict(), path)
+            path = os.path.join(args.model_dir, f'train_offline_actor_{args.solver}_{args.gnn_class}.pth')
             print(f'[+] saved {path=}')
-            path = os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
             torch.save(actor.state_dict(), path)
-            print(f'[+] saved {path=}')
-            # save normalizer
-            path = os.path.join(args.model_dir, f'on_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
-            with open(path, 'wb') as fp:
-                pickle.dump(on, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                print(f'[+] saved {path=}')
-            path = os.path.join(args.model_dir, f'rn_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
-            with open(path, 'wb') as fp:
-                pickle.dump(rn, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                print(f'[+] saved {path=}')
     # =========================================================
 
     # =========================================================
@@ -265,12 +223,10 @@ class Solver(BaseSolver):
         critic = self.critic1
         actor  = self.actor
         env    = self.env
-        on     = self.observation_normalizer
         edge_index, edge_weight = env.edge_index, env.edge_weight
         # extract bs
-        bs          = observation.shape[0]
-        mask        = observation[..., -1]
-        observation = on.normalize_torch(observation)
+        bs   = observation.shape[0]
+        mask = observation[..., -1]
         # combined score
         def combined(observation, edge_index, edge_weight):
             # compute score via actor
@@ -286,47 +242,28 @@ class Solver(BaseSolver):
             return critic_score
         # compute score
         score = eval(args.score)(observation, edge_index, edge_weight)
-        # print(score.min(), score.max())
         score = mask * score + (1 - mask) * (-999)
-
-        # get best action of topk
-        iv_score = [score[:, lid].flatten(1) for lid in range(score.shape[1])]
-        action = env.topk_action(iv_score, topk=10)
-        # print(f'===========\n{action=}')
         # initialize action
-        # action = []
-        # for i in range(bs):
-        #     candidates = torch.where(score[i] == score[i].max())
-        #     index      = np.random.choice(np.arange(len(candidates[0])))
-        #     a          = [_[index].item() for _ in candidates]
-        #     action.append(a)
-        # print(f'{action=     }')
-        # print()
-            
+        action = []
+        for i in range(bs):
+            candidates = torch.where(score[i] == score[i].max())
+            index      = np.random.choice(np.arange(len(candidates[0])))
+            a          = [_[index].item() for _ in candidates]
+            action.append(a)
         if args.verbose:
             print(f'{action=}')
-        # for here to eval
         return np.array(action)
 
     def test(self):
         # extract args
         args = self.args
         # load train_offline actor/critic model
-        path = os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
+        path = os.path.join(args.model_dir, f'train_offline_critic_{args.solver}_{args.gnn_class}.pth')
         self.critic1.load_state_dict(torch.load(path, weights_only=True))
         self.critic1.eval()
-        print(f'[+] loaded {path=}')
-        path = os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth')
+        print(f'loaded {path=}')
+        path = os.path.join(args.model_dir, f'train_offline_actor_{args.solver}_{args.gnn_class}.pth')
         self.actor.load_state_dict(torch.load(path, weights_only=True))
         self.actor.eval()
-        print(f'[+] loaded {path=}')
-        # load normalizer
-        path = os.path.join(args.model_dir, f'on_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
-        with open(path, 'rb') as fp:
-            self.observation_normalizer = pickle.load(fp)
-            print(f'[+] loaded {path=}')
-        path = os.path.join(args.model_dir, f'rn_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
-        with open(path, 'rb') as fp:
-            self.reward_normalizer = pickle.load(fp)
-            print(f'[+] loaded {path=}')
+        print(f'loaded {path=}')
         super().test()

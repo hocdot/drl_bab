@@ -31,7 +31,6 @@ class Critic(nn.Module):
         self.args = args
 
     def forward(self, x, edge_index, edge_weight):
-        # print(x.amin(dim=[0, 1, 2]).detach().cpu().numpy(), x.amax(dim=[0, 1, 2]).detach().cpu().numpy())
         # extract args
         args = self.args
         # extract shape

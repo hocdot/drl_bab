@@ -22,10 +22,11 @@ def get_args():
     # environment
     parser.add_argument('--iwb_threshold', type=int, default=-5.1)
     parser.add_argument('--ns_batch_size', type=int, default=64)
-    
+
     parser.add_argument('--n_train_episode', type=int, default=113)
-    parser.add_argument('--n_test_episode', type=int, default=28)
-    parser.add_argument('--n_prepare_episode', type=int, default=140)
+    parser.add_argument('--n_test_episode', type=int, default=1)
+    parser.add_argument('--n_prepare_episode', type=int, default=1)
+    parser.add_argument('--n_prepare_iter', type=int, default=1)
     parser.add_argument('--n_train_offline_step', type=int, default=10000)
     parser.add_argument('--n_step', type=int, default=100) # maximum number of step per episode
     parser.add_argument('--attacker_timeout', type=float, default=2.0) # maximum number of step per episode
@@ -38,12 +39,14 @@ def get_args():
     # top-k for greedy solver
     parser.add_argument('--top_k', type=int, default=3)
     # top-k for propose solver
-    parser.add_argument('--top_k_actor', type=int, default=16)
+    parser.add_argument('--top_k_actor', type=int, default=10000)
     # sac solver
-    parser.add_argument('--gamma', type=float, default=0.9)
+    parser.add_argument('--gamma', type=float, default=0.0)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--actor_n_hidden', type=int, default=64)
     parser.add_argument('--critic_n_hidden', type=int, default=64)
+    parser.add_argument('--embed_n_hidden', type=int, default=64)
+    parser.add_argument('--n_embed', type=int, default=64)
     parser.add_argument('--tau', type=float, default=0.005) # target smoothing coeff
     parser.add_argument('--patience', type=int, default=100) # early stop after 100 episodes no improvement
     # parser.add_argument('--entropy_lr', type=float, default=3e-4)
@@ -56,6 +59,7 @@ def get_args():
     parser.add_argument('--actor_update_interval', type=int, default=2)
     parser.add_argument('--target_update_interval', type=int, default=1)
     # gnn solver
+    parser.add_argument('--embed_class', type=str, default='Linear')
     parser.add_argument('--gnn_class', type=str, default='GCNConv')
     # data directory
     parser.add_argument('--instance_dir', type=str, default='../data/instance')
@@ -86,5 +90,5 @@ def get_args():
     # set default device cuda
     set_default_device(args)
     # additional args
-    args.n_observation = 4
+    args.n_observation = 7
     return args
