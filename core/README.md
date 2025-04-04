@@ -38,20 +38,14 @@ make main
 - [x] Gen data -1.5, 800 train, test 200, ra vnnlib text mỗi file một objective, attack luôn hộ, check luôn hộ 1.5
 - [x] Gen 2,3,4,5,6 layers
 - [x] Terminate state trick
-- [-] Learn on heuristic, generate mixed between heuristic and greedy
-- [-] Lightweight, hidden bound update
-- [ ] Test whether load trained model is correct by printing sub weight layerwise
-- [ ] In step of greedy_2 and heuristic as lower and upper bound
 - [x] Choose top-k score, convert to iv action
 - [x] Normalize data offline
+- [ ] Train for CNN verification
+- [ ] Importance sampling (lấy actor cũ để làm prob_old)
+- [ ] Model-based RL (predict next observation)
+- [ ] Distributional shift reduction by KL-div
 - [ ] Learn on sequence of previous states
 - [ ] Solve data skewness problem, select problem with less n_visited more for balance distribution
-- [ ] Importance sampling (lấy actor cũ để làm prob_old)
-- [ ] Distributional shift reduction by KL-div
-- [ ] Model-based RL
-- [ ] Greedy biet truoc het next step
-- [ ] Train model fancy
-- [ ] Scale lên problem to
 
 ### BASELINE
 - [ ] Heuristic bunel
