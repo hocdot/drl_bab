@@ -3,7 +3,7 @@ import torch
 import os
 
 def create_folders(args):
-    ls = [args.csv_dir, args.figure_dir, args.onnx_dir,
+    ls = [args.csv_dir, args.figure_dir, args.benchmark_dir,
           args.model_dir, args.data_dir]
     for folder in ls:
         if not os.path.exists(folder):
@@ -28,7 +28,7 @@ def get_args():
     parser.add_argument('--n_prepare_episode', type=int, default=1)
     parser.add_argument('--n_prepare_iter', type=int, default=1)
     parser.add_argument('--n_train_offline_step', type=int, default=10000)
-    parser.add_argument('--n_step', type=int, default=100) # maximum number of step per episode
+    parser.add_argument('--n_step', type=int, default=300) # maximum number of step per episode
     parser.add_argument('--attacker_timeout', type=float, default=2.0) # maximum number of step per episode
     # solver
     parser.add_argument('--solver', type=str, default='greedy')
@@ -63,12 +63,12 @@ def get_args():
     parser.add_argument('--embed_class', type=str, default='Linear')
     parser.add_argument('--gnn_class', type=str, default='GCNConv')
     # data directory
-    parser.add_argument('--instance_dir', type=str, default='../data/instance')
+    parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
     parser.add_argument('--model_dir', type=str, default='../data/model')
     parser.add_argument('--data_dir', type=str, default='../data/data')
-    parser.add_argument('--onnx_dir', type=str, default='../data/onnx')
     parser.add_argument('--csv_dir', type=str, default='../data/csv')
+    parser.add_argument('--benchmark', type=str, default='cifar10-cnn-one-example')
     # plot
     parser.add_argument('--metric', type=str, default='total_reward')
     parser.add_argument('--n_smooth', type=int, default=1)

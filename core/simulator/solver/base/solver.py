@@ -47,6 +47,7 @@ class BaseSolver:
         for step in range(args.n_step):
             # stopping condition
             if done or observation is None:
+                print(f'[!] {done=}')
                 break
             # select greedy action
             tic    = time.monotonic()

@@ -7,7 +7,7 @@ import tqdm
 import os
 
 def get_onnx_to_id(args):
-    path = os.path.join(args.onnx_dir, 'train_instance.csv')
+    path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')
     onnx_to_id = {}
     i = 0
     for _, (onnx, _) in pd.read_csv(path).iterrows():
@@ -28,7 +28,7 @@ def select_action(observation, env, args):
         idx     = np.random.choice(indices)
         _actions.append(actions[i, idx])
     action = np.array(_actions)
-    
+
     # convert reward to desired format
     # actions.shape=(bs, n_active_neuron, 2) rewards.shape=(bs, n_active_neuron)
     # want rewards.shape=(bs,n_layer,n_hidden), inactive neuron's reward = 0
@@ -39,7 +39,7 @@ def select_action(observation, env, args):
             layer  = actions[i, j, 0]
             neuron = actions[i, j, 1]
             rewards[i, layer, neuron] = active_neuron_rewards[i, j]
-            
+
     # extract mask
     mask = observation[..., -1]
     return action, rewards, mask
@@ -98,19 +98,19 @@ def prepare_episode(env, train_offline_buffer, iteration, args):
                 action, rewards, mask = select_action_2(observation, env, args)
             else:
                 action, rewards, mask = select_action(observation, env, args)
-                
+
             # send to env
             next_observation, reward_to_print, done, info = env.step(action)
         except:
             raise
             print(f'[+] error: {env.onnx},{env.vnnlib}')
-            path = os.path.join(args.onnx_dir, 'error.csv')
+            path = os.path.join(args.benchmark_dir, args.benchmark, 'error.csv')
             with open(path, 'a') as fp:
                 fp.write(f'{env.onnx},{env.vnnlib}\n')
             break
         uno_1 = info['unpruned_next_observation_1']
         uno_2 = info['unpruned_next_observation_1']
-        
+
         assert rewards.shape == mask.shape, f'{rewards.shape=} {mask.shape=}'
         for i in range(len(observation)):
             train_offline_buffer.push(observation[i],

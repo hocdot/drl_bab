@@ -19,10 +19,9 @@ class Env(gym.Env):
         args = self.args
         # load list of instances
         if 'train' in args.mode:
-            path = os.path.join(args.onnx_dir, 'train_instance.csv')
+            path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')
         elif args.mode == 'test':
-            path = os.path.join(args.onnx_dir, 'test_instance.csv')
-            # path = os.path.join(args.onnx_dir, 'train_instance.csv')
+            path = os.path.join(args.benchmark_dir, args.benchmark, 'test.csv')
         else:
             raise NotImplementedError
         # loading
@@ -41,17 +40,17 @@ class Env(gym.Env):
         self.vnnlib = self.instance_df.loc[self.instance_id % n_instance, 'vnnlib']
         #
         if self.onnx != self.loaded_onnx:
-            d = os.path.join(args.onnx_dir, self.onnx.replace('.onnx', ''))
-            path = os.path.join(args.onnx_dir, f'{self.onnx}.index.pth')
+            d = os.path.join(args.benchmark_dir, args.benchmark, self.onnx.replace('.onnx', ''))
+            path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.index.pth')
             self.edge_index = torch.load(path)
-            path = os.path.join(args.onnx_dir, f'{self.onnx}.weight.pth')
+            path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.weight.pth')
             self.edge_weight = torch.load(path)
             self.loaded_onnx = self.onnx
         if args.verbose:
             print(f'[+] loading new instance: {self.onnx=} {self.vnnlib=}')
         # load environment
         # TODO: extract moi objectives thoi ma khong phai extract lai net
-        d           = os.path.join(args.onnx_dir, self.onnx.replace('.onnx', ''))
+        d           = os.path.join(args.benchmark_dir, args.benchmark, self.onnx.replace('.onnx', ''))
         onnx_path   = os.path.join(d, 'onnx', self.onnx)
         vnnlib_path = os.path.join(d, 'vnnlib', self.vnnlib)
         net, input_shape, objectives = ns.test.extract_instance(onnx_path, vnnlib_path)
@@ -91,14 +90,14 @@ class Env(gym.Env):
         iv_action = self.convert_action(action)
         # interact with interactive verifier
         reward, done, info = self.iv.step(iv_action)
-        
+
         unpruned_next_observations = self.convert_iv_observation(info['unpruned_next_observations'])
         assert not unpruned_next_observations.isnan().any()
-        
+
         uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)
-        info['unpruned_next_observation_1'] = uno_1 
-        info['unpruned_next_observation_2'] = uno_2 
-        
+        info['unpruned_next_observation_1'] = uno_1
+        info['unpruned_next_observation_2'] = uno_2
+
         if not done:
             iv_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
             next_observation = self.convert_iv_observation(iv_observation)
@@ -147,7 +146,7 @@ class Env(gym.Env):
         return action
 
     def full_feedback(self, return_min_max_rewards=False):
-        active_neuron_rewards, iv_actions = self.iv.full_feedback(self.subproblems, 
+        active_neuron_rewards, iv_actions = self.iv.full_feedback(self.subproblems,
                                                                   return_min_max_rewards=return_min_max_rewards)
         # n_subproblem, n_active_neuron
         actions = np.array([self.convert_iv_action(iv_action) for iv_action in iv_actions])

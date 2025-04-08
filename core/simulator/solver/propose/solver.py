@@ -18,7 +18,7 @@ from ..base import BaseSolver
 np.set_printoptions(precision=2)
 
 def get_onnx_to_id(args):
-    path = os.path.join(args.onnx_dir, 'train_instance.csv')
+    path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')
     onnx_to_id = {}
     i = 0
     for _, (onnx, _) in pd.read_csv(path).iterrows():
@@ -60,8 +60,8 @@ class Solver(BaseSolver):
         self.onnx_to_id = get_onnx_to_id(args)
         self.edge_indices, self.edge_weights = [], []
         for onnx in self.onnx_to_id:
-            self.edge_indices.append(torch.load(os.path.join(args.onnx_dir, f'{onnx}.index.pth')))
-            self.edge_weights.append(torch.load(os.path.join(args.onnx_dir, f'{onnx}.weight.pth')))
+            self.edge_indices.append(torch.load(os.path.join(args.benchmark_dir, args.benchmark, f'{onnx}.index.pth')))
+            self.edge_weights.append(torch.load(os.path.join(args.benchmark_dir, args.benchmark, f'{onnx}.weight.pth')))
         # normalizer
         self.observation_normalizer = RunningMeanStd(shape=[args.n_observation])
         # self.reward_normalizer      = RunningMeanStd(shape=[1])
@@ -93,8 +93,11 @@ class Solver(BaseSolver):
         n_visited = 0
         d = os.path.join(args.data_dir, 'train')
         for name in tqdm.tqdm(list(sorted(set(os.listdir(d)))), desc='train_offline load buffer'):
+            # TODO: remove
             # instance_id, iter_id = name.split('.')[0].split('_')[-2:]
-            # if int(instance_id) < 1 and int(iter_id) <= 3: # TODO: remove this
+            # if int(instance_id) >= 1:
+            #     continue
+
             path = os.path.join(d, name)
             if args.verbose:
                 print(f'[+] Loading {path=}')

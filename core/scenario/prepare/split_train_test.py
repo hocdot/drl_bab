@@ -4,11 +4,11 @@ import os
 
 def split_train_test(args):
     # load list of instances
-    path = os.path.join(args.onnx_dir)
+    path = os.path.join(args.benchmark_dir, args.benchmark)
     data = {'onnx': [], 'vnnlib': []}
     for name in list(sorted(set(os.listdir(path)))):
         # load instances
-        path = os.path.join(args.onnx_dir, name, 'instance.csv')
+        path = os.path.join(args.benchmark_dir, args.benchmark, name, 'instance.csv')
         df = pd.read_csv(path, names=['onnx', 'vnnlib', 'timeout'])
         for i, (onnx, vnnlib, _) in df.iterrows():
             onnx = os.path.basename(onnx)
@@ -26,7 +26,7 @@ def split_train_test(args):
     df_train = df.iloc[indices[:n_train]]
     df_test  = df.iloc[indices[n_train:]]
     # load list of instances
-    path = os.path.join(args.onnx_dir, 'train_instance.csv')
+    path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')
     df_train.to_csv(path, index=None)
-    path = os.path.join(args.onnx_dir, 'test_instance.csv')
+    path = os.path.join(args.benchmark_dir, args.benchmark, 'test.csv')
     df_test.to_csv(path, index=None)
