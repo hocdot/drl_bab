@@ -15,7 +15,7 @@ from .actor import Actor
 
 from ..base import BaseSolver
 
-np.set_printoptions(precision=2)
+# np.set_printoptions(precision=2)
 
 def get_onnx_to_id(args):
     path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')

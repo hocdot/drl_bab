@@ -9,8 +9,9 @@ class Solver(BaseSolver):
         super().__init__(args)
 
     def select_action(self, observation):
-        # observation: [bs, n_layer, n_neuron, n_feature]
+        # observation: list of Layer_i: [bs, n_active_neuron_i, n_feature]
         # extract data
+        print(observation)
         mask  = observation[..., -1]
         score = observation[..., 0] * mask
         bs    = observation.shape[0]

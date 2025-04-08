@@ -39,18 +39,18 @@ class Env(gym.Env):
         self.onnx   = self.instance_df.loc[self.instance_id % n_instance, 'onnx']
         self.vnnlib = self.instance_df.loc[self.instance_id % n_instance, 'vnnlib']
         #
-        if self.onnx != self.loaded_onnx:
-            d = os.path.join(args.benchmark_dir, args.benchmark, self.onnx.replace('.onnx', ''))
-            path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.index.pth')
-            self.edge_index = torch.load(path)
-            path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.weight.pth')
-            self.edge_weight = torch.load(path)
-            self.loaded_onnx = self.onnx
+        # if self.onnx != self.loaded_onnx:
+        #     d = os.path.join(args.benchmark_dir, args.benchmark, self.onnx.replace('.onnx', ''))
+        #     path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.index.pth')
+        #     self.edge_index = torch.load(path)
+        #     path = os.path.join(args.benchmark_dir, args.benchmark, f'{self.onnx}.weight.pth')
+        #     self.edge_weight = torch.load(path)
+        #     self.loaded_onnx = self.onnx
         if args.verbose:
             print(f'[+] loading new instance: {self.onnx=} {self.vnnlib=}')
         # load environment
         # TODO: extract moi objectives thoi ma khong phai extract lai net
-        d           = os.path.join(args.benchmark_dir, args.benchmark, self.onnx.replace('.onnx', ''))
+        d           = os.path.join(args.benchmark_dir, args.benchmark)
         onnx_path   = os.path.join(d, 'onnx', self.onnx)
         vnnlib_path = os.path.join(d, 'vnnlib', self.vnnlib)
         net, input_shape, objectives = ns.test.extract_instance(onnx_path, vnnlib_path)
@@ -68,8 +68,10 @@ class Env(gym.Env):
         # load next instance if there is no objective left for current instance
         self.load_next_instance()
         done = self.iv.init(objective=self.objective, reference_bounds=None, preconditions={})
-        self.initial_worst_bound = self.iv.domains_list.minimum_lowers
+        # self.initial_worst_bound = self.iv.domains_list.minimum_lowers
         iv_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
+        # print(iv_observation)
+        exit()
         # bs in the 1st dimension of feature
         # save interactive verifier
         observation = self.convert_iv_observation(iv_observation)

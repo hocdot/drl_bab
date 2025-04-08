@@ -89,7 +89,7 @@ def get_args():
     # create folders
     create_folders(args)
     # set default device cuda
-    set_default_device(args)
+    # set_default_device(args)
     # additional args
     args.n_observation = 7
     return args
