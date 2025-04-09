@@ -40,12 +40,13 @@ make main
 - [x] Terminate state trick
 - [x] Choose top-k score, convert to iv action
 - [x] Normalize data offline
-- [ ] Train for CNN verification
+- [.] Train for CNN verification
 - [ ] Importance sampling (lấy actor cũ để làm prob_old)
 - [ ] Model-based RL (predict next observation)
 - [ ] Distributional shift reduction by KL-div
 - [ ] Learn on sequence of previous states
 - [ ] Solve data skewness problem, select problem with less n_visited more for balance distribution
+- [ ] Heuristic choose from both score
 
 ### BASELINE
 - [ ] Heuristic bunel

@@ -70,9 +70,8 @@ class BaseSolver:
             # display
             if args.verbose:
                 if observation is not None:
-                    mask = observation[..., -1]
-                    n_active_neuron = float(mask.sum(dim=[1, 2]).detach().cpu().numpy().mean())
-                    print(f'{self.step=} {reward.mean()=:0.2f} {n_active_neuron=:0.2f}')
+                    n_active_neuron = torch.stack(observation[2]).float().mean(dim=0)
+                    print(f'{self.step=} {reward.mean()=:0.2f} {n_active_neuron}')
                 # print(f'{self.step=} {reward=} {n_active_neuron=:0.2f}')
                 # print()
 

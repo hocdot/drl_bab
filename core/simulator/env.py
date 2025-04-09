@@ -58,7 +58,7 @@ class Env(gym.Env):
         self.input_shape   = input_shape
         self.iv            = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
         objectives, _      = self.iv._preprocess(objectives, force_split=None)
-        self.objective     = objectives.pop(1)
+        self.objective     = objectives.pop(3)
         # increase instance id counter
         self.instance_id += 1
 
@@ -69,17 +69,11 @@ class Env(gym.Env):
         self.load_next_instance()
         done = self.iv.init(objective=self.objective, reference_bounds=None, preconditions={})
         # self.initial_worst_bound = self.iv.domains_list.minimum_lowers
-        iv_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
-        # print(iv_observation)
-        exit()
-        # bs in the 1st dimension of feature
-        # save interactive verifier
-        observation = self.convert_iv_observation(iv_observation)
-        # extract action space
-        # (batch_size or n_subproblem, layer_id, neuron_id)
-        self.action_shape = list(np.array(observation.shape)[1:-1])
-        self.action_space = gym.spaces.MultiDiscrete(self.action_shape)
-        args.n_action     = np.prod(self.action_shape)
+        observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
+        # feature, active_neuron_index, n_active_neuron = observation
+        # feature            : list of layer (bs, padded_n_active_neuron, n_feature)
+        # active_neuron_index: list of layer (bs, padded_n_active_neuron)
+        # n_active_neuron    : list of layer (bs)
         # extract dict to convert layer id to layer name
         self.name_dict = {i: node.name for i, node in enumerate(self.iv.abstractor.net.split_nodes)}
         self.id_dict = {node.name: i for i, node in enumerate(self.iv.abstractor.net.split_nodes)}
@@ -92,44 +86,21 @@ class Env(gym.Env):
         iv_action = self.convert_action(action)
         # interact with interactive verifier
         reward, done, info = self.iv.step(iv_action)
+        unpruned_next_observations = info['unpruned_next_observations']
+        print(type(unpruned_next_observations))
+#         assert not unpruned_next_observations.isnan().any()
 
-        unpruned_next_observations = self.convert_iv_observation(info['unpruned_next_observations'])
-        assert not unpruned_next_observations.isnan().any()
-
-        uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)
-        info['unpruned_next_observation_1'] = uno_1
-        info['unpruned_next_observation_2'] = uno_2
+#         uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)
+#         info['unpruned_next_observation_1'] = uno_1
+#         info['unpruned_next_observation_2'] = uno_2
 
         if not done:
-            iv_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
-            next_observation = self.convert_iv_observation(iv_observation)
-            assert not next_observation.isnan().any()
+            next_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
         else:
             next_observation = None
         info['reward'] = reward
         reward = reward.to(args.device)
         return next_observation, reward, done, info
-
-    def convert_iv_observation(self, iv_observation):
-        feature, mask = iv_observation
-        # merge feature and mask
-        feature  = torch.stack(feature, dim=1)
-        mask     = torch.stack(mask, dim=1) # node still able to pick
-        indices  = torch.where(mask == 0)
-        feature0 = feature[..., 0] # score 1
-        feature0[indices] = 0
-        feature1 = - feature[..., 1] # score 2
-        feature1[indices] = 0
-        feature2 = feature[..., 2] # score 3
-        feature2[indices] = 0
-        feature3 = feature[..., 3] # score 4
-        feature3[indices] = 0
-        feature4 = feature[..., 4] # score 4
-        feature4[indices] = 0
-        feature5 = feature[..., 5] # abs
-        feature5[indices] = 0
-        observation = torch.stack([feature0, feature1, feature2, feature3, feature4, feature5, mask], dim=-1)
-        return observation
 
     def convert_action(self, action):
         named_action = []
