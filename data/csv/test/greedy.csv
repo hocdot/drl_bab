@@ -1,0 +1,2 @@
+episode,step,total_reward,avg_remaining,awb,runtime,n_visited,n_step
+0.0,20.0,1.240736961364746,22.3,-0.2025686300479889,44.23891929467209,449.0,20.0

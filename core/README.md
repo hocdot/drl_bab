@@ -47,6 +47,7 @@ make main
 - [ ] Learn on sequence of previous states
 - [ ] Solve data skewness problem, select problem with less n_visited more for balance distribution
 - [ ] Heuristic choose from both score
+- [ ] !!! add embeding as input e0
 
 ### BASELINE
 - [ ] Heuristic bunel

@@ -58,7 +58,7 @@ class Env(gym.Env):
         self.input_shape   = input_shape
         self.iv            = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
         objectives, _      = self.iv._preprocess(objectives, force_split=None)
-        self.objective     = objectives.pop(3)
+        self.objective     = objectives.pop(1)
         # increase instance id counter
         self.instance_id += 1
 
@@ -87,7 +87,7 @@ class Env(gym.Env):
         # interact with interactive verifier
         reward, done, info = self.iv.step(iv_action)
         unpruned_next_observations = info['unpruned_next_observations']
-        print(type(unpruned_next_observations))
+#        print(type(unpruned_next_observations))
 #         assert not unpruned_next_observations.isnan().any()
 
 #         uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)

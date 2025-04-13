@@ -43,25 +43,12 @@ def get_args():
     # sac solver
     parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--actor_n_hidden', type=int, default=64)
-    parser.add_argument('--critic_n_hidden', type=int, default=64)
-    parser.add_argument('--embed_n_hidden', type=int, default=64)
+    parser.add_argument('--n_hidden', type=int, default=64)
     parser.add_argument('--n_embed', type=int, default=64)
     parser.add_argument('--tau', type=float, default=0.005) # target smoothing coeff
     parser.add_argument('--patience', type=int, default=100) # early stop after 100 episodes no improvement
-    # parser.add_argument('--entropy_lr', type=float, default=3e-4)
-    parser.add_argument('--actor_lr', type=float, default=3e-4)
-    parser.add_argument('--critic_lr', type=float, default=5e-4)
-    parser.add_argument('--actor_iter', type=int, default=1)
-    parser.add_argument('--n_delay_gradient', type=int, default=30)
-    parser.add_argument('--buffer_size', type=int, default=100000000)
-    parser.add_argument('--start_learning', type=int, default=30) # frames
-    parser.add_argument('--end_guiding', type=int, default=3000) # frames
-    parser.add_argument('--actor_update_interval', type=int, default=2)
-    parser.add_argument('--target_update_interval', type=int, default=1)
+    parser.add_argument('--dqn_lr', type=int, default=3e-5)
     # gnn solver
-    parser.add_argument('--embed_class', type=str, default='Linear')
-    parser.add_argument('--gnn_class', type=str, default='GCNConv')
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
@@ -91,5 +78,5 @@ def get_args():
     # set default device cuda
     # set_default_device(args)
     # additional args
-    args.n_observation = 7
+    args.n_feature = 8
     return args

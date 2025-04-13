@@ -55,7 +55,7 @@ class Monitor:
     def label(self):
         args = self.args
         if args.solver == 'propose':
-            label = f'{args.solver}_{args.score}_{args.gnn_class}'
+            label = f'{args.solver}_{args.score}'
         else:
             label = f'{args.solver}'
         return label

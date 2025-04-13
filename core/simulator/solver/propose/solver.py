@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.nn as nn
 import pandas as pd
 import numpy as np
 import pickle
@@ -9,9 +10,7 @@ import os
 
 from .buffer import OfflineBuffer, OfflineTransition
 from .normalizer import RunningMeanStd
-from .embedding import Embedding
-from .critic import Critic
-from .actor import Actor
+from .model import DQN
 
 from ..base import BaseSolver
 
@@ -38,33 +37,17 @@ class Solver(BaseSolver):
         # extract args
         args = self.args
         env  = self.env
-        # initialize actor
-        self.actor = Actor(args).to(args.device)
-        self.actor_optimizer = optim.Adam(list(self.actor.parameters()),
-                                          lr=args.actor_lr)
         # initialize critic
-        self.critic1   = Critic(args).to(args.device)
-        self.critic2   = Critic(args).to(args.device)
-        # initialize embedding
-        self.embedding = Embedding(args).to(args.device)
-        if 'train' in args.mode:
-            self.critic1_target = Critic(args).to(args.device)
-            self.critic2_target = Critic(args).to(args.device)
-            self.critic1_target.load_state_dict(self.critic1.state_dict())
-            self.critic2_target.load_state_dict(self.critic2.state_dict())
+        self.policy_net = DQN(args).to(args.device)
+        self.target_net = DQN(args).to(args.device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
         # initialize optimizer
-        self.critic_optimizer = optim.Adam(list(self.critic1.parameters()) + \
-                                           list(self.critic2.parameters()),
-                                           lr=args.critic_lr)
+        self.optimizer = optim.AdamW(self.policy_net.parameters(),
+                                     lr=args.dqn_lr,
+                                     amsgrad=True)
+        self.criterion = nn.SmoothL1Loss()
         #
         self.onnx_to_id = get_onnx_to_id(args)
-        self.edge_indices, self.edge_weights = [], []
-        for onnx in self.onnx_to_id:
-            self.edge_indices.append(torch.load(os.path.join(args.benchmark_dir, args.benchmark, f'{onnx}.index.pth')))
-            self.edge_weights.append(torch.load(os.path.join(args.benchmark_dir, args.benchmark, f'{onnx}.weight.pth')))
-        # normalizer
-        self.observation_normalizer = RunningMeanStd(shape=[args.n_observation])
-        # self.reward_normalizer      = RunningMeanStd(shape=[1])
 
     # =========================================================
     # PRETRAIN
@@ -287,152 +270,40 @@ class Solver(BaseSolver):
     # TEST
     # =========================================================
     def select_action(self, observation):
-        assert not torch.isnan(observation).any(), f'{torch.where(observation.isnan())=}'
-        # observation: [bs, n_layer, n_neuron, n_feature]
-        # extract data
         # extract args
-        args      = self.args
-        critic    = self.critic1
-        embedding = self.embedding
-        actor     = self.actor
-        env       = self.env
-        on        = self.observation_normalizer
-        actor.eval()
-        critic.eval()
-        embedding.eval()
-        # rn     = self.reward_normalizer
-        edge_index, edge_weight = env.edge_index, env.edge_weight
-        # extract bs
-        bs          = observation.shape[0]
-        mask        = observation[..., -1].clone()
-        observation = on.normalize_torch(observation)
-        assert not observation.isnan().any()
-
-        es          = embedding(observation, edge_index, edge_weight)
-        assert not es.isnan().any()
-        # combined score
-        def combined(observation, edge_index, edge_weight):
-            # compute score via actor
-            actor_mask = torch.zeros_like(mask)
-            actor_score = actor(es) # bs, n_layer, n_neuron -> mask: bs, n_layer, n_neuron
-            # compute mask by actor
-            for i in range(bs):
-                threshold = torch.sort(actor_score[i].flatten(), descending=True).values[args.top_k_actor]
-                actor_mask[i, ...] = (actor_score[i] > threshold).to(actor_mask)
-            # compute critic score for only mask*actor_mask==1
-            critic_score = critic(es, edge_index, edge_weight)
-            critic_score = (actor_mask * mask) * critic_score + (1 - actor_mask * mask) * args.iwb_threshold
-            return critic_score
-        # compute score
-        score = eval(args.score)(es, edge_index, edge_weight)
-        assert not score.isnan().any()
-        score    = mask * score + (1 - mask) * (-999)
-#         # compute full feedback
-#         min_rewards, max_rewards, actions = env.full_feedback()
-#         # convert score to env.full_feedback format
-#         scores = []
-#         for i, action in enumerate(actions): # subproblem
-#             s = []
-#             for j, a in enumerate(action):   # active neuron
-#                 # print(i, j, a, score[i, a[0], a[1]])
-#                 s.append(score[i, a[0], a[1]].item())
-#             scores.append(np.array(s))
-#         # for each subproblem, filter top_k_actor neuron by score
-#         # then select best neuron by full feedback
-#         ret_action = []
-#         for i in range(bs):
-#             indices = np.argsort(scores[i])[::-1][:args.top_k_actor]
-#             indices = torch.tensor(indices.copy())
-#             filtered_rewards = rewards[i][indices]
-#             filtered_action  = actions[i][indices.detach().cpu().numpy()]
-#             idx = torch.argmax(filtered_rewards).detach().cpu().numpy()
-#             a = filtered_action[idx]
-#             ret_action.append(a)
-        # initialize action
-        ret_action = []
-        for i in range(bs):
-            candidates = torch.where(score[i] == score[i].max()) # .tolist()
-            # print(f'{bs=} {candidates=} {score[i].max()=}')
-            index      = np.random.choice(np.arange(len(candidates[0])))
-            a          = [_[index].item() for _ in candidates]
-            ret_action.append(a)
+        args       = self.args
+        policy_net = self.policy_net
+        env        = self.env
+        policy_net.eval()
+        # ===================
+        # extract observation
+        # ===================
+        # extract data
+        # feature: list of Layer_i: [bs, n_active_neuron_i, n_feature]
+        feature, active_neuron_index, n_active_neuron = observation
+        n_layer = len(feature)
+        bs      = feature[0].shape[0]
+        # extract
+        scores = policy_net(feature)
+        # initialize action, action.shape = (bs, 2)
+        best_scores, best_neuron_indices = [], []
+        for layer in range(n_layer):
+            score                  = scores[layer].cpu() # bs, n_active_neuron_i
+            print(f'{score.shape=}')
+            best_score, best_index = torch.max(score, dim=1)
+            best_neuron_index      = torch.tensor([active_neuron_index[layer][b, best_index[b]] for b in range(bs)])
+            best_scores.append(best_score)
+            best_neuron_indices.append(best_neuron_index)
+        best_scores         = torch.stack(best_scores).T         # (bs, n_layer)
+        best_neuron_indices = torch.stack(best_neuron_indices).T # (bs, n_layer)
+        best_layer          = torch.argmax(best_scores, dim=1)   # (bs, )
+        best_neuron         = torch.gather(best_neuron_indices, 1, best_layer.unsqueeze(-1)).squeeze(-1)
+        action = np.array([[best_layer[i].item(), best_neuron[i].item()] for i in range(bs)])
         if args.verbose:
             # print(f'{action=}')
             pass
-        # for here to eval
-        return np.array(ret_action)
+        return np.array(action)
 
-    def get_pretrained_paths(self):
-        # extract args
-        args = self.args
-
-        paths = {
-            'critic'   : os.path.join(args.model_dir, f'critic_{args.onnx}_{args.solver}_{args.gnn_class}.pth'),
-            'actor'    : os.path.join(args.model_dir, f'actor_{args.onnx}_{args.solver}_{args.gnn_class}.pth'),
-            'embedding': os.path.join(args.model_dir, f'embed_{args.onnx}_{args.solver}_{args.embed_class}.pth'),
-            'on'       : os.path.join(args.model_dir, f'on_{args.onnx}_{args.solver}_{args.gnn_class}.pkl'),
-            'rn'       : os.path.join(args.model_dir, f'rn_{args.onnx}_{args.solver}_{args.gnn_class}.pkl')
-        }
-        return paths
 
     def test(self):
-        # load pretrained paths
-        paths = self.get_pretrained_paths()
-
-        # critic
-        path = paths['critic']
-        self.critic1.load_state_dict(torch.load(path, weights_only=True))
-        self.critic1.eval()
-        print(f'[+] loaded {path=}')
-
-        # actor
-        path = paths['actor']
-        self.actor.load_state_dict(torch.load(path, weights_only=True))
-        self.actor.eval()
-        print(f'[+] loaded {path=}')
-
-        # embedding
-        path = paths['embedding']
-        self.embedding.load_state_dict(torch.load(path, weights_only=True))
-        self.embedding.eval()
-        print(f'[+] loaded {path=}')
-
-        # normalizer
-        path = paths['on']
-        with open(path, 'rb') as fp:
-            self.observation_normalizer = pickle.load(fp)
-        print(f'[+] loaded {path=}')
-
-#         path = paths['rn']
-#         with open(path, 'rb') as fp:
-#             self.reward_normalizer = pickle.load(fp)
-#             print(f'[+] loaded {path=}')
-
         super().test()
-
-    def save(self):
-        # load pretrained paths
-        paths = self.get_pretrained_paths()
-        # save train_offline actor/critic model
-        path = paths['critic']
-        torch.save(self.critic1.state_dict(), path)
-        print(f'[+] saved {path=}')
-
-        path = paths['actor']
-        torch.save(self.actor.state_dict(), path)
-        # print(f'[+] saved {path=}')
-
-        path = paths['embedding']
-        torch.save(self.embedding.state_dict(), path)
-        # print(f'[+] saved {path=}')
-
-        # save normalizer
-        path = paths['on']
-        with open(path, 'wb') as fp:
-            pickle.dump(self.observation_normalizer, fp, protocol=pickle.HIGHEST_PROTOCOL)
-            # print(f'[+] saved {path=}')
-
-#             path = paths['rn']
-#             with open(path, 'wb') as fp:
-#                 pickle.dump(rn, fp, protocol=pickle.HIGHEST_PROTOCOL)
-#                 print(f'[+] saved {path=}')
