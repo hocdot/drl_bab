@@ -12,6 +12,7 @@ from .buffer import OfflineBuffer, OfflineTransition
 from .normalizer import RunningMeanStd
 from .model import DQN
 
+from ...util import CudaDefault
 from ..base import BaseSolver
 
 # np.set_printoptions(precision=2)
@@ -43,7 +44,7 @@ class Solver(BaseSolver):
         self.target_net.load_state_dict(self.policy_net.state_dict())
         # initialize optimizer
         self.optimizer = optim.AdamW(self.policy_net.parameters(),
-                                     lr=args.dqn_lr,
+                                     lr=args.lr,
                                      amsgrad=True)
         self.criterion = nn.SmoothL1Loss()
         #
@@ -52,35 +53,27 @@ class Solver(BaseSolver):
     # =========================================================
     # PRETRAIN
     # =========================================================
-    def train_offline_add_info(self, actor_loss, critic_loss):
-        if critic_loss < self.min_critic_loss:
+    def train_offline_add_info(self, loss):
+        if loss < self.min_loss:
             self.save()
-        self.min_critic_loss = min(critic_loss, self.min_critic_loss)
-        self.max_critic_loss = max(critic_loss, self.max_critic_loss)
+        self.min_loss = min(loss, self.min_loss)
+        self.max_loss = max(loss, self.max_loss)
         info = {
-            'step': self.step,
-            'actor_loss': actor_loss,
-            'critic_loss': critic_loss,
-            'min_critic_loss': self.min_critic_loss,
-            'max_critic_loss': self.max_critic_loss,
+            'step'     : self.step,
+            'loss'     : loss,
+            'min_loss' : self.min_loss,
+            'max_loss' : self.max_loss,
         }
         return info
 
     def train_offline_load_buffer(self):
         # extract args
         args = self.args
-        on   = self.observation_normalizer
-        # rn   = self.reward_normalizer
         #
-        self.train_offline_buffer = OfflineBuffer(args.buffer_size)
+        self.buffer = OfflineBuffer(args.buffer_size)
         n_visited = 0
         d = os.path.join(args.data_dir, 'train')
         for name in tqdm.tqdm(list(sorted(set(os.listdir(d)))), desc='train_offline load buffer'):
-            # TODO: remove
-            # instance_id, iter_id = name.split('.')[0].split('_')[-2:]
-            # if int(instance_id) >= 1:
-            #     continue
-
             path = os.path.join(d, name)
             if args.verbose:
                 print(f'[+] Loading {path=}')
@@ -88,171 +81,116 @@ class Solver(BaseSolver):
                 buffer = pickle.load(fp)
                 n_visited += len(buffer)
                 for i, transition in enumerate(buffer.memory):
-                    self.train_offline_buffer.push(
-                        transition.observation,
-                        transition.unpruned_next_observation_1,
-                        transition.unpruned_next_observation_2,
-                        transition.mask,
-                        transition.reward,
+                    self.buffer.push(
+                        transition.feature,
+                        transition.active_neuron_index,
+                        transition.unf_1,
+                        transition.unf_2,
+                        transition.actions,
+                        transition.rewards,
                         transition.onnx_id,
                         transition.done,
                     )
-                    on.update(transition.observation.detach().cpu().numpy())
-                    # print(transition.observation[..., -1])
-                    # indices = torch.where(transition.mask)
-                    # reward = reward[indices].detach().cpu().numpy()[:, None]
-                    # rn.update(reward)
                 print(f'[+] loaded {name} +{len(buffer)} new transitions')
         print(f'[+] loaded {n_visited=}')
 
+    def soft_target_update(self):
+        # extract args
+        args       = self.args
+        policy_net = self.policy_net
+        target_net = self.target_net
+        # update
+        target_net_state_dict = target_net.state_dict()
+        policy_net_state_dict = policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key] * args.tau + \
+                                         target_net_state_dict[key] * (1 - args.tau)
+        target_net.load_state_dict(target_net_state_dict)
+
     def train_offline_step(self):
         # extract args
-        args             = self.args
-        env              = self.env
-        buffer           = self.train_offline_buffer
-        actor            = self.actor
-        actor_optimizer  = self.actor_optimizer
-        critic1          = self.critic1
-        critic2          = self.critic2
-        embedding        = self.embedding
-        critic1_target   = self.critic1_target
-        critic2_target   = self.critic2_target
-        critic_optimizer = self.critic_optimizer
-        on               = self.observation_normalizer
-        # rn               = self.reward_normalizer
+        args       = self.args
+        env        = self.env
+        buffer     = self.buffer
+        criterion  = self.criterion
+        optimizer  = self.optimizer
+        policy_net = self.policy_net
+        target_net = self.target_net
+        policy_net.train()
 
-        actor.train()
-        critic1.train()
-        critic2.train()
-        critic1_target.train()
-        critic2_target.train()
-        embedding.train()
-
-        critic_loss = 0
-        for _ in range(args.n_delay_gradient):
-            # =====================
-            # extract batch of data
-            # =====================
-            transitions             = buffer.sample(args.batch_size)
-            batch                   = OfflineTransition(*zip(*transitions))
-            observation             = torch.stack(batch.observation).to(args.device)
-            observation             = on.normalize_torch(observation)
-            # augment observation
-            mask                    = torch.stack(batch.mask).to(args.device)
-            reward                  = torch.stack(batch.reward).to(args.device)
-            onnx_id                 = batch.onnx_id[0].to(args.device)
-            done                    = torch.tensor(batch.done).to(args.device)[:, None, None]
-            # reward                  = rn.normalize_torch(reward)
-
-            uno_1                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_1).to(args.device))
-            uno_2                   = on.normalize_torch(torch.stack(batch.unpruned_next_observation_2).to(args.device))
-            edge_index, edge_weight = self.edge_indices[onnx_id], self.edge_weights[onnx_id]
-
-            # ============
-            # train critic
-            # ============
-            # compute target
-            bs = reward.shape[0]
-            nes_1 = embedding(uno_1, edge_index, edge_weight) # next embeddings 1
-            nes_2 = embedding(uno_2, edge_index, edge_weight) # next embeddings 2
-            with torch.no_grad():
-                target_q_value1        = 0.5 * (critic1_target(nes_1, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True) + \
-                                                critic1_target(nes_2, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True))
-                target_q_value2        = 0.5 * (critic2_target(nes_1, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True) + \
-                                                critic2_target(nes_2, edge_index, edge_weight).amax(dim=(1, 2), keepdims=True))
-                min_max_target_q_value = torch.min(target_q_value1, target_q_value2)
-                next_q_value = reward + args.gamma * min_max_target_q_value # * (1 - done) # Trick
-            # compute estimate
-            es            = embedding(observation, edge_index, edge_weight)
-            q_value1      = critic1(es, edge_index, edge_weight)
-            q_value2      = critic2(es, edge_index, edge_weight)
-            critic1_loss  = F.mse_loss(q_value1 * mask, next_q_value * mask)
-            critic2_loss  = F.mse_loss(q_value2 * mask, next_q_value * mask)
-            critic_loss  += (critic1_loss + critic2_loss)
-        critic_loss /= args.n_delay_gradient
-        # optimize the critic
-        critic_optimizer.zero_grad()
-        critic_loss.backward()
-        critic_optimizer.step()
-        print()
-
-        total_actor_loss = 0
-        # if self.step > 2000:
-#             # ===========
-#             # train actor
-#             # ===========
-#             for _ in range(10):
-#                 # compute actor score
-#                 score = actor(observation, edge_index, edge_weight)
-#                 # print(f'{score.max().item()=} {score.min().item()=}')
-#                 old_shape = score.shape
-#                 # bs, n_layer, n_neuron = score.shape
-#                 score = score.flatten(1)
-#                 prob = F.softmax(score).view(old_shape)
-#                 # compute full feedback from critic
-#                 with torch.no_grad():
-#                     q_value1 = critic1(observation, edge_index, edge_weight)
-#                     q_value2 = critic2(observation, edge_index, edge_weight)
-#                     min_q_value = torch.min(q_value1, q_value2)
-#                 actor_loss = - (min_q_value * prob).sum(dim=(1, 2)).mean()
-#                 # optimize actor
-#                 actor_optimizer.zero_grad()
-#                 actor_loss.backward()
-#                 actor_optimizer.step()
-#                 total_actor_loss += actor_loss.item()
-#             total_actor_loss = total_actor_loss / 10.0
-
-        # ===============================
-        # update target_network of critic
-        # ===============================
-        if self.step % args.target_update_interval == 0:
-            for param, target_param in zip(critic1.parameters(), critic1_target.parameters()):
-                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
-            for param, target_param in zip(critic2.parameters(), critic2_target.parameters()):
-                target_param.data.copy_(args.tau * param.data + (1 - args.tau) * target_param.data)
+        with CudaDefault():
+            loss = 0
+            for _ in range(args.batch_size):
+                # extract data
+                transition = buffer.sample(1)[0]
+                feature             = transition.feature             # [layer (bs, n_active_neuron), ...]
+                active_neuron_index = transition.active_neuron_index
+                unf_1               = transition.unf_1
+                unf_2               = transition.unf_2
+                actions             = transition.actions
+                rewards             = transition.rewards
+                done                = transition.done
+                n_layer             = len(feature)
+                # =========
+                # train DQN
+                # =========
+                # compute estimate
+                q_value      = policy_net(feature) # [layer (bs, n_active_neuron), ...]
+                # compute target
+                next_q_value_1 = target_net(unf_1)
+                next_q_value_2 = target_net(unf_2)
+                next_q_value = [0.5 * (next_q_value_1[layer] + next_q_value_2[layer]) for layer in range(n_layer)]
+                # compute expected_q_value and loss per layer
+                expected_q_value = [torch.zeros_like(q_value[layer]) for layer in range(n_layer)]
+                for layer in range(n_layer):
+                    bs, nan = q_value[layer].shape
+                    for b in range(bs):
+                        mask    = torch.isin(active_neuron_index[layer][b], actions[layer][b])
+                        indices = torch.nonzero(mask, as_tuple=True)[0]
+                        expected_q_value[layer][b][indices] = rewards[layer][b]
+                        if not done:
+                            # print(next_q_value[layer].max(-1, keepdim=True).values.shape)
+                            # print(expected_q_value[layer].shape)
+                            expected_q_value[layer] += args.gamma * next_q_value[layer].max(-1, keepdim=True).values
+                    print(layer, feature[layer].mean(), q_value[layer].mean().item(), expected_q_value[layer].mean().item())
+#                     loss += criterion(q_value[layer], expected_q_value[layer]) / (bs * nan)
+#             loss /= n_layer * args.batch_size
+#             # optimize the critic
+#             optimizer.zero_grad()
+#             loss.backward()
+#             optimizer.step()
         # report data
-        return total_actor_loss, critic_loss.item()
+        return loss.item()
 
     def train_offline(self):
         # extract args
-        args      = self.args
-        monitor   = self.monitor
-        actor     = self.actor
-        critic    = self.critic1
-        embedding = self.embedding
-        on        = self.observation_normalizer
-        # rn      = self.reward_normalizer
-        # load full feedback buffer
+        args       = self.args
+        monitor    = self.monitor
+        policy_net = self.policy_net
+
+        # load buffer
         self.train_offline_load_buffer()
-        # load pretrained paths
-        paths = self.get_pretrained_paths()
+
         # init
-        self.min_critic_loss = torch.inf
-        self.max_critic_loss = -torch.inf
+        self.min_loss = torch.inf
+        self.max_loss = -torch.inf
 
-        # load train_offline actor/critic model
+        # load dqn model
         if args.load_state_dict:
-            path = paths['critic']
+            path = os.path.join(args.model_dir, f'{monitor.label}.pkl')
             print(f'[+] loaded {path=}')
-            self.critic1.load_state_dict(torch.load(path))
-            self.critic2.load_state_dict(torch.load(path))
-            self.critic1_target.load_state_dict(self.critic1.state_dict())
-            self.critic2_target.load_state_dict(self.critic2.state_dict())
+            self.policy_net.load_state_dict(torch.load(path))
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+            self.target_net.eval()
 
-            path = paths['actor']
-            self.actor.load_state_dict(torch.load(path))
-            print(f'[+] loaded {path=}')
-
-            path = paths['embedding']
-            self.embedding.load_state_dict(torch.load(path))
-            print(f'[+] loaded {path=}')
         # optimization loop
         try:
             self.step = 0
             for _ in range(args.n_train_offline_step):
-                actor_loss, critic_loss = self.train_offline_step()
+                loss = self.train_offline_step()
+                self.soft_target_update()
                 # add more info
-                info = self.train_offline_add_info(actor_loss, critic_loss)
+                info = self.train_offline_add_info(loss)
                 # logging
                 monitor.step(info)
                 #
@@ -260,9 +198,6 @@ class Solver(BaseSolver):
                 # export csv
                 monitor.export_csv()
         except KeyboardInterrupt:
-            pass
-        finally:
-            # self.save()
             pass
     # =========================================================
 
@@ -299,11 +234,24 @@ class Solver(BaseSolver):
         best_layer          = torch.argmax(best_scores, dim=1)   # (bs, )
         best_neuron         = torch.gather(best_neuron_indices, 1, best_layer.unsqueeze(-1)).squeeze(-1)
         action = np.array([[best_layer[i].item(), best_neuron[i].item()] for i in range(bs)])
-        if args.verbose:
-            # print(f'{action=}')
-            pass
         return np.array(action)
 
-
     def test(self):
+        self.load()
         super().test()
+
+    def save(self):
+        args = self.args
+        state_dict = self.policy_net.state_dict()
+        path = os.path.join(args.model_dir, f'{self.monitor.label}.pkl')
+        with open(path, 'wb') as fp:
+            pickle.dump(state_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load(self):
+        args = self.args
+        path = os.path.join(args.model_dir, f'{self.monitor.label}.pkl')
+        if os.path.exists(path):
+            with open(path, 'rb') as fp:
+                state_dict = pickle.load(fp)
+                self.policy_net.load_state_dict(state_dict)
+                self.policy_net.eval()

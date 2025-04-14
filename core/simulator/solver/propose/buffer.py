@@ -3,13 +3,14 @@ import numpy as np
 import random
 
 OfflineTransition = namedtuple('OfflineTransition',
-                              ('observation', 
-                               'unpruned_next_observation_1', 
-                               'unpruned_next_observation_2', 
-                               'mask', 
-                               'reward', 
-                               'onnx_id', 
-                               'done'))
+                              ('feature',             # bs, n_active_neuron, n_feature
+                               'active_neuron_index', # bs, n_active_neuron
+                               'unf_1',               # bs, n_active_neuron, n_feature
+                               'unf_2',               # bs, n_active_neuron, n_feature
+                               'actions',             #
+                               'rewards',             #
+                               'onnx_id',             #
+                               'done'))               #
 
 class OfflineBuffer:
 
@@ -21,14 +22,7 @@ class OfflineBuffer:
         self.memory = deque([], maxlen=self.capacity)
 
     def push(self, *args):
-        # convert all items to cpu
-        args_cpu = []
-        for _ in args:
-            if type(_) is not bool:
-                args_cpu.append(_.detach().cpu())
-            else:
-                args_cpu.append(_)
-        self.memory.append(OfflineTransition(*args_cpu))
+        self.memory.append(OfflineTransition(*args))
 
     def sample(self, batch_size):
         batch_size = np.min([batch_size, len(self)])

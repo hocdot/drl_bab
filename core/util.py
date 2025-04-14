@@ -38,16 +38,18 @@ def get_args():
     parser.add_argument('--objective_id', type=int, default=0)
     # top-k for greedy solver
     parser.add_argument('--top_k', type=int, default=3)
+    parser.add_argument('--top_k_prepare', type=int, default=50)
     # top-k for propose solver
     parser.add_argument('--top_k_actor', type=int, default=10000)
     # sac solver
     parser.add_argument('--gamma', type=float, default=0.9)
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--n_hidden', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--buffer_size', type=int, default=1000000)
+    parser.add_argument('--n_hidden', type=int, default=512)
     parser.add_argument('--n_embed', type=int, default=64)
-    parser.add_argument('--tau', type=float, default=0.005) # target smoothing coeff
+    parser.add_argument('--tau', type=float, default=0.001) # target smoothing coeff
     parser.add_argument('--patience', type=int, default=100) # early stop after 100 episodes no improvement
-    parser.add_argument('--dqn_lr', type=int, default=3e-5)
+    parser.add_argument('--lr', type=int, default=3e-5)
     # gnn solver
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')

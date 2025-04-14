@@ -58,6 +58,7 @@ class Env(gym.Env):
         self.input_shape   = input_shape
         self.iv            = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
         objectives, _      = self.iv._preprocess(objectives, force_split=None)
+        # TODO: Paul Pogba
         self.objective     = objectives.pop(1)
         # increase instance id counter
         self.instance_id += 1
@@ -86,14 +87,7 @@ class Env(gym.Env):
         iv_action = self.convert_action(action)
         # interact with interactive verifier
         reward, done, info = self.iv.step(iv_action)
-        unpruned_next_observations = info['unpruned_next_observations']
-#        print(type(unpruned_next_observations))
-#         assert not unpruned_next_observations.isnan().any()
-
-#         uno_1, uno_2 = torch.chunk(unpruned_next_observations, 2)
-#         info['unpruned_next_observation_1'] = uno_1
-#         info['unpruned_next_observation_2'] = uno_2
-
+        info['unf_1'], info['unf_2'] = self.convert_unf(info['unpruned_next_features'])
         if not done:
             next_observation, self.subproblems = self.iv.get_observation(args.ns_batch_size)
         else:
@@ -118,6 +112,15 @@ class Env(gym.Env):
             action.append(a)
         return action
 
+    def convert_unf(self, unf):
+        n_layer = len(unf)
+        unf_1, unf_2 = [], []
+        for layer in range(n_layer):
+            unf_1_layer, unf_2_layer = torch.chunk(unf[layer], 2)
+            unf_1.append(unf_1_layer)
+            unf_2.append(unf_2_layer)
+        return unf_1, unf_2
+
     def full_feedback(self, return_min_max_rewards=False):
         active_neuron_rewards, iv_actions = self.iv.full_feedback(self.subproblems,
                                                                   return_min_max_rewards=return_min_max_rewards)
@@ -129,7 +132,6 @@ class Env(gym.Env):
             return active_neuron_rewards[0], active_neuron_rewards[1], actions
         return active_neuron_rewards, actions
 
-    def topk_action(self, scores, topk=1):
-        actions = self.iv.topk_action(scores, self.subproblems, topk)
-        actions = self.convert_iv_action(actions)
-        return actions
+    def top_k_reward(self, actions):
+        rewards, scores = self.iv.top_k_reward(actions, self.subproblems) # layer of (bs, k)
+        return rewards, scores

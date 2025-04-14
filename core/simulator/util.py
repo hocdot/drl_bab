@@ -143,3 +143,21 @@ def prepare_graph(net, input_shape, output_shape, args):
 #     # avoid negative edge_weight
 #     edge_weight = torch.abs(edge_weight)
 #     return edge_index, edge_weight
+
+import torch
+import gc
+
+class CudaDefault:
+    def __enter__(self):
+        # Move all existing tensors to CUDA
+        self.tensors = [t for t in gc.get_objects() if isinstance(t, torch.Tensor)]
+        for tensor in self.tensors:
+            if tensor.is_cuda is False:
+                tensor.data = tensor.data.cuda()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Optionally, you could move tensors back to CPU or do other cleanup
+        for tensor in self.tensors:
+            if tensor.is_cuda:
+                tensor.data = tensor.data.cpu()
