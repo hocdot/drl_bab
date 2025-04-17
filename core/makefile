@@ -1,14 +1,19 @@
 all: prepare test plot
 
-prepare:
-	python3 main.py --scenario=prepare_offline_buffer --mode=train --n_prepare_episode=10 --n_prepare_iter=5 --clear_buffer --verbose
+prepare_graph:
+	python3 main.py --scenario=prepare_graph --verbose
+
+prepare_data:
+	python3 main.py --scenario=prepare_offline_buffer --mode=train --n_prepare_episode=1 --n_prepare_iter=1 --clear_buffer --verbose
 
 train_offline:
-	python3 main.py --solver=propose --mode=train_offline --gnn_class=Linear --embed_class=Linear --n_train_offline_step=5000
+	python3 main.py --solver=propose --mode=train_offline --n_train_offline_step=500 --gamma=0.0 --device=cuda:0
 
-test:
-	python3 main.py --mode=test --solver=propose --score=critic --gnn_class=Linear --embed_class=Linear --verbose
-	# python3 main.py --mode=test --solver=heuristic --verbose
+propose:
+	python3 main.py --mode=test --solver=propose --verbose --device=cuda:1
+
+heuristic:
+	python3 main.py --mode=test --solver=heuristic --verbose --device=cuda:1
 	# python3 main.py --mode=test --solver=greedy --verbose
 
 boxplot:

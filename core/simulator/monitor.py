@@ -3,7 +3,6 @@ import tqdm
 import os
 
 class Monitor:
-
     def __init__(self, args, progress_bar=True):
         # save
         self.args = args

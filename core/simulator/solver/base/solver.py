@@ -70,8 +70,8 @@ class BaseSolver:
             # display
             if args.verbose:
                 if observation is not None:
-                    n_active_neuron = torch.stack(observation[2]).float().mean(dim=0)
-                    print(f'{self.step=} {reward.mean()=:0.2f} {n_active_neuron}')
+                    n_active_neuron = torch.stack(observation[3]).float().mean(dim=0)
+                    print(f'{self.step=} {len(reward)=} {reward}')
                 # print(f'{self.step=} {reward=} {n_active_neuron=:0.2f}')
                 # print()
 

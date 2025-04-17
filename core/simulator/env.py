@@ -133,5 +133,5 @@ class Env(gym.Env):
         return active_neuron_rewards, actions
 
     def top_k_reward(self, actions):
-        rewards, scores = self.iv.top_k_reward(actions, self.subproblems) # layer of (bs, k)
-        return rewards, scores
+        heuristic_score = self.iv.top_k_reward(actions, self.subproblems) # layer of (bs, k)
+        return heuristic_score

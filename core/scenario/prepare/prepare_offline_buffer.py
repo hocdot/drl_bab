@@ -16,10 +16,53 @@ def get_onnx_to_id(args):
         i += 1
     return onnx_to_id
 
+# def select_action(observation, env, args):
+#     # observation: list of Layer_i: [bs, n_active_neuron_i, n_feature]
+#     # extract data
+#     feature, heuristic_score, active_neuron_index, n_active_neuron = observation
+#     # extract hyperparam
+#     n_layer = len(feature)
+#     bs      = feature[0].shape[0]
+#     top_k   = args.top_k_prepare
+#     # initialize action, action.shape = (bs, 2)
+#     actions = [] # layer of (bs, k)
+#     for layer in range(n_layer):
+#         score = heuristic_score[layer].cpu() # (bs, n_active_neuron_i)
+#         k = min(score.shape[1], top_k)
+#         _, best_index = torch.topk(score, k, dim=1) # (bs, k)
+#         layer_action = [] # (bs, k)
+#         for b in range(bs):
+#             la = torch.index_select(active_neuron_index[layer][b], dim=0, index=best_index[b]) # k
+#             layer_action.append(la)
+#         layer_action = torch.stack(layer_action)
+#         actions.append(layer_action)
+#     rewards = env.top_k_reward(actions) # layer of (bs, k)
+#     # compute selected action
+#     best_scores, best_neuron_indices = [], []
+#     heuristic_scores = []
+#     for layer in range(n_layer):
+#         score = torch.zeros_like(rewards[layer])
+#         for b in range(bs):
+#             mask     = torch.isin(active_neuron_index[layer][b], actions[layer][b])
+#             indices  = torch.nonzero(mask, as_tuple=True)[0]
+#             score[b] = heuristic_score[layer][b, indices] # bs, k
+#         heuristic_scores.append(score)
+#         best_score, best_index = torch.max(score, dim=1)
+#         best_neuron_index      = torch.tensor([actions[layer][b, best_index[b]] for b in range(bs)])
+#         best_scores.append(best_score)
+#         best_neuron_indices.append(best_neuron_index)
+#     best_scores         = torch.stack(best_scores).T         # (bs, 1)
+#     best_neuron_indices = torch.stack(best_neuron_indices).T # (bs, 1)
+#     best_layer          = torch.argmax(best_scores, dim=1)   # (bs, )
+#     best_neuron         = torch.gather(best_neuron_indices, 1, best_layer.unsqueeze(-1)).squeeze(-1)
+#     selected_action = np.array([[best_layer[i].item(), best_neuron[i].item()] for i in range(bs)])
+#     # return selected_action, actions, rewards
+#     return selected_action, actions, heuristic_scores
+
 def select_action(observation, env, args):
     # observation: list of Layer_i: [bs, n_active_neuron_i, n_feature]
     # extract data
-    feature, active_neuron_index, n_active_neuron = observation
+    feature, heuristic_score, active_neuron_index, n_active_neuron = observation
     # extract hyperparam
     n_layer = len(feature)
     bs      = feature[0].shape[0]
@@ -27,7 +70,7 @@ def select_action(observation, env, args):
     # initialize action, action.shape = (bs, 2)
     actions = [] # layer of (bs, k)
     for layer in range(n_layer):
-        score = - feature[layer][..., 1].cpu() # (bs, n_active_neuron_i)
+        score = heuristic_score[layer].cpu() # (bs, n_active_neuron_i)
         k = min(score.shape[1], top_k)
         _, best_index = torch.topk(score, k, dim=1) # (bs, k)
         layer_action = [] # (bs, k)
@@ -36,21 +79,23 @@ def select_action(observation, env, args):
             layer_action.append(la)
         layer_action = torch.stack(layer_action)
         actions.append(layer_action)
-    rewards, scores = env.top_k_reward(actions) # layer of (bs, k)
+    # heuristic_score = env.top_k_reward(actions) # layer of (bs, k)
     # compute selected action
+    # initialize action, action.shape = (bs, 2)
     best_scores, best_neuron_indices = [], []
     for layer in range(n_layer):
-        score                  = scores[layer] # bs, k
+        score                  = heuristic_score[layer] # bs, n_active_neuron_i
         best_score, best_index = torch.max(score, dim=1)
-        best_neuron_index      = torch.tensor([actions[layer][b, best_index[b]] for b in range(bs)])
+        best_neuron_index      = torch.tensor([active_neuron_index[layer][b, best_index[b]] for b in range(bs)])
         best_scores.append(best_score)
         best_neuron_indices.append(best_neuron_index)
-    best_scores         = torch.stack(best_scores).T         # (bs, 1)
-    best_neuron_indices = torch.stack(best_neuron_indices).T # (bs, 1)
+    best_scores         = torch.stack(best_scores).T         # (bs, n_layer)
+    best_neuron_indices = torch.stack(best_neuron_indices).T # (bs, n_layer)
     best_layer          = torch.argmax(best_scores, dim=1)   # (bs, )
     best_neuron         = torch.gather(best_neuron_indices, 1, best_layer.unsqueeze(-1)).squeeze(-1)
     selected_action = np.array([[best_layer[i].item(), best_neuron[i].item()] for i in range(bs)])
-    return selected_action, actions, rewards
+    # return selected_action, actions, rewards
+    return selected_action, actions, heuristic_score
 
 def prepare_episode(env, buffer, iteration, args):
     # reset environment
@@ -70,8 +115,8 @@ def prepare_episode(env, buffer, iteration, args):
         unf_1 = info['unf_1']
         unf_2 = info['unf_2']
         assert len(unf_1[1].shape) == 3 == len(unf_2[1].shape)
-        buffer.push(observation[0],
-                    observation[1],
+        buffer.push(observation[0], # feature
+                    observation[2], # active neuron index
                     unf_1,
                     unf_2,
                     actions,

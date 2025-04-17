@@ -23,7 +23,7 @@ def prepare_graph(args):
                 vnnlib_path = os.path.join(d, 'vnnlib', vnnlib)
                 print(f'[+] loading net {onnx_path=} {vnnlib_path=}')
                 # net, _, _ = ns.test.extract_instance(onnx_path, vnnlib_path)
-                net, input_shape, output_shape, _ = ns.util.network.read_onnx.parse_onnx_2(onnx_path)
+                net, input_shape, output_shape, _ = ns.util.network.read_onnx.parse_onnx(onnx_path)
                 print('[+] loading preparing graph')
                 ei, ew = simulator.prepare_graph(net, input_shape, output_shape, args)
                 # save ei ew

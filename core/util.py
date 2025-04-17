@@ -2,6 +2,8 @@ import argparse
 import torch
 import os
 
+torch.set_printoptions(2, sci_mode=False)
+
 def create_folders(args):
     ls = [args.csv_dir, args.figure_dir, args.benchmark_dir,
           args.model_dir, args.data_dir]
@@ -27,7 +29,7 @@ def get_args():
     parser.add_argument('--n_test_episode', type=int, default=1)
     parser.add_argument('--n_prepare_episode', type=int, default=1)
     parser.add_argument('--n_prepare_iter', type=int, default=1)
-    parser.add_argument('--n_train_offline_step', type=int, default=10000)
+    parser.add_argument('--n_train_offline_step', type=int, default=200)
     parser.add_argument('--n_step', type=int, default=300) # maximum number of step per episode
     parser.add_argument('--attacker_timeout', type=float, default=2.0) # maximum number of step per episode
     # solver
@@ -38,16 +40,17 @@ def get_args():
     parser.add_argument('--objective_id', type=int, default=0)
     # top-k for greedy solver
     parser.add_argument('--top_k', type=int, default=3)
-    parser.add_argument('--top_k_prepare', type=int, default=50)
+    parser.add_argument('--top_k_prepare', type=int, default=5)
     # top-k for propose solver
     parser.add_argument('--top_k_actor', type=int, default=10000)
     # sac solver
     parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--buffer_size', type=int, default=1000000)
-    parser.add_argument('--n_hidden', type=int, default=512)
+    parser.add_argument('--n_hidden', type=int, default=256)
     parser.add_argument('--n_embed', type=int, default=64)
-    parser.add_argument('--tau', type=float, default=0.001) # target smoothing coeff
+    parser.add_argument('--n_save_interval', type=int, default=50)
+    parser.add_argument('--tau', type=float, default=0.005) # target smoothing coeff
     parser.add_argument('--patience', type=int, default=100) # early stop after 100 episodes no improvement
     parser.add_argument('--lr', type=int, default=3e-5)
     # gnn solver
@@ -80,5 +83,5 @@ def get_args():
     # set default device cuda
     # set_default_device(args)
     # additional args
-    args.n_feature = 8
+    args.n_feature = 6
     return args

@@ -57,7 +57,7 @@ class RunningMeanStd:
     def normalize_torch(self, x):
         shape = x.shape
         x = x.view(-1, shape[-1])
-        x_norm = (x - torch.tensor(self.mean, dtype=torch.float)) / \
-                torch.sqrt(torch.tensor(self.var, dtype=torch.float) + self.epsilon)
+        x_norm = (x - torch.tensor(self.mean, dtype=torch.float, device=x.device)) / \
+                torch.sqrt(torch.tensor(self.var, dtype=torch.float, device=x.device) + self.epsilon)
         x_norm = x_norm.view(shape)
         return x_norm

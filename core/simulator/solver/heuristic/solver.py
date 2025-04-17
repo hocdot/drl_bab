@@ -12,15 +12,15 @@ class Solver(BaseSolver):
         # observation: list of Layer_i: [bs, n_active_neuron_i, n_feature]
         # extract data
         args    = self.args
-        feature, active_neuron_index, n_active_neuron = observation
+        feature, heuristic_score, active_neuron_index, n_active_neuron = observation
         # extract hyperparam
         n_layer = len(feature)
         bs      = feature[0].shape[0]
         # initialize action, action.shape = (bs, 2)
         best_scores, best_neuron_indices = [], []
         for layer in range(n_layer):
-            score                  = - feature[layer][..., 1].cpu() # bs, n_active_neuron_i
-            print(f'{score.shape=}')
+            # score                  = - feature[layer][..., 1].cpu() # bs, n_active_neuron_i
+            score                  = heuristic_score[layer].cpu()
             best_score, best_index = torch.max(score, dim=1)
             best_neuron_index      = torch.tensor([active_neuron_index[layer][b, best_index[b]] for b in range(bs)])
             best_scores.append(best_score)
