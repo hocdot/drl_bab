@@ -117,6 +117,7 @@ def prepare_episode(env, buffer, iteration, args):
         assert len(unf_1[1].shape) == 3 == len(unf_2[1].shape)
         buffer.push(observation[0], # feature
                     observation[2], # active neuron index
+                    observation[3], # n active neuron index
                     unf_1,
                     unf_2,
                     actions,

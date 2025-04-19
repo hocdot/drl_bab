@@ -38,6 +38,14 @@ class Solver(BaseSolver):
         # extract args
         args = self.args
         env  = self.env
+        # TODO: remove this hard code
+        if args.mode == 'train_offline':
+            env.reset()
+#         # TODO: load all graph, remove hardcode
+#         if args.mode == 'train_offline':
+#             env.onnx = 'cifar10_2_255_simplified.onnx'
+#             env.vnnlib = 'cifar10_spec_idx_4_eps_0.00784_n1.vnnlib'
+#             env.load_graph()
         # initialize critic
         self.policy_net = DQN(args).to(args.device)
         self.target_net = DQN(args).to(args.device)
@@ -86,6 +94,7 @@ class Solver(BaseSolver):
                     self.buffer.push(
                         transition.feature,
                         transition.active_neuron_index,
+                        transition.n_active_neuron,
                         transition.unf_1,
                         transition.unf_2,
                         transition.actions,
@@ -128,35 +137,40 @@ class Solver(BaseSolver):
             total_n_neuron = 0
             for _ in range(args.batch_size):
                 # extract data
-                transition                = buffer.sample(1)[0] # TODO: update this
-                feature                   = transition.feature # [layer (n_subproblem, n_active_neuron, n_feature), ...]
-                unf_1                     = transition.unf_1
-                unf_2                     = transition.unf_2
-                # actions                   = transition.actions
-                # active_neuron_index       = transition.active_neuron_index
-                rewards                   = transition.rewards
-                done                      = transition.done
-                n_layer                   = len(feature)
-                feature                   = [normalizer.normalize_torch(feature[layer]) for layer in range(n_layer)]
-                
+                transition          = buffer.sample(1)[0] # TODO: update this
+                feature             = transition.feature # [layer (n_subproblem, n_active_neuron, n_feature), ...]
+                unf_1               = transition.unf_1
+                unf_2               = transition.unf_2
+                # actions             = transition.actions
+                active_neuron_index = transition.active_neuron_index
+                n_active_neuron     = transition.n_active_neuron
+                rewards             = transition.rewards
+                done                = transition.done
+                n_layer             = len(feature)
+                feature             = [normalizer.normalize_torch(feature[layer].to(args.device)) for layer in range(n_layer)]
+
                 # =========
                 # train DQN
                 # =========
-                
+
                 # compute target
                 with torch.no_grad():
-                    next_q_value_1 = target_net(unf_1)
-                    next_q_value_2 = target_net(unf_2)
-                    next_q_value = [0.5 * (next_q_value_1[layer] + next_q_value_2[layer]) for layer in range(n_layer)]
+                    # TODO next active neuron index
+                    # uno_1 = (unf_1, None,  active_neuron_index, n_active_neuron)
+                    # uno_2 = (unf_2, None,  active_neuron_index, n_active_neuron)
+                    # next_q_value_1 = target_net(uno_1)
+                    # next_q_value_2 = target_net(uno_2)
+                    # next_q_value = [0.5 * (next_q_value_1[layer] + next_q_value_2[layer]) for layer in range(n_layer)]
                     expected_q_value = rewards
-                    
+
                 # compute expected_q_value and loss per layer
-                q_value = policy_net(feature) # [layer (n_subproblem, n_active_neuron), ...]
+                observation = (feature, None,  active_neuron_index, n_active_neuron)
+                q_value = policy_net(observation, env) # [layer (n_subproblem, n_active_neuron), ...]
                 loss = 0.
                 for layer in range(n_layer):
-                    if not done:
-                        expected_q_value[layer] += args.gamma * next_q_value[layer].max(-1, keepdim=True).values
-                    loss += criterion(q_value[layer], expected_q_value[layer])
+                    # if not done:
+                    #     expected_q_value[layer] += args.gamma * next_q_value[layer].max(-1, keepdim=True).values
+                    loss += criterion(q_value[layer].to(args.device), expected_q_value[layer].to(args.device))
                     # n_subproblem, n_active_neuron = q_value[layer].shape
                     # total_n_neuron += n_subproblem * n_active_neuron
                 optimizer.zero_grad()
@@ -206,27 +220,31 @@ class Solver(BaseSolver):
     # =========================================================
     def select_action(self, observation):
         # extract args
-        args       = self.args
-        policy_net = self.policy_net
-        env        = self.env
-        normalizer = self.normalizer
+        args        = self.args
+        policy_net  = self.policy_net
+        env         = self.env
+        normalizer  = self.normalizer
+
         policy_net.eval().to(args.device)
         # ===================
         # extract observation
         # ===================
         # extract data
         # feature: list of Layer_i: [bs, n_active_neuron_i, n_feature]
-        feature, _, active_neuron_index, n_active_neuron = observation
+        feature, heuristic_score, active_neuron_index, n_active_neuron = observation
         feature = [normalizer.normalize_torch(f.to(args.device)) for f in feature]
+        active_neuron_index = [ani.to(args.device) for ani in active_neuron_index]
+        observation = feature, heuristic_score, active_neuron_index, n_active_neuron
         # feature = [f.to(args.device) for f in feature]
         n_layer = len(feature)
         bs      = feature[0].shape[0]
         # extract
-        scores = policy_net(feature)
+        scores = policy_net(observation, env)
         # initialize action, action.shape = (bs, 2)
         best_scores, best_neuron_indices = [], []
         for layer in range(n_layer):
             score                  = scores[layer].cpu() # bs, n_active_neuron_i
+            print(layer, score.mean().item(), score.max().item(), score.min().item())
             best_score, best_index = torch.max(score, dim=1)
             best_neuron_index      = torch.tensor([active_neuron_index[layer][b, best_index[b]] for b in range(bs)])
             best_scores.append(best_score)

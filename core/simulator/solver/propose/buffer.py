@@ -5,6 +5,7 @@ import random
 OfflineTransition = namedtuple('OfflineTransition',
                               ('feature',             # bs, n_active_neuron, n_feature
                                'active_neuron_index', # bs, n_active_neuron
+                               'n_active_neuron',     # bs
                                'unf_1',               # bs, n_active_neuron, n_feature
                                'unf_2',               # bs, n_active_neuron, n_feature
                                'actions',             #

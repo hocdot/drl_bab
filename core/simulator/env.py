@@ -2,8 +2,11 @@ import gymnasium as gym
 import neuralsat as ns
 import pandas as pd
 import numpy as np
+import pickle
 import torch
 import os
+
+from .util import get_edge_index, get_edge_weight
 
 class Env(gym.Env):
 
@@ -78,7 +81,21 @@ class Env(gym.Env):
         # extract dict to convert layer id to layer name
         self.name_dict = {i: node.name for i, node in enumerate(self.iv.abstractor.net.split_nodes)}
         self.id_dict = {node.name: i for i, node in enumerate(self.iv.abstractor.net.split_nodes)}
+        self.ordered_names = [_.name for _ in self.iv.abstractor.net.split_nodes]
+        self.hidden_shapes = [self.subproblems.lower_bounds[k].shape for k in self.ordered_names]
+        self.load_graph()
         return observation, done
+
+    def load_graph(self):
+        # extract args
+        args = self.args
+        # load graph
+        graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
+        path = os.path.join(graph_dir, f'{self.onnx}_{self.vnnlib}.pkl')
+        with open(path, 'rb') as fp:
+            self.G = pickle.load(fp)
+        self.edge_index  = get_edge_index(self.G).to(args.device)
+        self.edge_weight = get_edge_weight(self.G).to(args.device)
 
     def step(self, action):
         # extract args

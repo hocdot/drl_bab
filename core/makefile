@@ -1,5 +1,8 @@
 all: prepare test plot
 
+prepare_sub_graph:
+	python3 main.py --scenario=prepare_sub_graph --verbose
+
 prepare_graph:
 	python3 main.py --scenario=prepare_graph --verbose
 
