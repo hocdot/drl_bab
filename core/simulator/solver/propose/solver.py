@@ -15,8 +15,6 @@ from .model import DQN
 from ...util import CudaDefault
 from ..base import BaseSolver
 
-# np.set_printoptions(precision=2)
-
 def get_onnx_to_id(args):
     path = os.path.join(args.benchmark_dir, args.benchmark, 'train.csv')
     onnx_to_id = {}
@@ -56,7 +54,8 @@ class Solver(BaseSolver):
                                      amsgrad=True)
         self.criterion = nn.SmoothL1Loss(reduction='sum')
         # feature normalizer
-        self.normalizer = RunningMeanStd(shape=args.n_feature)
+        self.feature_normalizer = RunningMeanStd(shape=args.n_feature)
+        self.reward_normalizer      = RunningMeanStd(shape=1)
         #
         self.onnx_to_id = get_onnx_to_id(args)
 
@@ -102,9 +101,13 @@ class Solver(BaseSolver):
                         transition.onnx_id,
                         transition.done,
                     )
+                    # TODO: remove this
+                    break
                 print(f'[+] loaded {name} +{len(buffer)} new transitions')
-                for layer in range(len(transition.feature)):
-                    self.normalizer.update(transition.feature[layer].detach().cpu().numpy())
+                n_layer = len(transition.feature)
+                for layer in range(n_layer):
+                    self.feature_normalizer.update(transition.feature[layer].detach().cpu().numpy())
+                    self.reward_normalizer.update(transition.rewards[layer].unsqueeze(-1).detach().cpu().numpy())
         print(f'[+] loaded {n_visited=}')
 
     def soft_target_update(self):
@@ -129,12 +132,13 @@ class Solver(BaseSolver):
         optimizer  = self.optimizer
         policy_net = self.policy_net
         target_net = self.target_net
-        normalizer = self.normalizer
+        f_norm     = self.feature_normalizer
+        r_norm     = self.reward_normalizer
         policy_net.train()
 
         with CudaDefault():
-            total_loss = 0
-            total_n_neuron = 0
+            loss = 0.
+            total_n_active_neuron = 0
             for _ in range(args.batch_size):
                 # extract data
                 transition          = buffer.sample(1)[0] # TODO: update this
@@ -147,12 +151,19 @@ class Solver(BaseSolver):
                 rewards             = transition.rewards
                 done                = transition.done
                 n_layer             = len(feature)
-                feature             = [normalizer.normalize_torch(feature[layer].to(args.device)) for layer in range(n_layer)]
-
+                # extract a random subproblem
+                norm_feature = []
+                norm_rewards = []
+                for layer in range(n_layer):
+                    n_subproblem, _, n_feature = feature[layer].shape
+                    p = np.random.randint(low=0, high=n_subproblem)
+                    norm_feature.append(f_norm.normalize_torch(feature[layer].to(args.device))[p].unsqueeze(0))
+                    norm_rewards.append(r_norm.normalize_torch(rewards[layer].to(args.device))[p].unsqueeze(0))
+                feature = norm_feature
+                rewards = norm_rewards
                 # =========
                 # train DQN
                 # =========
-
                 # compute target
                 with torch.no_grad():
                     # TODO next active neuron index
@@ -162,23 +173,21 @@ class Solver(BaseSolver):
                     # next_q_value_2 = target_net(uno_2)
                     # next_q_value = [0.5 * (next_q_value_1[layer] + next_q_value_2[layer]) for layer in range(n_layer)]
                     expected_q_value = rewards
-
                 # compute expected_q_value and loss per layer
                 observation = (feature, None,  active_neuron_index, n_active_neuron)
                 q_value = policy_net(observation, env) # [layer (n_subproblem, n_active_neuron), ...]
-                loss = 0.
                 for layer in range(n_layer):
                     # if not done:
                     #     expected_q_value[layer] += args.gamma * next_q_value[layer].max(-1, keepdim=True).values
+                    _, n_neuron, _ = feature[layer].shape
                     loss += criterion(q_value[layer].to(args.device), expected_q_value[layer].to(args.device))
-                    # n_subproblem, n_active_neuron = q_value[layer].shape
-                    # total_n_neuron += n_subproblem * n_active_neuron
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item()
+                    total_n_active_neuron += n_neuron
+            loss /= total_n_active_neuron
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
         # report data
-        return total_loss / args.batch_size
+        return loss.item()
 
     def train_offline(self):
         # extract args
@@ -223,7 +232,7 @@ class Solver(BaseSolver):
         args        = self.args
         policy_net  = self.policy_net
         env         = self.env
-        normalizer  = self.normalizer
+        f_norm      = self.feature_normalizer
 
         policy_net.eval().to(args.device)
         # ===================
@@ -232,7 +241,7 @@ class Solver(BaseSolver):
         # extract data
         # feature: list of Layer_i: [bs, n_active_neuron_i, n_feature]
         feature, heuristic_score, active_neuron_index, n_active_neuron = observation
-        feature = [normalizer.normalize_torch(f.to(args.device)) for f in feature]
+        feature = [f_norm.normalize_torch(f.to(args.device)) for f in feature]
         active_neuron_index = [ani.to(args.device) for ani in active_neuron_index]
         observation = feature, heuristic_score, active_neuron_index, n_active_neuron
         # feature = [f.to(args.device) for f in feature]
@@ -244,7 +253,7 @@ class Solver(BaseSolver):
         best_scores, best_neuron_indices = [], []
         for layer in range(n_layer):
             score                  = scores[layer].cpu() # bs, n_active_neuron_i
-            print(layer, score.mean().item(), score.max().item(), score.min().item())
+            # print(layer, score.mean().item(), score.max().item(), score.min().item())
             best_score, best_index = torch.max(score, dim=1)
             best_neuron_index      = torch.tensor([active_neuron_index[layer][b, best_index[b]] for b in range(bs)])
             best_scores.append(best_score)
@@ -265,13 +274,12 @@ class Solver(BaseSolver):
         state_dict = self.policy_net.state_dict()
         # save model
         path = os.path.join(args.model_dir, f'{self.monitor.label}.pkl')
+        data = {'state_dict': state_dict,
+                'f_norm': self.feature_normalizer,
+                'r_norm': self.reward_normalizer,
+        }
         with open(path, 'wb') as fp:
-            pickle.dump(state_dict, fp, protocol=pickle.HIGHEST_PROTOCOL)
-            print(f'[+] saved at {self.step=} {path=}')
-        # save normalizer
-        path = os.path.join(args.model_dir, f'normalizer-{self.monitor.label}.pkl')
-        with open(path, 'wb') as fp:
-            pickle.dump(self.normalizer, fp, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(data, fp, protocol=pickle.HIGHEST_PROTOCOL)
             print(f'[+] saved at {self.step=} {path=}')
 
     def load(self):
@@ -280,23 +288,8 @@ class Solver(BaseSolver):
         if os.path.exists(path):
             print(f'[+] loading {path}')
             with open(path, 'rb') as fp:
-                state_dict = pickle.load(fp)
-                self.policy_net.load_state_dict(state_dict)
-                self.policy_net.eval()
-        # load normalizer
-        path = os.path.join(args.model_dir, f'normalizer-{self.monitor.label}.pkl')
-        if os.path.exists(path):
-            print(f'[+] loading {path}')
-            with open(path, 'rb') as fp:
-                self.normalizer = pickle.load(fp)
-
-# for b in range(n_subproblem):
-# compute estimate
-# mask          = torch.isin(active_neuron_index[layer][b], actions[layer][b])
-# indices       = torch.nonzero(mask, as_tuple=True)[0]
-# all_indices   = torch.arange(len(active_neuron_index[layer][b])).to(indices)
-# indices1      = all_indices[~torch.isin(all_indices, indices)]
-# expected_q_value[layer][b][indices]  = rewards[layer][b]
-# expected_q_value[layer][b][indices1] = rewards[layer][b].min()
-# expected_q_value[layer][b][indices]  = rewards[layer][b, indices, 1]
-# expected_q_value[layer][b][indices1] = rewards[layer][b, indices, 1].max()
+                data = pickle.load(fp)
+            self.policy_net.load_state_dict(data['state_dict'])
+            self.policy_net.eval()
+            self.feature_normalizer = data['f_norm']
+            self.reward_normalizer  = data['r_norm']

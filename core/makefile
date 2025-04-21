@@ -10,13 +10,13 @@ prepare_data:
 	python3 main.py --scenario=prepare_offline_buffer --mode=train --n_prepare_episode=1 --n_prepare_iter=1 --clear_buffer --verbose
 
 train_offline:
-	python3 main.py --solver=propose --mode=train_offline --n_train_offline_step=500 --gamma=0.0 --device=cuda:0
+	python3 main.py --solver=propose --mode=train_offline --n_train_offline_step=500 --gamma=0.0 --device=cuda:0 --batch_size=300
 
 propose:
-	python3 main.py --mode=test --solver=propose --verbose --device=cuda:1
+	python3 main.py --mode=test --solver=propose --verbose --device=cuda:0
 
 heuristic:
-	python3 main.py --mode=test --solver=heuristic --verbose --device=cuda:1
+	python3 main.py --mode=test --solver=heuristic --verbose --device=cuda:0
 	# python3 main.py --mode=test --solver=greedy --verbose
 
 boxplot:

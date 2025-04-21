@@ -2,7 +2,7 @@ import argparse
 import torch
 import os
 
-torch.set_printoptions(2, sci_mode=False)
+torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
     ls = [args.csv_dir, args.figure_dir, args.benchmark_dir,
@@ -47,12 +47,11 @@ def get_args():
     parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--buffer_size', type=int, default=1000000)
-    parser.add_argument('--n_hidden', type=int, default=256)
-    parser.add_argument('--n_embed', type=int, default=64)
+    parser.add_argument('--n_hidden', type=int, default=128)
     parser.add_argument('--n_save_interval', type=int, default=50)
     parser.add_argument('--tau', type=float, default=0.005) # target smoothing coeff
     parser.add_argument('--patience', type=int, default=100) # early stop after 100 episodes no improvement
-    parser.add_argument('--lr', type=int, default=3e-5)
+    parser.add_argument('--lr', type=float, default=3e-5)
     # gnn solver
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
@@ -83,5 +82,5 @@ def get_args():
     # set default device cuda
     # set_default_device(args)
     # additional args
-    args.n_feature = 6
+    args.n_feature = 2
     return args
