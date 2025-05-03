@@ -10,7 +10,7 @@ prepare_data:
 	python3 main.py --scenario=prepare_offline_buffer --mode=train --n_prepare_episode=1 --n_prepare_iter=1 --clear_buffer --verbose
 
 train_offline:
-	python3 main.py --solver=propose --mode=train_offline --n_train_offline_step=500 --gamma=0.0 --device=cuda:0 --batch_size=300
+	python3 main.py --solver=propose --mode=train_offline --n_train_offline_step=1000 --gamma=0.0 --device=cuda:0 --batch_size=128
 
 propose:
 	python3 main.py --mode=test --solver=propose --verbose --device=cuda:0

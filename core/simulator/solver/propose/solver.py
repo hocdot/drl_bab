@@ -103,7 +103,7 @@ class Solver(BaseSolver):
                     )
                     # TODO: remove this
                     break
-                print(f'[+] loaded {name} +{len(buffer)} new transitions')
+                print(f'[+] loaded {name} +{i+1} new transitions')
                 n_layer = len(transition.feature)
                 for layer in range(n_layer):
                     self.feature_normalizer.update(transition.feature[layer].detach().cpu().numpy())
