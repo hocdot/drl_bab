@@ -5,7 +5,7 @@ onnxruntime
 torchvision
 setuptools
 matplotlib
-neuralsat
+# neuralsat
 gymnasium
 termcolor
 beartype

@@ -22,7 +22,7 @@ class Dataset(Dataset):
         # x:
         # input: lb, ub, bias=0, mask=0 for all
         # hidden: lb, ub, bias, mask=1 for active neuron, mask=0 otherwise
-        # output: lb, ub, bias, mask=1 for active neuron, mask=0 otherwise
+        # output: lb (to verify), ub=0, bias=0, mask=0
         # edge_index: [list of [source_node_id, target_node_id]]
         # edge_weight: weight of connections [list of [weight]]
         # y:
