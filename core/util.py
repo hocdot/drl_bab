@@ -21,8 +21,8 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--scenario', type=str, default='debug')
     parser.add_argument('--mode', type=str, default='test')
-    # environment
-
+    # neuralsat
+    parser.add_argument('--ns_batch_size', type=int, default=128)
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
