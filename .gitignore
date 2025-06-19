@@ -1,5 +1,6 @@
 # Ignore __pycache__ folder recursively
 **/__pycache__
 *.pyc
-data.*/
 *.pkl
+data.*/
+data

@@ -1,0 +1,16 @@
+sortedcontainers
+torch_geometric
+scikit-learn
+onnxruntime
+torchvision
+setuptools
+matplotlib
+neuralsat
+gymnasium
+termcolor
+beartype
+gurobipy
+pandas
+numpy
+torch
+onnx
