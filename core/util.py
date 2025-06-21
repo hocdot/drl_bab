@@ -29,7 +29,7 @@ def get_args():
     parser.add_argument('--model_dir', type=str, default='../data/model')
     parser.add_argument('--data_dir', type=str, default='../data/data')
     parser.add_argument('--csv_dir', type=str, default='../data/csv')
-    parser.add_argument('--benchmark', type=str, default='cnn')
+    parser.add_argument('--benchmark', type=str, default='mnist')
     # plot
     parser.add_argument('--metric', type=str, default='total_reward')
     parser.add_argument('--n_smooth', type=int, default=1)
