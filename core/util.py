@@ -23,6 +23,8 @@ def get_args():
     parser.add_argument('--mode', type=str, default='test')
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
+    parser.add_argument('--n_input', type=int, default=4)
+    parser.add_argument('--n_embed', type=int, default=128)
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
