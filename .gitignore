@@ -2,5 +2,9 @@
 **/__pycache__
 *.pyc
 *.pkl
-data.*/
-data
+data/csv/
+data/figure/
+data/model/
+data/data/
+venv/
+lib/
