@@ -17,17 +17,19 @@ def debug(args):
 
     # extract node and edge
     node_data = torch.cat(iv.get_node_data(obj))
-    # print([_.shape for _ in node_data])
-    # edge_weight, edge_index = iv.get_edge_data()
-    # print(f'{edge_weight.shape=} {edge_index.shape=}')
-    # print(edge_index.max())
+    edge_weight, edge_index = iv.get_edge_data()
+    # print(f'{edge_index.shape=} {edge_weight.shape=}')
+    # print(f'{edge_index.max()}')
+    print(edge_index.unique())
 
     # try infer
     net = simulator.pointer_net.Embedding(args).to(device='cuda:0')
-    node_data = node_data.to(device='cuda:0')
-    x = torch.nn.utils.rnn.pack_sequence([node_data], enforce_sorted=False)
-    z = net(x)
-    print(z.data.shape)
+    x0 = torch.zeros(args.n_input)
+    x = node_data.to(device='cuda:0')
+    # print(x.shape)
+    # x = torch.nn.utils.rnn.pack_sequence([node_data], enforce_sorted=False)
+    z = net(x=x, x0=x0, edge_index=edge_index, edge_weight=edge_weight)
+    # print(z.data.shape)
 
     # TODO:
     # step 1: embedding all node in node data + edge_weight edge_index
