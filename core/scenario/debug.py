@@ -25,7 +25,9 @@ def debug(args):
     edge_weight = edge_weight.to(args.device)
 
     # try infer
-    net = simulator.pointer_net.Actor(args).to(args.device)
-    print(f'{x.device=} {edge_index.device=} {edge_weight.device=} {args.device=}')
-    ll, y = net(x=x, edge_index=edge_index, edge_weight=edge_weight)
+    actor = simulator.pointer_net.Actor(args).to(args.device)
+    critic = simulator.pointer_net.Critic(args).to(args.device)
+    ll, y = actor(x=x, edge_index=edge_index, edge_weight=edge_weight)
     print(ll, y)
+    f = critic(x=x, edge_index=edge_index, edge_weight=edge_weight)
+    print(f)
