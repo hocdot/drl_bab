@@ -25,9 +25,24 @@ def debug(args):
     edge_weight = edge_weight.to(args.device)
 
     # try infer
-    actor = simulator.pointer_net.Actor(args).to(args.device)
-    critic = simulator.pointer_net.Critic(args).to(args.device)
-    ll, y = actor(x=x, edge_index=edge_index, edge_weight=edge_weight)
-    print(ll, y)
-    f = critic(x=x, edge_index=edge_index, edge_weight=edge_weight)
-    print(f)
+#     actor = simulator.pointer_net.Actor(args).to(args.device)
+#     critic = simulator.pointer_net.Critic(args).to(args.device)
+#     ll, y = actor(x=x, edge_index=edge_index, edge_weight=edge_weight)
+#     print(ll, y)
+#     f = critic(x=x, edge_index=edge_index, edge_weight=edge_weight)
+#     print(f)
+
+    # randomly choose action
+    n_subproblem, n_node, n_input = x.shape
+    n_next_node = 3
+    action = []
+    for i in range(n_subproblem):
+        mask = x[i, :, -1]
+        next_nodes = []
+        for j in range(n_next_node):
+            active_neurons = torch.where(mask == 1)[0].detach().cpu().numpy()
+            next_node = np.random.choice(active_neurons)
+            x[i, next_node, -1] = 0
+            next_nodes.append(next_node)
+        action.append(next_nodes)
+    print(action)
