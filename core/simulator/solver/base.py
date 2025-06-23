@@ -15,14 +15,22 @@ class BaseSolver:
     def select_action(self, observation):
         raise NotImplementedError
 
+    def prepare_test(self):
+        pass
+
     def test(self):
         # extract args
         monitor = self.monitor
         args = self.args
         env  = self.env
-        # TODO: env.reset, change to another model
+        # TODO: env.reset(), change to another model
         # reset environment
-        observation, edge_index, edge_weight = env.reset()
+        observation, self.edge_index, self.edge_weight = env.reset()
+        self.edge_weight = self.edge_weight.to(args.device)
+        self.edge_index  = self.edge_index.to(args.device)
+        # procedure before test
+        self.prepare_test(observation)
+        print(f'[+] testing {monitor.label}')
         #
         done = False
         step = 0

@@ -60,7 +60,6 @@ class Actor(nn.Module):
         # init
         nodes, log_probs = [], []
         mask = torch.zeros([bs, max_node], device=args.device)
-
         # fill mask with 1 for padding
         for b in range(bs):
             mask[b, n_nodes[b]:] = 1.0
@@ -88,7 +87,6 @@ class Actor(nn.Module):
         # stack padded nodes
         nodes = torch.stack(nodes, dim=1)
         log_likelihoods = self.get_log_likelihood(log_probs, nodes)
-
         # pack nodes
         nodes = [indices[i][node[:n_nodes[i]]] for i, node in enumerate(nodes)]
         nodes = torch.nn.utils.rnn.pack_sequence(nodes, enforce_sorted=False)

@@ -28,6 +28,7 @@ class Decoder(nn.Module):
         padded_e = pad_packed_sequence(e, batch_first=True)[0]
         index = next_node.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, args.n_embed)
         z = torch.gather(padded_e, dim=1, index=index)
+        print(f'{padded_e.shape=} {z.shape=}')
         return z
 
     @beartype

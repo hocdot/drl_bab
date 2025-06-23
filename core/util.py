@@ -34,6 +34,12 @@ def get_args():
     parser.add_argument('--n_hidden', type=int, default=128)
     parser.add_argument('--n_embed', type=int, default=128)
     parser.add_argument('--n_input', type=int, default=4)
+    # training
+    parser.add_argument('--lrs_step_size', type=int, default=5e3)
+    parser.add_argument('--n_train_epoch', type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--lrs_gamma', type=float, default=0.96)
+    parser.add_argument('--lr', type=float, default=1e-3)
     # data directory
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
