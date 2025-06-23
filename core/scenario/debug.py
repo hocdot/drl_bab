@@ -15,7 +15,6 @@ def debug(args):
     obj = objs.pop(4)
     obj = objs.pop(1)
 
-
     # extract node and edge
     node_data = iv.get_initial_node_data(obj)
     # print([_.shape for _ in node_data])
@@ -40,7 +39,7 @@ def debug(args):
     subproblems = iv.setup(obj)
     torch.manual_seed(0)
     np.random.seed(0)
-    
+
     for s in range(5):
         # randomly choose action
         action = []
@@ -51,10 +50,9 @@ def debug(args):
             next_node = int(np.random.choice(active_neurons))
             x[i, next_node, -1] = 0
             action.append(next_node)
-            
+
         # step: n_subproblems ---->     < 2 * n_subproblems (trong vong for)
         subproblems, rewards, next_observations = iv.step(subproblems, action)
         x = torch.cat(next_observations, dim=1)
         print(f'{s=} {subproblems.output_lbs.shape=} {subproblems.output_lbs.shape=}')
         print()
-    
