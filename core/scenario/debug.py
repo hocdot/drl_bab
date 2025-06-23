@@ -15,8 +15,12 @@ def debug(args):
     obj = objs.pop(4)
     obj = objs.pop(1)
 
+
     # extract node and edge
-    x = torch.cat(iv.get_node_data(obj))[None]
+    node_data = iv.get_initial_node_data(obj)
+    # print([_.shape for _ in node_data])
+    x = torch.cat(node_data, dim=1)
+    # print(x.shape)
     edge_weight, edge_index = iv.get_edge_data(obj)
 
     # convert to device
@@ -32,17 +36,25 @@ def debug(args):
 #     f = critic(x=x, edge_index=edge_index, edge_weight=edge_weight)
 #     print(f)
 
-    # randomly choose action
-    n_subproblem, n_node, n_input = x.shape
-    n_next_node = 3
-    action = []
-    for i in range(n_subproblem):
-        mask = x[i, :, -1]
-        next_nodes = []
-        for j in range(n_next_node):
+    # initial setup (ngoai vong for)
+    subproblems = iv.setup(obj)
+    torch.manual_seed(0)
+    np.random.seed(0)
+    
+    for s in range(5):
+        # randomly choose action
+        action = []
+        n_subproblem = len(subproblems.input_lowers)
+        for i in range(n_subproblem):
+            mask = x[i, :, -1]
             active_neurons = torch.where(mask == 1)[0].detach().cpu().numpy()
-            next_node = np.random.choice(active_neurons)
+            next_node = int(np.random.choice(active_neurons))
             x[i, next_node, -1] = 0
-            next_nodes.append(next_node)
-        action.append(next_nodes)
-    print(action)
+            action.append(next_node)
+            
+        # step: n_subproblems ---->     < 2 * n_subproblems (trong vong for)
+        subproblems, rewards, next_observations = iv.step(subproblems, action)
+        x = torch.cat(next_observations, dim=1)
+        print(f'{s=} {subproblems.output_lbs.shape=} {subproblems.output_lbs.shape=}')
+        print()
+    
