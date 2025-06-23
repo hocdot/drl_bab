@@ -28,6 +28,10 @@ class Env(gym.Env):
         self.subproblem = self.iv.setup(obj)
         return observation, edge_index, edge_weight
 
+    @property
+    def last_action(self):
+        return self.iv.get_last_actions(self.subproblem)
+
     def step(self, action):
         self.subproblem, reward, next_observation = self.iv.step(self.subproblem, action)
         next_observation = torch.cat(next_observation, dim=1)

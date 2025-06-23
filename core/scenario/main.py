@@ -1,4 +1,5 @@
 import simulator
+import torch
 
 def main(args):
     # create solver
@@ -7,6 +8,7 @@ def main(args):
     if args.mode == 'train':
         solver.train()
     elif args.mode == 'test':
-        solver.test()
+        with torch.no_grad():
+            solver.test()
     else:
         raise NotImplementedError

@@ -36,21 +36,25 @@ class Solver(BaseSolver):
                                       gamma=args.lrs_gamma)
 
     def prepare_test(self, observation):
-        self.z = self.actor.decoder.get_z0(observation)
+        self.n_step = 0
 
     def select_action(self, observation):
         # extract parameters
         actor = self.actor
         args  = self.args
+        env   = self.env
         bs    = observation.shape[0]
         x     = observation.to(args.device)
         ew    = self.edge_weight
         ei    = self.edge_index
         # embed
         e = actor.embedding(x, ei, ew)
-        # gather
-        # TODO: env splited action
-        # z = actor.decoder.gather_z(e, env.split_action)
+        print(f'{e.shape=}')
+        # gather z for decoder by pointing to embedded state of last action
+        if self.n_step > 0:
+            z = actor.decoder.gather_z(e, torch.tensor(env.last_action, device=args.device))
+        else:
+            z = actor.decoder.get_z0(observation)
         mask = x[:, :, -1]
         # pick embedding of only active neurons
         indices  = [] # indices of active neuron
@@ -88,4 +92,5 @@ class Solver(BaseSolver):
         # convert active neuron indices to original indices
         action = action.tolist()
         action = [indices[i][a[:n_nodes[i]]].item() for i, a in enumerate(action)]
+        self.n_step += 1
         return action

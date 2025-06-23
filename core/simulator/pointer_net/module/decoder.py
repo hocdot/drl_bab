@@ -22,13 +22,11 @@ class Decoder(nn.Module):
         return z0
 
     @beartype
-    def gather_z(self, e: PackedSequence, next_node: torch.Tensor) -> torch.Tensor:
+    def gather_z(self, e: torch.Tensor, next_node: torch.Tensor) -> torch.Tensor:
         args = self.args
         # e: (bs, n_node, n_embed)
-        padded_e = pad_packed_sequence(e, batch_first=True)[0]
         index = next_node.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, args.n_embed)
-        z = torch.gather(padded_e, dim=1, index=index)
-        print(f'{padded_e.shape=} {z.shape=}')
+        z = torch.gather(e, dim=1, index=index)
         return z
 
     @beartype
