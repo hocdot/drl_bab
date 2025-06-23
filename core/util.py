@@ -19,10 +19,13 @@ base_folder = os.path.dirname(os.path.dirname(__file__))
 def get_args():
     # create args parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--scenario', type=str, default='debug')
+    parser.add_argument('--scenario', type=str, default='main')
     parser.add_argument('--mode', type=str, default='test')
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
+    parser.add_argument('--ns_n_step', type=int, default=20)
+    # heuristic solver
+    parser.add_argument('--solver', type=str, default='random')
     # pointer net
     parser.add_argument('--softmax_temperature', type=float, default=1.0)
     parser.add_argument('--clip_logit', type=float, default=10.0)

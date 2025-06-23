@@ -1,2 +1,2 @@
 all:
-	python3 main.py --scenario=debug_env
+	python3 main.py
