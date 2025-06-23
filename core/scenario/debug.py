@@ -55,4 +55,5 @@ def debug(args):
         subproblems, rewards, next_observations = iv.step(subproblems, action)
         x = torch.cat(next_observations, dim=1)
         print(f'{s=} {subproblems.output_lbs.shape=} {subproblems.output_lbs.shape=}')
+        print(f'{action=}\n{iv.get_last_actions(subproblems)=}')
         print()
