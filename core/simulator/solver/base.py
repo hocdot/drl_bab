@@ -42,7 +42,7 @@ class BaseSolver:
         total_reward = 0
         while not done:
             action = self.select_action(embed, observation)
-            print(f'{action=}')
+            # print(f'{action=}')
             next_observation, reward, done, info = env.step(action)
             n_subproblem = len(next_observation)
             total_reward += reward.sum().item()
@@ -54,7 +54,6 @@ class BaseSolver:
                 'done': done,
             })
             monitor.step(info)
-            print()
             step += 1
             observation = next_observation
             if step >= args.ns_n_step:

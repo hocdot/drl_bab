@@ -8,7 +8,6 @@ def main(args):
     if args.mode == 'train':
         solver.train()
     elif args.mode == 'test':
-        with torch.no_grad():
-            solver.test()
+        solver.test()
     else:
         raise NotImplementedError

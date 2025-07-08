@@ -23,7 +23,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='test')
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
-    parser.add_argument('--ns_n_step', type=int, default=4)
+    parser.add_argument('--ns_n_step', type=int, default=20)
     # heuristic solver
     parser.add_argument('--solver', type=str, default='random')
     # pointer net

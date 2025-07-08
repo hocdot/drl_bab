@@ -9,6 +9,5 @@ class Solver(BaseSolver):
         super().__init__(args)
 
     def select_action(self, embed, observation):
-        # n_subproblem = len(observation)
         action = self.env.get_fsb_action()
         return action
