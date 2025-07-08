@@ -1,8 +1,7 @@
-import gymnasium as gym
 import neuralsat as ns
 import torch
 
-class Env(gym.Env):
+class Env:
 
     def __init__(self, args):
         super().__init__()
@@ -16,7 +15,6 @@ class Env(gym.Env):
         onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnist-net_256x2.onnx'
         vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_1_0.03.vnnlib'
         net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
-        obj = objs.pop(4)
         obj = objs.pop(1)
         # initialize interactive verifier
         self.iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
