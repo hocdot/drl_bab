@@ -13,8 +13,8 @@ class Env(gym.Env):
         # extract args
         args = self.args
         # extract problem (TODO: remove hardcode)
-        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/0.onnx'
-        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/0.vnnlib'
+        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnist-net_256x2.onnx'
+        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_1_0.03.vnnlib'
         net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
         obj = objs.pop(4)
         obj = objs.pop(1)
