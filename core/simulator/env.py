@@ -35,7 +35,7 @@ class Env:
 
     def step(self, action):
         self.subproblem, reward, next_observation, subproblem_indices = self.iv.step(self.subproblem, action)
-        print(subproblem_indices)
+        print(f'{subproblem_indices=}')
         next_observation = torch.cat(next_observation, dim=1)
         done = False
         n_subproblem = len(self.subproblem.input_lowers)
