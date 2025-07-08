@@ -38,7 +38,7 @@ class Solver(BaseSolver):
     def prepare_test(self, observation):
         self.n_step = 0
 
-    def select_action(self, observation):
+    def select_action(self, embed, observation):
         # extract parameters
         actor = self.actor
         args  = self.args
@@ -48,7 +48,7 @@ class Solver(BaseSolver):
         ew    = self.edge_weight
         ei    = self.edge_index
         # embed
-        e = actor.embedding(x, ei, ew)
+        e = embed
         print(f'{e.shape=}')
         # gather z for decoder by pointing to embedded state of last action
         if self.n_step > 0:
@@ -77,9 +77,9 @@ class Solver(BaseSolver):
         for b in range(bs):
             mask[b, n_nodes[b]:] = 1.0
         # one step decoding
-        print(f'{z.shape=} {h.shape=} {c.shape=}')
         _, (h, c) = actor.decoder(z, h, c)
         q = h.squeeze(0)
+        print(f'{z.shape=} {h.shape=} {c.shape=} {_.shape=}')
         # glimpse
         for _ in range(args.n_glimpse):
             q = actor.glimpse(q, ref, mask)
@@ -93,4 +93,5 @@ class Solver(BaseSolver):
         action = action.tolist()
         action = [indices[i][a[:n_nodes[i]]].item() for i, a in enumerate(action)]
         self.n_step += 1
+        exit()
         return action

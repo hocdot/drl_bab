@@ -28,6 +28,7 @@ class BaseSolver:
         observation, self.edge_index, self.edge_weight = env.reset()
         self.edge_weight = self.edge_weight.to(args.device)
         self.edge_index  = self.edge_index.to(args.device)
+
         # procedure before test
         self.prepare_test(observation)
         print(f'[+] testing {monitor.label}')
