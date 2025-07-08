@@ -32,8 +32,12 @@ class Env(gym.Env):
     def last_action(self):
         return self.iv.get_last_actions(self.subproblem)
 
+    def get_fsb_action(self):
+        return self.iv.get_fsb_action(self.subproblem)
+
     def step(self, action):
-        self.subproblem, reward, next_observation = self.iv.step(self.subproblem, action)
+        self.subproblem, reward, next_observation, subproblem_indices = self.iv.step(self.subproblem, action)
+        print(subproblem_indices)
         next_observation = torch.cat(next_observation, dim=1)
         done = False
         n_subproblem = len(self.subproblem.input_lowers)
