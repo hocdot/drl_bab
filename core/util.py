@@ -1,7 +1,9 @@
 import argparse
 import torch
+import sys
 import os
 
+sys.path.append('neuralsat/src/')
 torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
