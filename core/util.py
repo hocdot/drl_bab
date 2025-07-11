@@ -65,4 +65,5 @@ def get_args():
     # create folders
     create_folders(args)
     # additional args
+    print(f'Using device: {args.device}')
     return args

@@ -1,8 +1,8 @@
-torchvision==0.20.0
+torchvision
 sortedcontainers
 torch_geometric
 scikit-learn
-torch==2.5.0
+torch
 onnxruntime
 setuptools
 matplotlib
