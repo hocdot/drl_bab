@@ -1,8 +1,9 @@
+torchvision==0.20.0
 sortedcontainers
 torch_geometric
 scikit-learn
+torch==2.5.0
 onnxruntime
-torchvision
 setuptools
 matplotlib
 gymnasium
@@ -11,5 +12,4 @@ beartype
 gurobipy
 pandas
 numpy
-torch
 onnx

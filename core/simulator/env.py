@@ -12,8 +12,8 @@ class Env:
         # extract args
         args = self.args
         # extract problem (TODO: remove hardcode)
-        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnist-net_256x2.onnx'
-        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_1_0.03.vnnlib'
+        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnistfc-medium-net-151.onnx'
+        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_2_0.03.vnnlib'
         net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
         obj = objs.pop(1)
         # initialize interactive verifier
@@ -37,6 +37,7 @@ class Env:
         self.subproblem, reward, next_observation, subproblem_indices = self.iv.step(self.subproblem, action)
         if self.subproblem is not None:
             next_observation = torch.cat(next_observation, dim=1)
+            print(f'{next_observation.shape=} {reward.shape=}', subproblem_indices)
         done = self.subproblem is None
         info = {}
         return next_observation, reward, done, info
