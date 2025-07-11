@@ -39,13 +39,12 @@ class Solver(BaseSolver):
         # extract args
         args = self.args
         assert mask.shape[0] == z.shape[0]
-        assert mask.shape[0] == h.shape[0]
-        assert mask.shape[0] == c.shape[0]
+        assert mask.shape[0] == h.shape[1]
+        assert mask.shape[0] == c.shape[1]
         assert mask.shape[0] == ref.shape[0]
         # decoder step
-        print(f'before {z.shape=} {h.shape=} {c.shape=}')
         d, (h, c) = self.actor.decoder(z, h, c) # d: n_subproblem, 1, n_embed
-        q = h.squeeze(1) # q:= n_subproblem, n_embed # TODO: note original implementation h.squeeze(0)
+        q = h.squeeze(0) # q:= n_subproblem, n_embed # TODO: note original implementation h.squeeze(0)
         # glimpse step
         for _ in range(args.n_glimpse):
             print(f'{q.shape=} {ref.shape=} {mask.shape=}')
@@ -96,8 +95,8 @@ class Solver(BaseSolver):
             indices = info['subproblem_indices']
             # split z:
             z = simulator.util.split_subproblem(z, indices)
-            h = simulator.util.split_subproblem(h, indices)
-            c = simulator.util.split_subproblem(c, indices)
+            h = simulator.util.split_subproblem(h, indices).transpose(0, 1)
+            c = simulator.util.split_subproblem(c, indices).transpose(0, 1)
             ref = simulator.util.split_subproblem(ref, indices)
             #
             n_subproblem = len(next_observation)
