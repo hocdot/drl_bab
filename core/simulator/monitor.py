@@ -24,12 +24,13 @@ class Monitor:
     def __update_description(self, **kwargs):
         _kwargs = {}
         for key in kwargs:
-            for term in ['step', 'n']:
-                if term in key:
-                    _kwargs[key] = f'{kwargs[key]:d}'
-            for term in ['reward']:
-                if term in key:
-                    _kwargs[key] = f'{kwargs[key]:0.2f}'
+            if key not in ['subproblem_indices']:
+                for term in ['step', 'n_:']:
+                    if term in key:
+                        _kwargs[key] = f'{kwargs[key]:d}'
+                for term in ['reward']:
+                    if term in key:
+                        _kwargs[key] = f'{kwargs[key]:0.2f}'
         self.bar.set_postfix(**_kwargs)
 
     def __display(self):
@@ -56,10 +57,11 @@ class Monitor:
 
     def __update_csv(self, info):
         for key in info.keys():
-            if key not in self.csv_data:
-                self.csv_data[key] = [float(info[key])]
-            else:
-                self.csv_data[key].append(float(info[key]))
+            if key not in ['subproblem_indices']:
+                if key not in self.csv_data:
+                    self.csv_data[key] = [float(info[key])]
+                else:
+                    self.csv_data[key].append(float(info[key]))
 
     def export_csv(self):
         # extract args

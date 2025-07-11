@@ -43,9 +43,8 @@ class Env:
         self.subproblem, reward, next_observation, subproblem_indices = self.iv.step(self.subproblem, action)
         if self.subproblem is not None:
             next_observation = torch.cat(next_observation, dim=1)
-            print(f'{next_observation.shape=} {reward.shape=}', subproblem_indices)
         done = self.subproblem is None
         if self.n_step > args.ns_n_step:
             done = True
-        info = {}
+        info = {'subproblem_indices': subproblem_indices}
         return next_observation, reward, done, info

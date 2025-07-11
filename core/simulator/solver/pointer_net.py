@@ -38,11 +38,17 @@ class Solver(BaseSolver):
     def select_action(self, z, h, c, ref, mask):
         # extract args
         args = self.args
+        assert mask.shape[0] == z.shape[0]
+        assert mask.shape[0] == h.shape[0]
+        assert mask.shape[0] == c.shape[0]
+        assert mask.shape[0] == ref.shape[0]
         # decoder step
+        print(f'before {z.shape=} {h.shape=} {c.shape=}')
         d, (h, c) = self.actor.decoder(z, h, c) # d: n_subproblem, 1, n_embed
         q = h.squeeze(1) # q:= n_subproblem, n_embed # TODO: note original implementation h.squeeze(0)
         # glimpse step
         for _ in range(args.n_glimpse):
+            print(f'{q.shape=} {ref.shape=} {mask.shape=}')
             q = self.actor.glimpse(q, ref, mask)
         # pointing using attention
         logits = self.actor.pointer(q, ref, mask) # logits: n_subproblem, n_node
@@ -71,24 +77,29 @@ class Solver(BaseSolver):
         ref, (h, c) = self.actor.encoder(e) # ref: n_subproblem, n_node, n_embed
         # decode loop
         z = self.actor.decoder.get_z0(x) # n_subproblem, 1, n_embed
-        # init mask
-        mask = torch.zeros(*x.shape[:-1], device=args.device) # n_subproblem, n_node
+
         # initial
         done = False
         step = 0
         total_reward = 0
         while not done:
+            # extract mask
+            mask = x[:, :, -1] # 1' entries are non selectable
             # select action
             action, (d, h, c) = self.select_action(z, h, c, ref, mask)
             # update z
             z = self.actor.decoder.gather_z(e, action)
-            # update mask
-            mask += torch.zeros(mask.shape, device=args.device).\
-                    scatter_(dim=1, index=action.unsqueeze(1), value=1)
             # TODO: HERE, update ref depending on action
             # and split subproblems
             action = action.detach().cpu().tolist()
             next_observation, reward, done, info = env.step(action)
+            indices = info['subproblem_indices']
+            # split z:
+            z = simulator.util.split_subproblem(z, indices)
+            h = simulator.util.split_subproblem(h, indices)
+            c = simulator.util.split_subproblem(c, indices)
+            ref = simulator.util.split_subproblem(ref, indices)
+            #
             n_subproblem = len(next_observation)
             total_reward += reward.sum().item()
             info.update({
@@ -100,7 +111,7 @@ class Solver(BaseSolver):
             })
             monitor.step(info)
             step += 1
-            observation = next_observation
+            x = next_observation.to(args.device)
             if step >= args.ns_n_step:
                 break
         monitor.export_csv()
