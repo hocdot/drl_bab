@@ -15,9 +15,6 @@ class BaseSolver:
     def select_action(self, observation):
         raise NotImplementedError
 
-    def prepare_test(self, observation):
-        pass
-
     def test(self):
         # extract args
         monitor = self.monitor
@@ -28,20 +25,13 @@ class BaseSolver:
         observation, self.edge_index, self.edge_weight = env.reset()
         self.edge_weight = self.edge_weight.to(args.device)
         self.edge_index  = self.edge_index.to(args.device)
-        # embed
-        embed = None
-        if args.solver == 'pointer_net':
-            embed = self.actor.embedding(observation.to(args.device), self.edge_weight, self.edge_index)
-
-        # procedure before test
-        self.prepare_test(observation)
         print(f'[+] testing {monitor.label}')
         #
         done = False
         step = 0
         total_reward = 0
         while not done:
-            action = self.select_action(embed, observation)
+            action = self.select_action(observation)
             # print(f'{action=}')
             next_observation, reward, done, info = env.step(action)
             n_subproblem = len(next_observation)

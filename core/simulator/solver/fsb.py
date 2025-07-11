@@ -8,6 +8,6 @@ class Solver(BaseSolver):
     def __init__(self, args):
         super().__init__(args)
 
-    def select_action(self, embed, observation):
+    def select_action(self, observation):
         action = self.env.get_fsb_action()
         return action

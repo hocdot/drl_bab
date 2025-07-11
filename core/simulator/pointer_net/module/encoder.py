@@ -1,5 +1,3 @@
-from torch.nn.utils.rnn import PackedSequence
-from beartype import beartype
 import torch.nn as nn
 import torch
 
@@ -12,7 +10,6 @@ class Encoder(nn.Module):
                              batch_first=True,
                              device=args.device)
 
-    @beartype
-    def forward(self, e: PackedSequence) -> tuple[PackedSequence, tuple[torch.Tensor, torch.Tensor]]:
+    def forward(self, e):
         z, (h, c) = self.layer(e, None)
         return z, (h, c)

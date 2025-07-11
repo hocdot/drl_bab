@@ -12,9 +12,12 @@ class Env:
         # extract args
         args = self.args
         # extract problem (TODO: remove hardcode)
-        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnistfc-medium-net-151.onnx'
-        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_2_0.03.vnnlib'
+        # onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnistfc-medium-net-151.onnx'
+        # vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_2_0.03.vnnlib'
+        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnist-net_256x2.onnx'
+        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_1_0.03.vnnlib'
         net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
+        obj = objs.pop(1)
         obj = objs.pop(1)
         # initialize interactive verifier
         self.iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
@@ -24,6 +27,8 @@ class Env:
         edge_weight, edge_index = self.iv.get_edge_data(obj)
         # extract subproblems
         self.subproblem = self.iv.setup(obj)
+        # step
+        self.n_step = 0
         return observation, edge_index, edge_weight
 
     @property
@@ -34,10 +39,13 @@ class Env:
         return self.iv.get_fsb_action(self.subproblem)
 
     def step(self, action):
+        args = self.args
         self.subproblem, reward, next_observation, subproblem_indices = self.iv.step(self.subproblem, action)
         if self.subproblem is not None:
             next_observation = torch.cat(next_observation, dim=1)
             print(f'{next_observation.shape=} {reward.shape=}', subproblem_indices)
         done = self.subproblem is None
+        if self.n_step > args.ns_n_step:
+            done = True
         info = {}
         return next_observation, reward, done, info

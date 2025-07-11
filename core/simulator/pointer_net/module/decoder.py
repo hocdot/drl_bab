@@ -1,5 +1,3 @@
-from torch.nn.utils.rnn import PackedSequence, pad_packed_sequence
-from beartype import beartype
 import torch.nn as nn
 import torch
 
@@ -10,26 +8,21 @@ class Decoder(nn.Module):
         self.args = args
         self.layer = nn.LSTM(input_size=args.n_embed,
                              hidden_size=args.n_hidden,
-                             batch_first=True,
-                             device=args.device)
+                             batch_first=True, device=args.device)
         self.g = nn.Parameter(torch.FloatTensor(args.n_embed).to(args.device))
 
-    @beartype
-    def get_z0(self, x: torch.Tensor) -> torch.Tensor:
+    def get_z0(self, x):
+        bs, _, _ = x.size()
         args = self.args
-        bs   = x.shape[0]
-        z0   = self.g.unsqueeze(0).repeat(bs, 1).unsqueeze(1).to(args.device)
+        z0 = self.g.unsqueeze(0).repeat(bs, 1).unsqueeze(1).to(args.device)
         return z0
 
-    @beartype
-    def gather_z(self, e: torch.Tensor, next_node: torch.Tensor) -> torch.Tensor:
+    def gather_z(self, e, next_node):
         args = self.args
-        # e: (bs, n_node, n_embed)
         index = next_node.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, args.n_embed)
         z = torch.gather(e, dim=1, index=index)
         return z
 
-    @beartype
-    def forward(self, z: torch.Tensor, h: torch.Tensor, c: torch.Tensor) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+    def forward(self, z, h, c):
         z, (h, c) = self.layer(z, (h, c))
         return z, (h, c)

@@ -8,7 +8,7 @@ class Solver(BaseSolver):
     def __init__(self, args):
         super().__init__(args)
 
-    def select_action(self, embed, observation):
+    def select_action(self, observation):
         n_subproblem = len(observation)
         action = []
         for i in range(n_subproblem):
