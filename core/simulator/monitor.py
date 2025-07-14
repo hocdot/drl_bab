@@ -36,7 +36,7 @@ class Monitor:
                         if term in key:
                             _kwargs[key] = f'{kwargs[key]:0.2f}'
             elif args.mode == 'train':
-                for term in ['episode']:
+                for term in ['episode', 'n_']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:d}'
                 for term in ['value', 'loss', 'log']:

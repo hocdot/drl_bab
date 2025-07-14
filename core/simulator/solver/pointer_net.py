@@ -152,11 +152,13 @@ class Solver(BaseSolver):
             step = 0
             total_reward = 0
             log_likelihood = 0
+            n_subproblem = 0
             while not done:
                 x, e, ref, h, c, z, ll, reward, info = self.step(x, e, ref, h, c, z)
                 log_likelihood += ll.sum()
                 step += 1
                 total_reward += reward.sum().item()
+                n_subproblem += x.shape[0]
                 info['step'] = step
                 info['total_reward'] = total_reward
                 if step >= args.ns_n_step:
@@ -192,5 +194,9 @@ class Solver(BaseSolver):
                 'critic_loss': critic_loss.item(),
                 'actor_loss': actor_loss.item(),
                 'log_likelihood': log_likelihood.item(),
+                'n_step': step,
+                'n_subproblem': n_subproblem,
+                'total_reward': total_reward,
             }
             monitor.step(episode_info)
+            print()
