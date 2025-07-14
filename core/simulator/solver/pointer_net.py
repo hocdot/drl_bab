@@ -144,59 +144,66 @@ class Solver(BaseSolver):
         self.critic.train()
         # procedure before test
         print(f'[+] training {monitor.label}')
+        global_step = 0
         for episode in range(args.n_train_episode):
-            # TODO: env.reset(), change to another model
-            x, e, ref, h, c, z, l_hat = self.reset()
-            # initial
-            done = False
-            step = 0
-            total_reward = 0
-            log_likelihood = 0
-            n_subproblem = 0
-            while not done:
-                x, e, ref, h, c, z, ll, reward, info = self.step(x, e, ref, h, c, z)
-                log_likelihood += ll.sum()
-                step += 1
-                total_reward += reward.sum().item()
-                n_subproblem += x.shape[0]
-                info['step'] = step
-                info['total_reward'] = total_reward
-                if step >= args.ns_n_step:
-                    break
-            # optimize critic
-            l = torch.tensor(total_reward, requires_grad=False, device=args.device)
-            # reward scaling in [-1, 0] to improve learning
-            l /= args.reward_scale
-            l_hat /= args.reward_scale
-            log_likelihood /= args.reward_scale
-            critic_loss = self.critic_loss_fn(l_hat, l)
-            self.critic_optimizer.zero_grad()
-            critic_loss.backward()
-            nn.utils.clip_grad_norm_(self.critic.parameters(),
-                                     max_norm=1., norm_type=2)
-            self.critic_optimizer.step()
-            self.critic_scheduler.step()
-            # optimize actor
-            advantage = l.detach() - l_hat.detach()
-            actor_loss = (advantage * log_likelihood).mean() # log_likelihood?
-            self.actor_optimizer.zero_grad()
-            actor_loss.backward()
-            nn.utils.clip_grad_norm_(self.actor.parameters(),
-                                     max_norm=1., norm_type=2)
-            self.actor_optimizer.step()
-            self.actor_scheduler.step()
-            # export csv
-            monitor.export_csv()
-            episode_info = {
-                'episode': episode,
-                'value': l.item(),
-                'estimate_value': l_hat.item(),
-                'critic_loss': critic_loss.item(),
-                'actor_loss': actor_loss.item(),
-                'log_likelihood': log_likelihood.item(),
-                'n_step': step,
-                'n_subproblem': n_subproblem,
-                'total_reward': total_reward,
-            }
-            monitor.step(episode_info)
+            for _ in len(env):
+                # TODO: env.reset(), change to another model
+                tic = time.time()
+                x, e, ref, h, c, z, l_hat = self.reset()
+                # initial
+                done = False
+                step = 0
+                total_reward = 0
+                log_likelihood = 0
+                n_subproblem = 0
+                while not done:
+                    x, e, ref, h, c, z, ll, reward, info = self.step(x, e, ref, h, c, z)
+                    log_likelihood += ll.sum()
+                    step += 1
+                    total_reward += reward.sum().item()
+                    n_subproblem += x.shape[0]
+                    info['step'] = step
+                    info['total_reward'] = total_reward
+                    if step >= args.ns_n_step:
+                        break
+                # optimize critic
+                l = torch.tensor(total_reward, requires_grad=False, device=args.device)
+                # reward scaling in [-1, 0] to improve learning
+                l /= args.reward_scale
+                l_hat /= args.reward_scale
+                log_likelihood /= args.reward_scale
+                critic_loss = self.critic_loss_fn(l_hat, l)
+                self.critic_optimizer.zero_grad()
+                critic_loss.backward()
+                nn.utils.clip_grad_norm_(self.critic.parameters(),
+                                         max_norm=1., norm_type=2)
+                self.critic_optimizer.step()
+                self.critic_scheduler.step()
+                # optimize actor
+                advantage = l.detach() - l_hat.detach()
+                actor_loss = (advantage * log_likelihood).mean() # log_likelihood?
+                self.actor_optimizer.zero_grad()
+                actor_loss.backward()
+                nn.utils.clip_grad_norm_(self.actor.parameters(),
+                                         max_norm=1., norm_type=2)
+                self.actor_optimizer.step()
+                self.actor_scheduler.step()
+                toc = time.time()
+                # export csv
+                episode_info = {
+                    'episode'        : episode,
+                    'global_step'    : global_step,
+                    'value'          : l.item(),
+                    'estimate_value' : l_hat.item(),
+                    'critic_loss'    : critic_loss.item(),
+                    'actor_loss'     : actor_loss.item(),
+                    'log_likelihood' : log_likelihood.item(),
+                    'n_iter'         : step,
+                    'n_subproblem'   : n_subproblem,
+                    'total_reward'   : total_reward,
+                    'time'           : toc - tic,
+                }
+                monitor.step(episode_info)
+                monitor.export_csv()
+                global_step += 1
             print()

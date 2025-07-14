@@ -1,5 +1,7 @@
 import neuralsat as ns
+import pandas as pd
 import torch
+import os
 
 class Env:
 
@@ -7,18 +9,39 @@ class Env:
         super().__init__()
         # save args
         self.args = args
+        # load list of instances
+        self.load_instances()
+        # initialize
+        self.n_episode = 0
+
+    def load_instances(self):
+        # extract args
+        args = self.args
+        # load csv
+        names = ['instance', 'onnx', 'vnnlib']
+        path = os.path.join(args.benchmark_dir, args.benchmark, 'instances.csv')
+        df = pd.read_csv(path, names=names)
+        # load net
+        onnx_path = df['onnx'].iloc[0]
+        vnnlib_path = df['vnnlib'].iloc[0]
+        self.net, self.input_shape, _ = ns.test.extract_instance(onnx_path, vnnlib_path)
+        # load objectives from vnnlibs
+        self.objectives = []
+        for vnnlib_path in df['vnnlib']:
+            net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
+            obj = objs.pop(1)
+            self.objectives.append(obj)
+
+    def __len__(self):
+        return len(self.objectives)
 
     def reset(self):
         # extract args
         args = self.args
-        # extract problem (TODO: remove hardcode)
-        # onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnistfc-medium-net-151.onnx'
-        # vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_2_0.03.vnnlib'
-        onnx_path = f'../data/benchmark/{args.benchmark}/onnx/mnist-net_256x2.onnx'
-        vnnlib_path = f'../data/benchmark/{args.benchmark}/vnnlib/prop_1_0.03.vnnlib'
-        net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
-        obj = objs.pop(1)
-        obj = objs.pop(1)
+        # extract net and obj
+        net = self.net
+        input_shape = self.input_shape
+        obj = self.objectives[self.n_episode % len(self.objectives)]
         # initialize interactive verifier
         self.iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
         # extract observation + topo
@@ -29,6 +52,7 @@ class Env:
         self.subproblem = self.iv.setup(obj)
         # step
         self.n_step = 0
+        self.n_episode += 1
         return observation, edge_index, edge_weight
 
     @property

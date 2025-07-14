@@ -36,10 +36,10 @@ class Monitor:
                         if term in key:
                             _kwargs[key] = f'{kwargs[key]:0.2f}'
             elif args.mode == 'train':
-                for term in ['episode', 'n_']:
+                for term in ['episode', 'n_', 'step']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:d}'
-                for term in ['value', 'loss', 'log']:
+                for term in ['value', 'loss', 'log', 'time']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:0.2f}'
         self.bar.set_postfix(**_kwargs)
