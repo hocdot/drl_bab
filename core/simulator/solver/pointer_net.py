@@ -56,18 +56,14 @@ class Solver(BaseSolver):
         action = torch.argmax(log_prob, dim=1).long() # next_node: n_subproblem
         return action, (d, h, c)
 
-    def test(self):
+    def reset(self):
         # extract args
-        monitor = self.monitor
         args = self.args
-        env  = self.env
-        # procedure before test
-        print(f'[+] testing {monitor.label}')
-        # TODO: env.reset(), change to another model
+        env = self.env
         # reset environment
         observation, self.edge_index, self.edge_weight = env.reset()
         ew = self.edge_weight.to(args.device)
-        ei  = self.edge_index.to(args.device)
+        ei = self.edge_index.to(args.device)
         # input
         x = observation.to(args.device) # n_subproblem, n_node, n_input
         # embed
@@ -76,42 +72,88 @@ class Solver(BaseSolver):
         ref, (h, c) = self.actor.encoder(e) # ref: n_subproblem, n_node, n_embed
         # decode loop
         z = self.actor.decoder.get_z0(x) # n_subproblem, 1, n_embed
+        return x, e, ref, h, c, z
+
+    def step(self, x, e, ref, h, c, z):
+        # extract args
+        args = self.args
+        env = self.env
+        # extract mask
+        mask = x[:, :, -1] # 1' entries are non selectable
+        print(f'{mask.shape=} {z.shape=} {h.shape=} {c.shape=} {x.shape=} {ref.shape=}')
+        # select action
+        action, (d, h, c) = self.select_action(z, h, c, ref, mask)
+        # TODO: HERE, update ref depending on action
+        # and split subproblems
+        action = action.detach()
+        next_observation, reward, done, info = env.step(action.cpu().tolist())
+        indices = info['subproblem_indices']
+        # split z:
+        e = simulator.util.split_subproblem(e, indices)
+        action = simulator.util.split_subproblem(action, indices)
+        z = self.actor.decoder.gather_z(e, action)
+        h = simulator.util.split_subproblem(h.transpose(0, 1), indices).transpose(0, 1)
+        c = simulator.util.split_subproblem(c.transpose(0, 1), indices).transpose(0, 1)
+        ref = simulator.util.split_subproblem(ref, indices)
+        #
+        n_subproblem = len(next_observation)
+        info.update({
+            'avg_reward': reward.mean().item(),
+            'n_subproblem': n_subproblem,
+            'done': done,
+        })
+        x = next_observation.to(args.device)
+        return x, e, ref, h, c, z, reward, info
+
+    def test(self):
+        # extract args
+        monitor = self.monitor
+        args = self.args
+        env  = self.env
+        # procedure before test
+        print(f'[+] testing {monitor.label}')
+        # TODO: env.reset(), change to another model
+        x, e, ref, h, c, z = self.reset()
 
         # initial
         done = False
         step = 0
         total_reward = 0
         while not done:
-            # extract mask
-            mask = x[:, :, -1] # 1' entries are non selectable
-            print(f'{mask.shape=} {z.shape=} {h.shape=} {c.shape=} {x.shape=} {ref.shape=}')
-            # select action
-            action, (d, h, c) = self.select_action(z, h, c, ref, mask)
-            # TODO: HERE, update ref depending on action
-            # and split subproblems
-            action = action.detach()
-            next_observation, reward, done, info = env.step(action.cpu().tolist())
-            indices = info['subproblem_indices']
-            # split z:
-            e = simulator.util.split_subproblem(e, indices)
-            action = simulator.util.split_subproblem(action, indices)
-            z = self.actor.decoder.gather_z(e, action)
-            h = simulator.util.split_subproblem(h.transpose(0, 1), indices).transpose(0, 1)
-            c = simulator.util.split_subproblem(c.transpose(0, 1), indices).transpose(0, 1)
-            ref = simulator.util.split_subproblem(ref, indices)
-            #
-            n_subproblem = len(next_observation)
-            total_reward += reward.sum().item()
-            info.update({
-                'step': step,
-                'total_reward': total_reward,
-                'avg_reward': reward.mean().item(),
-                'n_subproblem': n_subproblem,
-                'done': done,
-            })
+            x, e, ref, h, c, z, reward, info = self.step(x, e, ref, h, c, z)
             monitor.step(info)
             step += 1
-            x = next_observation.to(args.device)
+            total_reward += reward.sum().item()
+            info['step'] = step
+            info['total_reward'] = total_reward
             if step >= args.ns_n_step:
                 break
         monitor.export_csv()
+
+
+#     def train_epoch(self):
+#         exit()
+#
+#     def train(self):
+#         # extract args
+#         args       = self.args
+#         dataloader = self.dataloader_dict['train']
+#         monitor    = self.monitor
+#         n_step     = len(dataloader) * args.n_train_epoch
+#         self.actor.train()
+#         self.critic.train()
+#         #
+#         monitor.create_progress_bar(n_step)
+#         self.step = 0
+#         try:
+#             for epoch in range(args.n_train_epoch):
+#                 for info in self.train_epoch():
+#                     info.update({'step': self.step, 'epoch': epoch})
+#                     if self.step % args.n_logging == 0:
+#                         monitor.step(info)
+#                     self.step += 1
+#         except KeyboardInterrupt:
+#             pass
+#         finally:
+#             self.save_model()
+#             monitor.export_csv(mode='train')
