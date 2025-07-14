@@ -29,14 +29,6 @@ class Critic(nn.Module):
         # embed
         mask = x[:, :, -1]
         e = self.embedding(x, edge_index, edge_weight)
-        # pick embedding of only active neurons
-        indices  = [] # indices of active neuron
-        e_ = [] # packed
-        for b in range(bs):
-            idx = torch.where(mask[b] == 1)[0]
-            e_.append(e[b, idx])
-            indices.append(idx)
-        e = nn.utils.rnn.pack_sequence(e_, enforce_sorted=False)
         # encode
         ref, (h, c) = self.encoder(e)
         q = h[-1]

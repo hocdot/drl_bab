@@ -10,6 +10,8 @@ class Monitor:
         if progress_bar:
             if args.mode == 'test':
                 T = args.ns_n_step
+            elif args.mode == 'train':
+                T = args.n_train_episode
             else:
                 raise NotImplementedError
             if progress_bar:
@@ -23,12 +25,21 @@ class Monitor:
 
     def __update_description(self, **kwargs):
         _kwargs = {}
+        args = self.args
         for key in kwargs:
-            if key not in ['subproblem_indices']:
-                for term in ['step', 'n_:']:
+            if args.mode == 'test':
+                if key not in ['subproblem_indices']:
+                    for term in ['step', 'n_:']:
+                        if term in key:
+                            _kwargs[key] = f'{kwargs[key]:d}'
+                    for term in ['reward']:
+                        if term in key:
+                            _kwargs[key] = f'{kwargs[key]:0.2f}'
+            elif args.mode == 'train':
+                for term in ['episode']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:d}'
-                for term in ['reward']:
+                for term in ['value', 'loss', 'log']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:0.2f}'
         self.bar.set_postfix(**_kwargs)

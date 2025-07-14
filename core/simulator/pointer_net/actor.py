@@ -25,11 +25,11 @@ class Actor(nn.Module):
 
     @beartype
     def get_log_likelihood(self, log_probs: torch.Tensor, nodes: torch.Tensor) -> torch.Tensor:
-        # log_probs: (bs, max_node, max_node)
-        # nodes: (bs, max_node)
+        # log_probs: (bs, max_node)
+        # nodes: (bs)
         # return: (bs)
-        ll = torch.gather(log_probs, dim=2, index=nodes[:, :, None])
-        ll = torch.sum(ll.squeeze(-1), 1)
+        ll = torch.gather(log_probs, dim=1, index=nodes[:, None])
+        ll = ll.squeeze(-1)
         return ll
 
     @beartype
