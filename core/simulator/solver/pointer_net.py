@@ -6,7 +6,7 @@ import torch.nn as nn
 import numpy as np
 import simulator
 import torch
-
+import time
 
 class Solver(BaseSolver):
 
@@ -14,6 +14,7 @@ class Solver(BaseSolver):
         super().__init__(args)
         # create actor/critic model
         self.create_model()
+        self.monitor = simulator.Monitor(args, env=self.env)
 
     def create_model(self):
         args = self.args
@@ -93,22 +94,30 @@ class Solver(BaseSolver):
         action = action.detach()
         next_observation, reward, done, info = env.step(action.cpu().tolist())
         indices = info['subproblem_indices']
-        # split z:
-        e = simulator.util.split_subproblem(e, indices)
-        action = simulator.util.split_subproblem(action, indices)
-        z = self.actor.decoder.gather_z(e, action)
-        h = simulator.util.split_subproblem(h.transpose(0, 1), indices).transpose(0, 1)
-        c = simulator.util.split_subproblem(c.transpose(0, 1), indices).transpose(0, 1)
-        ref = simulator.util.split_subproblem(ref, indices)
-        #
-        n_subproblem = len(next_observation)
-        info.update({
-            'avg_reward': reward.mean().item(),
-            'n_subproblem': n_subproblem,
-            'done': done,
-        })
-        x = next_observation.to(args.device)
-        return x, e, ref, h, c, z, log_likelihood, reward, info
+        if len(indices) == 0:
+            done = True
+            info.update({
+                'avg_reward': 0,
+                'n_subproblem': 0,
+                'done': True,
+            })
+        else:
+            # split z:
+            e = simulator.util.split_subproblem(e, indices)
+            action = simulator.util.split_subproblem(action, indices)
+            z = self.actor.decoder.gather_z(e, action)
+            h = simulator.util.split_subproblem(h.transpose(0, 1), indices).transpose(0, 1)
+            c = simulator.util.split_subproblem(c.transpose(0, 1), indices).transpose(0, 1)
+            ref = simulator.util.split_subproblem(ref, indices)
+            #
+            n_subproblem = len(next_observation)
+            info.update({
+                'avg_reward': reward.mean().item(),
+                'n_subproblem': n_subproblem,
+                'done': done,
+            })
+            x = next_observation.to(args.device)
+        return x, e, ref, h, c, z, log_likelihood, reward, done, info
 
     def test(self):
         # extract args
@@ -125,7 +134,7 @@ class Solver(BaseSolver):
         step = 0
         total_reward = 0
         while not done:
-            x, e, ref, h, c, z, log_likelihood, reward, info = self.step(x, e, ref, h, c, z)
+            x, e, ref, h, c, z, log_likelihood, reward, done, info = self.step(x, e, ref, h, c, z)
             monitor.step(info)
             step += 1
             total_reward += reward.sum().item()
@@ -146,7 +155,7 @@ class Solver(BaseSolver):
         print(f'[+] training {monitor.label}')
         global_step = 0
         for episode in range(args.n_train_episode):
-            for _ in len(env):
+            for _ in range(len(env)):
                 # TODO: env.reset(), change to another model
                 tic = time.time()
                 x, e, ref, h, c, z, l_hat = self.reset()
@@ -157,7 +166,7 @@ class Solver(BaseSolver):
                 log_likelihood = 0
                 n_subproblem = 0
                 while not done:
-                    x, e, ref, h, c, z, ll, reward, info = self.step(x, e, ref, h, c, z)
+                    x, e, ref, h, c, z, ll, reward, done, info = self.step(x, e, ref, h, c, z)
                     log_likelihood += ll.sum()
                     step += 1
                     total_reward += reward.sum().item()
@@ -181,7 +190,7 @@ class Solver(BaseSolver):
                 self.critic_scheduler.step()
                 # optimize actor
                 advantage = l.detach() - l_hat.detach()
-                actor_loss = (advantage * log_likelihood).mean() # log_likelihood?
+                actor_loss = (advantage * log_likelihood).mean()
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
                 nn.utils.clip_grad_norm_(self.actor.parameters(),
@@ -206,4 +215,4 @@ class Solver(BaseSolver):
                 monitor.step(episode_info)
                 monitor.export_csv()
                 global_step += 1
-            print()
+                print()

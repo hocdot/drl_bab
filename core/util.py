@@ -25,7 +25,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='test')
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
-    parser.add_argument('--ns_n_step', type=int, default=20)
+    parser.add_argument('--ns_n_step', type=int, default=10)
     parser.add_argument('--eps', type=float, default=0.01)
     parser.add_argument('--n_instance', type=int, default=100)
     # heuristic solver
@@ -44,7 +44,7 @@ def get_args():
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--lrs_gamma', type=float, default=0.96)
     parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--reward_scale', type=float, default=500)
+    parser.add_argument('--reward_scale', type=float, default=2000)
     # data directory
     parser.add_argument('--checkpoint_dir', type=str, default='../data/checkpoint')
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
@@ -54,7 +54,7 @@ def get_args():
     parser.add_argument('--benchmark', type=str, default='mnist', choices=['mnist', 'cifar10'])
     # plot
     parser.add_argument('--metric', type=str, default='total_reward')
-    parser.add_argument('--n_smooth', type=int, default=1)
+    parser.add_argument('--n_smooth', type=int, default=55)
     # other
     if torch.cuda.is_available():
         parser.add_argument('--device', type=str, default='cuda:0')

@@ -3,7 +3,7 @@ import tqdm
 import os
 
 class Monitor:
-    def __init__(self, args, progress_bar=True):
+    def __init__(self, args, progress_bar=True, env=None):
         # save
         self.args = args
         # initialize progress bar
@@ -12,6 +12,8 @@ class Monitor:
                 T = args.ns_n_step
             elif args.mode == 'train':
                 T = args.n_train_episode
+                if env is not None:
+                    T = T * len(env)
             else:
                 raise NotImplementedError
             if progress_bar:
@@ -34,14 +36,14 @@ class Monitor:
                             _kwargs[key] = f'{kwargs[key]:d}'
                     for term in ['reward']:
                         if term in key:
-                            _kwargs[key] = f'{kwargs[key]:0.2f}'
+                            _kwargs[key] = f'{kwargs[key]:0.3f}'
             elif args.mode == 'train':
                 for term in ['episode', 'n_', 'step']:
                     if term in key:
                         _kwargs[key] = f'{kwargs[key]:d}'
                 for term in ['value', 'loss', 'log', 'time']:
                     if term in key:
-                        _kwargs[key] = f'{kwargs[key]:0.2f}'
+                        _kwargs[key] = f'{kwargs[key]:0.3f}'
         self.bar.set_postfix(**_kwargs)
 
     def __display(self):

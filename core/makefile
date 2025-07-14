@@ -8,5 +8,8 @@ test:
 train:
 	python3 main.py --mode=train --solver=pointer_net
 
-debug:
-	python3 main.py --scenario=generate_mnist_property --benchmark=mnist
+prepare_vb:
+	python3 main.py --scenario=generate_mnist_property --benchmark=mnist --n_instance=100 --eps=0.02
+
+plot:
+	python3 main.py --scenario=plot_line

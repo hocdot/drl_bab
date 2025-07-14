@@ -30,7 +30,12 @@ class Env:
         for vnnlib_path in df['vnnlib']:
             net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
             obj = objs.pop(1)
-            self.objectives.append(obj)
+            # initialize interactive verifier
+            iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+            observation = iv.get_initial_node_data(obj)
+            if observation is not None:
+                self.objectives.append(obj)
+        print(f'[+] loaded {len(self)} valid properties')
 
     def __len__(self):
         return len(self.objectives)
