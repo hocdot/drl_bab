@@ -16,3 +16,22 @@ pip3 install -e .
 
 ## Thanh Le
 - [ ] Rebuild codebase
+
+input: 1
+output: [0, 1]
+
+input: 3
+output: [0, 1, 2, 3, 5]
+
+output 0, 1, 2 index of left subproblem of input 0, 1, 2
+output 3, 5 index of right subproblem of input 0, 2
+
+```python
+for i in output:
+    input[i] = i % len(input)
+    if i >= len(input):
+        right branch (-)
+    else i < len(input):
+        left branch (+)
+# sort by desc
+```
