@@ -84,19 +84,20 @@ class Solver(BaseSolver):
         while not done:
             # extract mask
             mask = x[:, :, -1] # 1' entries are non selectable
+            print(f'{mask.shape=} {z.shape=} {h.shape=} {c.shape=} {x.shape=} {ref.shape=}')
             # select action
             action, (d, h, c) = self.select_action(z, h, c, ref, mask)
-            # update z
-            z = self.actor.decoder.gather_z(e, action)
             # TODO: HERE, update ref depending on action
             # and split subproblems
-            action = action.detach().cpu().tolist()
-            next_observation, reward, done, info = env.step(action)
+            action = action.detach()
+            next_observation, reward, done, info = env.step(action.cpu().tolist())
             indices = info['subproblem_indices']
             # split z:
-            z = simulator.util.split_subproblem(z, indices)
-            h = simulator.util.split_subproblem(h, indices).transpose(0, 1)
-            c = simulator.util.split_subproblem(c, indices).transpose(0, 1)
+            e = simulator.util.split_subproblem(e, indices)
+            action = simulator.util.split_subproblem(action, indices)
+            z = self.actor.decoder.gather_z(e, action)
+            h = simulator.util.split_subproblem(h.transpose(0, 1), indices).transpose(0, 1)
+            c = simulator.util.split_subproblem(c.transpose(0, 1), indices).transpose(0, 1)
             ref = simulator.util.split_subproblem(ref, indices)
             #
             n_subproblem = len(next_observation)
