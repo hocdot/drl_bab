@@ -8,7 +8,7 @@ torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
     ls = [args.csv_dir, args.figure_dir, args.benchmark_dir,
-          args.model_dir, args.data_dir]
+          args.checkpoint_dir, args.data_dir]
     for folder in ls:
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -26,6 +26,8 @@ def get_args():
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
     parser.add_argument('--ns_n_step', type=int, default=20)
+    parser.add_argument('--eps', type=float, default=0.01)
+    parser.add_argument('--n_instance', type=int, default=100)
     # heuristic solver
     parser.add_argument('--solver', type=str, default='random')
     # pointer net
@@ -44,12 +46,12 @@ def get_args():
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--reward_scale', type=float, default=500)
     # data directory
+    parser.add_argument('--checkpoint_dir', type=str, default='../data/checkpoint')
     parser.add_argument('--benchmark_dir', type=str, default='../data/benchmark')
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
-    parser.add_argument('--model_dir', type=str, default='../data/model')
     parser.add_argument('--data_dir', type=str, default='../data/data')
     parser.add_argument('--csv_dir', type=str, default='../data/csv')
-    parser.add_argument('--benchmark', type=str, default='mnist')
+    parser.add_argument('--benchmark', type=str, default='mnist', choices=['mnist', 'cifar10'])
     # plot
     parser.add_argument('--metric', type=str, default='total_reward')
     parser.add_argument('--n_smooth', type=int, default=1)

@@ -7,3 +7,6 @@ test:
 
 train:
 	python3 main.py --mode=train --solver=pointer_net
+
+debug:
+	python3 main.py --scenario=generate_mnist_property --benchmark=mnist

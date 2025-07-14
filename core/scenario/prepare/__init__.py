@@ -1,0 +1,1 @@
+from .generate_mnist_property import generate_mnist_property
