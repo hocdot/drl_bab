@@ -24,17 +24,26 @@ class Env:
         # load net
         onnx_path = df['onnx'].iloc[0]
         vnnlib_path = df['vnnlib'].iloc[0]
-        self.net, self.input_shape, _ = ns.test.extract_instance(onnx_path, vnnlib_path)
+        for vnnlib_path in df['vnnlib']:
+            if os.path.exists(vnnlib_path):
+                self.net, self.input_shape, _ = ns.test.extract_instance(onnx_path, vnnlib_path)
         # load objectives from vnnlibs
         self.objectives = []
+        count = 0
         for vnnlib_path in df['vnnlib']:
-            net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
-            obj = objs.pop(1)
-            # initialize interactive verifier
-            iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
-            observation = iv.get_initial_node_data(obj)
-            if observation is not None:
-                self.objectives.append(obj)
+            if os.path.exists(vnnlib_path):
+                net, input_shape, objs = ns.test.extract_instance(onnx_path, vnnlib_path)
+                obj = objs.pop(1)
+                # initialize interactive verifier
+                iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+                observation = iv.get_initial_node_data(obj)
+                if observation is not None:
+                    self.objectives.append(obj)
+                    count += 1
+                else:
+                    os.system(f'rm -rf {vnnlib_path}')
+            if count >= 5:
+                break
         print(f'[+] loaded {len(self)} valid properties')
 
     def __len__(self):

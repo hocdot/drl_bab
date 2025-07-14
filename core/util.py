@@ -25,7 +25,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='test')
     # neuralsat
     parser.add_argument('--ns_batch_size', type=int, default=128)
-    parser.add_argument('--ns_n_step', type=int, default=10)
+    parser.add_argument('--ns_n_step', type=int, default=20)
     parser.add_argument('--eps', type=float, default=0.01)
     parser.add_argument('--n_instance', type=int, default=100)
     # heuristic solver

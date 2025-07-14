@@ -26,8 +26,7 @@ class Critic(nn.Module):
         bs   = x.shape[0]
         # init
         x = x.to(args.device)
-        # embed
-        mask = x[:, :, -1]
+        print(f'{x.shape=} {edge_index.shape=} {edge_weight.shape=}')
         e = self.embedding(x, edge_index, edge_weight)
         # encode
         ref, (h, c) = self.encoder(e)
