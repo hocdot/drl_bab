@@ -7,8 +7,8 @@ sys.path.append('neuralsat/src/')
 torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
-    ls = [args.csv_dir, args.figure_dir, args.benchmark_dir,
-          args.checkpoint_dir, args.data_dir]
+    ls = [args.csv_dir, args.figure_dir, args.benchmark_dir, args.data_dir,
+          args.checkpoint_dir]
     for folder in ls:
         if not os.path.exists(folder):
             os.makedirs(folder)

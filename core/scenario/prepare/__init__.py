@@ -1,1 +1,1 @@
-from .generate_mnist_property import generate_mnist_property
+from .prepare_properties import prepare_properties

@@ -129,6 +129,8 @@ class Solver(BaseSolver):
         print(f'[+] testing {monitor.label}')
         # TODO: env.reset(), change to another model
         x, e, ref, h, c, z, l_hat = self.reset()
+        print(x.shape)
+        exit()
         # initial
         done = False
         step = 0

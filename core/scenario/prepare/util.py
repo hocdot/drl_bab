@@ -1,19 +1,21 @@
+import torchvision.transforms as transforms
+import torchvision
 import torch
 
 def write_vnnlib_classify(
-    spec_path: str,  
-    data_lb: float, data_ub: float, 
+    spec_path: str,
+    data_lb: float, data_ub: float,
     prediction: torch.Tensor,
     negate_spec=False,
     single_output=False):
     # input bounds
     x_lb = data_lb.flatten()
     x_ub = data_ub.flatten()
-    
+
     # outputs
     n_class = prediction.numel()
     y = prediction.argmax(-1).item()
-    
+
     with open(spec_path, "w") as f:
         f.write(f"; Specification for class {int(y)}\n")
 
@@ -47,3 +49,21 @@ def write_vnnlib_classify(
                 if single_output:
                     break
             f.write(f"))\n")
+
+def get_dataloader(args):
+    if args.benchmark == 'mnist':
+        dataset = torchvision.datasets.MNIST(
+            root=args.data_dir,
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
+    elif args.benchmark == 'cifar10':
+        dataset = torchvision.datasets.CIFAR10(
+            root=args.data_dir,
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
+    return dataloader
