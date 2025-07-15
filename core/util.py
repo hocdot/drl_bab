@@ -27,9 +27,12 @@ def get_args():
     parser.add_argument('--ns_batch_size', type=int, default=128)
     parser.add_argument('--ns_n_step', type=int, default=20)
     parser.add_argument('--eps', type=float, default=0.01)
-    parser.add_argument('--n_instance', type=int, default=10)
-    parser.add_argument('--timeout', type=int, default=300)
-    # heuristic solver
+    parser.add_argument('--n_property', type=int, default=10)
+    parser.add_argument('--prepare_attacker_timeout', type=float, default=2.)
+    parser.add_argument('--verifier_timeout', type=float, default=300.)
+    # attacker
+    parser.add_argument('--attacker', type=str, default='pgd')
+    # verifier
     parser.add_argument('--solver', type=str, default='random')
     # pointer net
     parser.add_argument('--softmax_temperature', type=float, default=1.0)

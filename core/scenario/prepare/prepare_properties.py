@@ -1,5 +1,6 @@
 import neuralsat as ns
 import pandas as pd
+import simulator
 import torch
 import onnx
 import os
@@ -17,6 +18,7 @@ def write_vnnlib(path, x, y_hat, eps):
     )
 
 def prepare_properties(args):
+    # prepare directory
     onnx_dir = os.path.join(args.benchmark_dir, args.benchmark, 'onnx')
     vnnlib_dir = os.path.join(args.benchmark_dir, args.benchmark, 'vnnlib')
     os.makedirs(vnnlib_dir, exist_ok=True)
@@ -44,25 +46,31 @@ def prepare_properties(args):
                 write_vnnlib(path, x, y_hat, args.eps)
                 # check if hard property
                 net, input_shape, objs = ns.test.extract_instance(onnx_path, path)
-                obj = objs.pop(1)
-                # initialize interactive verifier
-                iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
-                observation = iv.get_initial_node_data(obj)
-                if observation is not None: # a.k.a hard property
-                    # only write hard property (not verified immediately)
-                    path = os.path.join(vnnlib_dir, f'{idx}_{onnx_name[:-5]}.vnnlib')
-                    write_vnnlib(path, x, y_hat, args.eps)
-                    # add to data
-                    data['onnx'].append(onnx_path)
-                    data['vnnlib'].append(path)
-                    data['timeout'].append(args.timeout)
-                    # print progress
-                    print(f'+ found {len(data["onnx"])}/{args.n_instance} properties')
-                    if len(data['onnx']) > args.n_instance:
-                        # save instances.csv
-                        df = pd.DataFrame(data)
-                        csv_dir = os.path.join(args.benchmark_dir, args.benchmark)
-                        os.makedirs(csv_dir, exist_ok=True)
-                        path = os.path.join(csv_dir, 'instances.csv')
-                        df.to_csv(path, header=None)
-                        break
+                # check sat
+                attacker = simulator.attacker.create(net.to(args.device), objs, input_shape, args)
+                is_attacked, _ = attacker.run(timeout=args.prepare_attacker_timeout)
+                if not is_attacked:
+                    # initialize interactive verifier
+                    iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+                    # extract objective
+                    obj = objs.pop(1)
+                    observation = iv.get_initial_node_data(obj)
+                    # check if hard property
+                    if observation is not None:
+                        # only write hard property (not verified immediately)
+                        path = os.path.join(vnnlib_dir, f'{idx}_{onnx_name[:-5]}.vnnlib')
+                        write_vnnlib(path, x, y_hat, args.eps)
+                        # add to data
+                        data['onnx'].append(onnx_path)
+                        data['vnnlib'].append(path)
+                        data['timeout'].append(args.verifier_timeout)
+                        # print progress
+                        print(f'+ found {len(data["onnx"])}/{args.n_property} properties after {idx} trials')
+                        if len(data['onnx']) >= args.n_property:
+                            # save instances.csv
+                            df = pd.DataFrame(data)
+                            csv_dir = os.path.join(args.benchmark_dir, args.benchmark)
+                            os.makedirs(csv_dir, exist_ok=True)
+                            path = os.path.join(csv_dir, 'instances.csv')
+                            df.to_csv(path, header=None)
+                            break
