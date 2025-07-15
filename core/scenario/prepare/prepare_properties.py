@@ -6,18 +6,26 @@ import os
 
 from . import util
 
+def write_vnnlib(path, x, y_hat, eps):
+    util.write_vnnlib_classify(
+        spec_path=path,
+        data_lb=x-eps,
+        data_ub=x+eps,
+        prediction=y_hat,
+        negate_spec=True,
+        single_output=True,
+    )
+
 def prepare_properties(args):
     onnx_dir = os.path.join(args.benchmark_dir, args.benchmark, 'onnx')
     vnnlib_dir = os.path.join(args.benchmark_dir, args.benchmark, 'vnnlib')
-    csv_dir = os.path.join(args.benchmark_dir, args.benchmark)
-    os.makedirs(csv_dir, exist_ok=True)
+    os.makedirs(vnnlib_dir, exist_ok=True)
 
-    path = os.path.join(csv_dir, 'instances.csv')
-    data = {}
+    data = {'onnx': [], 'vnnlib': [], 'timeout': []}
 
-    for name in os.listdir(onnx_dir):
+    for onnx_name in os.listdir(onnx_dir):
         # read onnx
-        path = os.path.join(onnx_dir, name)
+        onnx_path = os.path.join(onnx_dir, onnx_name)
         model, input_shape = ns.util.network.read_onnx.parse_onnx(onnx_path)[:2]
         model.to(args.device)
         model.eval()
@@ -33,19 +41,28 @@ def prepare_properties(args):
             if y_pred == y:
                 # write temporary property
                 path = os.path.join('/tmp', f'{idx}_{onnx_name[:-5]}.vnnlib')
-                # only write hard properties (not verified immediately)
-                path = os.path.join(vnnlib_dir, f'{idx}_{onnx_name[:-5]}.vnnlib')
-                util.write_vnnlib_classify(
-                    spec_path=path,
-                    data_lb=x - args.eps,
-                    data_ub=x + args.eps,
-                    prediction=prediction,
-                    negate_spec=True,
-                    single_output=True,
-                )
-                # TODO: check attack
-                fp.write(f'{count},{onnx_path},{vnnlib_path}\n')
-                count += 1
-                if count >= args.n_instance:
-                    # TODO: next network
-                    return
+                write_vnnlib(path, x, y_hat, args.eps)
+                # check if hard property
+                net, input_shape, objs = ns.test.extract_instance(onnx_path, path)
+                obj = objs.pop(1)
+                # initialize interactive verifier
+                iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+                observation = iv.get_initial_node_data(obj)
+                if observation is not None: # a.k.a hard property
+                    # only write hard property (not verified immediately)
+                    path = os.path.join(vnnlib_dir, f'{idx}_{onnx_name[:-5]}.vnnlib')
+                    write_vnnlib(path, x, y_hat, args.eps)
+                    # add to data
+                    data['onnx'].append(onnx_path)
+                    data['vnnlib'].append(path)
+                    data['timeout'].append(args.timeout)
+                    # print progress
+                    print(f'+ found {len(data["onnx"])}/{args.n_instance} properties')
+                    if len(data['onnx']) > args.n_instance:
+                        # save instances.csv
+                        df = pd.DataFrame(data)
+                        csv_dir = os.path.join(args.benchmark_dir, args.benchmark)
+                        os.makedirs(csv_dir, exist_ok=True)
+                        path = os.path.join(csv_dir, 'instances.csv')
+                        df.to_csv(path, header=None)
+                        break
