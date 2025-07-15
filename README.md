@@ -12,5 +12,5 @@ pip3 install -e .
 - [ ] CNN problems ONNX + VNNLIB
 
 ## Thanh Le
-- [ ] Cache list potential vnnlib
 - [ ] Extract subgraph based on vnnlib and cache
+- [ ] Cache list potential vnnlib
