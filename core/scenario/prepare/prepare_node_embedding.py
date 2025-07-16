@@ -53,9 +53,9 @@ def prepare_node_embedding(args):
                              embedding_dim=args.n_embed,
                              walk_length=args.n2v_walk_length,
                              p=args.n2v_p,
-                             q=args.n2v_q
+                             q=args.n2v_q,
                              context_size=args.n2v_context_size,
-                             walk_per_node=args.n2v_n_walk_per_node)
+                             walks_per_node=args.n2v_n_walk_per_node)
             model = model.to(args.device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.n2v_lr)
             for epoch in range(args.n2v_n_epoch):
