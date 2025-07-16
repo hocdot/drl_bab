@@ -10,6 +10,7 @@ pip3 install -e .
 
 ## Hai Duong
 - [ ] CNN problems ONNX + VNNLIB
+- [ ] Thinking customized loss function towards select better active neurons
 
 ## Thanh Le
 - [x] Extract subgraph based on vnnlib

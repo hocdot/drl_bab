@@ -23,7 +23,7 @@ def prepare_node_embedding(args):
         # save edge_weight + edge_index
         graph_path = os.path.basename(onnx).replace('.onnx', '.pt')
         graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
-        os.makedir(graph_dir, exist_ok=True)
+        os.makedirs(graph_dir, exist_ok=True)
         path = os.path.join(graph_dir, graph_path)
         if os.path.exists(path):
             data = torch.load(path)
@@ -36,7 +36,7 @@ def prepare_node_embedding(args):
         #
         embed_path = os.path.basename(vnnlib).replace('.vnnlib', '.pt')
         embed_dir = os.path.join(args.benchmark_dir, args.benchmark, 'embed')
-        os.makedir(embed_dir, exist_ok=True)
+        os.makedirs(embed_dir, exist_ok=True)
         path = os.path.join(embed_dir, embed_path)
         if os.path.exists(path):
             e = torch.load(path)
@@ -70,6 +70,7 @@ def prepare_node_embedding(args):
             mask = x[0, :, -1]
             node_indices = torch.where(mask == 0)[0]
             e = e[node_indices]
+            e = e.detach().cpu()
             print(f'    - sub graph embedding {e.shape=}')
             # save embedding of active neurons
             torch.save(e, path)
