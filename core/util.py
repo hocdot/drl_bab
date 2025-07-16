@@ -34,6 +34,14 @@ def get_args():
     parser.add_argument('--attacker', type=str, default='pgd')
     # verifier
     parser.add_argument('--solver', type=str, default='random')
+    # node2vec
+    parser.add_argument('--n2v_walk_length', type=int, default=20)
+    parser.add_argument('--n2v_context_size', type=int, default=10)
+    parser.add_argument('--n2v_n_walk_per_node', type=int, default=5)
+    parser.add_argument('--n2v_p', type=float, default=1.0)
+    parser.add_argument('--n2v_q', type=float, default=1.0)
+    parser.add_argument('--n2v_lr', type=float, default=0.01)
+    parser.add_argument('--n2v_n_epoch', type=int, default=100)
     # pointer net
     parser.add_argument('--softmax_temperature', type=float, default=1.0)
     parser.add_argument('--clip_logit', type=float, default=10.0)
