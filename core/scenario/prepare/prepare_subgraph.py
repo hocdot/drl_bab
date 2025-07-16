@@ -14,7 +14,7 @@ def prepare_subgraph(args):
         # load full graph from onnx and vnnlib
         net, input_shape, objs = ns.test.extract_instance(onnx, vnnlib)
         obj = objs.pop(1)
-        iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+        iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
         edge_weight, edge_index = iv.get_edge_data(obj)
         print(f'full graph: {edge_weight.shape=} {edge_index.shape=} {edge_index.max().item()=}')
         # load first observation

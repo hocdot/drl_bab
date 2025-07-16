@@ -55,7 +55,7 @@ def get_args():
     parser.add_argument('--figure_dir', type=str, default='../data/figure')
     parser.add_argument('--data_dir', type=str, default='../data/data')
     parser.add_argument('--csv_dir', type=str, default='../data/csv')
-    parser.add_argument('--benchmark', type=str, default='mnist', choices=['mnist', 'cifar10'])
+    parser.add_argument('--benchmark', type=str, default='cifar10', choices=['mnist', 'cifar10'])
     # plot
     parser.add_argument('--metric', type=str, default='total_reward')
     parser.add_argument('--n_smooth', type=int, default=55)

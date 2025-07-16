@@ -2,6 +2,7 @@ import neuralsat as ns
 import pandas as pd
 import simulator
 import torch
+import tqdm
 import onnx
 import os
 
@@ -25,6 +26,9 @@ def prepare_properties(args):
 
     data = {'onnx': [], 'vnnlib': [], 'timeout': []}
 
+    n_unsat = n_sat = 0
+
+
     for onnx_name in os.listdir(onnx_dir):
         # read onnx
         onnx_path = os.path.join(onnx_dir, onnx_name)
@@ -33,13 +37,15 @@ def prepare_properties(args):
         model.eval()
         # get input data
         dataloader = util.get_dataloader(args)
+
         # loop to create properties
-        for idx, (x, y) in enumerate(dataloader):
+        for idx, (x, y) in enumerate(tqdm.tqdm(dataloader)):
             x = x.to(args.device)
             y = y.to(args.device)
             y_hat = model(x.view(input_shape))
             y_pred = y_hat.argmax(-1)
             # only write properties for input with correct prediction
+            # print('- check y_pred')
             if y_pred == y:
                 # write temporary property
                 path = os.path.join('/tmp', f'{idx}_{onnx_name[:-5]}.vnnlib')
@@ -49,11 +55,13 @@ def prepare_properties(args):
                 # check sat
                 attacker = simulator.attacker.create(net.to(args.device), objs, input_shape, args)
                 is_attacked, _ = attacker.run(timeout=args.prepare_attacker_timeout)
+                # print('- check sat')
                 if not is_attacked:
                     # initialize interactive verifier
-                    iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device='cpu')
+                    iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
                     # extract objective
                     obj = objs.pop(1)
+                    # print('- check unsat')
                     observation = iv.get_initial_node_data(obj)
                     # check if hard property
                     if observation is not None:
@@ -65,7 +73,6 @@ def prepare_properties(args):
                         data['vnnlib'].append(path)
                         data['timeout'].append(args.verifier_timeout)
                         # print progress
-                        print(f'+ found {len(data["onnx"])}/{args.n_property} properties after {idx} trials')
                         if len(data['onnx']) >= args.n_property:
                             # save instances.csv
                             df = pd.DataFrame(data)
@@ -74,3 +81,8 @@ def prepare_properties(args):
                             path = os.path.join(csv_dir, 'instances.csv')
                             df.to_csv(path, header=None)
                             break
+                    else:
+                        n_unsat += 1
+                else:
+                    n_sat += 1
+                print(f'+ found {len(data["onnx"])}/{args.n_property} properties {idx=} {n_sat=} {n_unsat=}')
