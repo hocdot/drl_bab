@@ -58,11 +58,15 @@ def prepare_node_embedding(args):
                              walks_per_node=args.n2v_n_walk_per_node)
             model = model.to(args.device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.n2v_lr)
+
+            # Create the loader for positive and negative random walks
+            loader = model.loader(batch_size=128, shuffle=True)
+
             for epoch in range(args.n2v_n_epoch):
                 total_loss = 0
                 for pos_rw, neg_rw in loader:
                     optimizer.zero_grad()
-                    loss = node2vec.loss(pos_rw, neg_rw)
+                    loss = model.loss(pos_rw, neg_rw)
                     loss.backward()
                     optimizer.step()
                     total_loss += loss.item()
