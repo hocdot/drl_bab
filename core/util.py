@@ -41,7 +41,7 @@ def get_args():
     parser.add_argument('--n2v_p', type=float, default=1.0)
     parser.add_argument('--n2v_q', type=float, default=1.0)
     parser.add_argument('--n2v_lr', type=float, default=0.01)
-    parser.add_argument('--n2v_n_epoch', type=int, default=100)
+    parser.add_argument('--n2v_n_epoch', type=int, default=5)
     # pointer net
     parser.add_argument('--softmax_temperature', type=float, default=1.0)
     parser.add_argument('--clip_logit', type=float, default=10.0)

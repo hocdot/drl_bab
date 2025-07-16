@@ -65,6 +65,8 @@ def prepare_node_embedding(args):
             for epoch in range(args.n2v_n_epoch):
                 total_loss = 0
                 for pos_rw, neg_rw in loader:
+                    pos_rw = pos_rw.to(args.device)
+                    neg_rw = neg_rw.to(args.device)
                     optimizer.zero_grad()
                     loss = model.loss(pos_rw, neg_rw)
                     loss.backward()
