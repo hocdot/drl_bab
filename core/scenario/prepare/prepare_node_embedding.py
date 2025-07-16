@@ -19,7 +19,6 @@ def prepare_node_embedding(args):
         obj = objs.pop(1)
         print(f'    - initializing InteractiveVerifier')
         iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
-        print(f'    - getting edge data')
         # save edge_weight + edge_index
         graph_path = os.path.basename(onnx).replace('.onnx', '.pt')
         graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
@@ -30,6 +29,7 @@ def prepare_node_embedding(args):
             edge_weight = data['edge_weight']
             edge_index = data['edge_index']
         else:
+            print(f'    - getting edge data from InteractiveVerifier')
             edge_weight, edge_index = iv.get_edge_data(obj)
             data = {'edge_weight': edge_weight, 'edge_index': edge_index}
             torch.save(data, path)
@@ -49,10 +49,13 @@ def prepare_node_embedding(args):
             # train embedding
             print(f'[+] train node embedding using Node2Vec')
             data = Data(edge_index=edge_index)
-            n_node = edge_index.max().item()
-            model = Node2Vec(n_node, args.n_embed, args.n2v_walk_length,
-                             args.n2v_context_size, args.n2v_n_walk_per_node,
-                             args.n2v_p, args.n2v_q)
+            model = Node2Vec(edge_index=data.edge_index,
+                             embedding_dim=args.n_embed,
+                             walk_length=args.n2v_walk_length,
+                             p=args.n2v_p,
+                             q=args.n2v_q
+                             context_size=args.n2v_context_size,
+                             walk_per_node=args.n2v_n_walk_per_node)
             model = model.to(args.device)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.n2v_lr)
             for epoch in range(args.n2v_n_epoch):

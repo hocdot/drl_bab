@@ -10,6 +10,6 @@ termcolor
 beartype
 gurobipy
 pandas
-numpy
-torch
+numpy<2
+torch==2.2.0
 onnx
