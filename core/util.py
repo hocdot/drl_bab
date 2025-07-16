@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument('--ns_batch_size', type=int, default=128)
     parser.add_argument('--ns_n_step', type=int, default=20)
     parser.add_argument('--eps', type=float, default=0.01)
-    parser.add_argument('--n_property', type=int, default=10)
+    parser.add_argument('--n_property', type=int, default=200)
     parser.add_argument('--prepare_attacker_timeout', type=float, default=2.)
     parser.add_argument('--verifier_timeout', type=float, default=300.)
     # attacker
@@ -74,6 +74,7 @@ def get_args():
         parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--clear', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     # parse args
     args = parser.parse_args()

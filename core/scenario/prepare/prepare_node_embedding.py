@@ -10,6 +10,15 @@ def prepare_node_embedding(args):
     # load hard instances list
     path = os.path.join(args.benchmark_dir, args.benchmark, 'instances.csv')
     df = pd.read_csv(path, names=['onnx', 'vnnlib', 'timeout'])
+    # clean or create result dirs
+    graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
+    embed_dir = os.path.join(args.benchmark_dir, args.benchmark, 'embed')
+    if args.clear:
+        cmd = f'rm -rf {graph_dir} {embed_dir}'
+        print(cmd)
+        os.system(cmd)
+    os.makedirs(graph_dir, exist_ok=True)
+    os.makedirs(embed_dir, exist_ok=True)
     #
     for i, (onnx, vnnlib, timeout) in df.iterrows():
         # load full graph from onnx and vnnlib
@@ -21,8 +30,6 @@ def prepare_node_embedding(args):
         iv = ns.InteractiveVerifier(net=net, input_shape=input_shape, batch=args.ns_batch_size, device=args.device)
         # save edge_weight + edge_index
         graph_path = os.path.basename(onnx).replace('.onnx', '.pt')
-        graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
-        os.makedirs(graph_dir, exist_ok=True)
         path = os.path.join(graph_dir, graph_path)
         if os.path.exists(path):
             data = torch.load(path)
@@ -35,8 +42,6 @@ def prepare_node_embedding(args):
             torch.save(data, path)
         #
         embed_path = os.path.basename(vnnlib).replace('.vnnlib', '.pt')
-        embed_dir = os.path.join(args.benchmark_dir, args.benchmark, 'embed')
-        os.makedirs(embed_dir, exist_ok=True)
         path = os.path.join(embed_dir, embed_path)
         if os.path.exists(path):
             e = torch.load(path)
@@ -83,4 +88,3 @@ def prepare_node_embedding(args):
             print(f'    - sub graph embedding {e.shape=}')
             # save embedding of active neurons
             torch.save(e, path)
-        break

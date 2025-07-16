@@ -22,6 +22,10 @@ def prepare_properties(args):
     # prepare directory
     onnx_dir = os.path.join(args.benchmark_dir, args.benchmark, 'onnx')
     vnnlib_dir = os.path.join(args.benchmark_dir, args.benchmark, 'vnnlib')
+    if args.clear:
+        cmd = f'rm -rf {vnnlib_dir}'
+        print(cmd)
+        os.system(cmd)
     os.makedirs(vnnlib_dir, exist_ok=True)
 
     data = {'onnx': [], 'vnnlib': [], 'timeout': []}
