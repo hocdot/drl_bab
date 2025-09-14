@@ -1,11 +1,10 @@
+data/
+
 # Ignore __pycache__ folder recursively
 **/__pycache__
 *.pyc
 *.pkl
-data/csv/
-data/figure/
-data/model/
-data/data/
 venv/
 lib/
 venv3.10/
+
