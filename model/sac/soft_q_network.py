@@ -2,7 +2,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch
 
-from . import module
+from model.pointer import Embedding, Glimpse, Encoder, Decoder, Pointer2
 
 class SoftQNetwork(nn.Module):
 
@@ -11,11 +11,11 @@ class SoftQNetwork(nn.Module):
         # save args
         self.args = args
         # init model
-        self.embedding  = module.Embedding(args)
-        self.glimpse    = module.Glimpse(args)
-        self.encoder    = module.Encoder(args)
-        self.decoder    = module.Decoder(args)
-        self.pointer    = module.Pointer2(args)
+        self.embedding  = Embedding(args)
+        self.glimpse    = Glimpse(args)
+        self.encoder    = Encoder(args)
+        self.decoder    = Decoder(args)
+        self.pointer    = Pointer2(args)
         self.init_weight()
 
     def init_weight(self):

@@ -46,7 +46,7 @@ class MILPDataset(Dataset):
         args = self.args
         # check if data exists
         n_instance = eval(f'args.n_{self.args.mode}_episode')
-        label = f'{self.args.mode}_{args.n_var}_{args.n_constraint}_{n_instance}.npz'
+        label = f'{args.dataset}_{self.args.mode}_{args.n_var}_{args.n_constraint}_{n_instance}.npz'
         path = os.path.join(args.dataset_dir, label)
         if os.path.exists(path):
             data   = np.load(path, allow_pickle=True)

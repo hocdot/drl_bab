@@ -14,8 +14,8 @@ class Env:
         self.args = args
         # create dataloader dict
         self.dataloader_dict = create_dataloader(args)
-        if args.mode == 'test':
-            self.loader = iter(self.dataloader_dict[args.mode])
+        # if args.mode == 'test':
+        self.loader = iter(self.dataloader_dict[args.mode])
         self.episode = 0
 
     def load_root(self):

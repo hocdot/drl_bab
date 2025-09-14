@@ -19,7 +19,7 @@ class BaseSolver:
         # test each property
         for _ in range(args.n_test_episode):
             info = self.test_episode()
-            print(info)
+            print('[test]', info)
 
     def test_episode(self):
         # extract args
@@ -47,7 +47,7 @@ class BaseSolver:
         for episode in range(args.n_train_episode * args.n_train_epoch):
             try:
                 info = self.train_episode()
-                print(info)
+                print('[train]', info)
                 if episode % args.n_save == 0 and episode > 0:
                     self.save()
             except KeyboardInterrupt:
