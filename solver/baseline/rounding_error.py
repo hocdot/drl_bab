@@ -19,3 +19,6 @@ class RoundingErrorSolver(BaseSolver):
             # j = np.random.choice(indices)
             action.append(k)
         return action
+
+    def __repr__(self):
+        return f'RoundingErrorSolver(mode={self.args.mode}, dataset={self.args.dataset})'

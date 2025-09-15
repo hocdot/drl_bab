@@ -342,3 +342,6 @@ class SACSolver(BaseSolver):
             self.qf2.eval()
             self.qf1_target.eval()
             self.qf2_target.eval()
+
+    def __repr__(self):
+        return f'SACSolver(mode={self.args.mode}, dataset={self.args.dataset})'

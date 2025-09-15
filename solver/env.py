@@ -141,6 +141,7 @@ class Env:
                         if args.verbose:
                             print(f'    - pruned {len(queue)=}')
                 else:
+                    assert status == 'infeasible', f'{status=} {len(queue)=}'
                     if args.verbose:
                         print(f'    ? {status=} {len(queue)=}')
             # store training information
@@ -149,7 +150,6 @@ class Env:
             train_done.append(done)
             train_reward.append(reward)
         # update self.queue
-        # print(f'{len(self.queue)=} {len(queue)=}')
         while len(self.queue):
             node = self.queue.pop(0)
             del node

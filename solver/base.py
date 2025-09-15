@@ -19,7 +19,7 @@ class BaseSolver:
         # test each property
         for _ in range(args.n_test_episode):
             info = self.test_episode()
-            print('[test]', info)
+            print('[test]', self, info)
 
     def test_episode(self):
         # extract args

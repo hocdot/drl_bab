@@ -17,8 +17,8 @@ def get_args():
     
     # train
     parser.add_argument('--n_train_epoch', type=int, default=1)
-    parser.add_argument('--n_train_episode', type=int, default=10000)
-    parser.add_argument('--n_test_episode', type=int, default=50)
+    parser.add_argument('--n_train_episode', type=int, default=10)
+    parser.add_argument('--n_test_episode', type=int, default=5)
     
     # dataset
     parser.add_argument('--n_var', type=int, default=10)

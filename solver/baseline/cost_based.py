@@ -19,3 +19,6 @@ class CostBasedSolver(BaseSolver):
             # j = np.random.choice(indices)
             action.append(k)
         return action
+
+    def __repr__(self):
+        return f'CostBasedSolver(mode={self.args.mode}, dataset={self.args.dataset})'

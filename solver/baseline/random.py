@@ -16,3 +16,6 @@ class RandomSolver(BaseSolver):
             j = np.random.choice(indices)
             action.append(j)
         return action
+
+    def __repr__(self):
+        return f'RandomSolver(mode={self.args.mode}, dataset={self.args.dataset})'
