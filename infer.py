@@ -5,6 +5,7 @@ from arguments import get_args
 
 if __name__ == '__main__':
     args = get_args()
+    args.mode = 'test'
     for solver_class in [CostBasedDecider, RandomDecider, RoundingErrorDecider, SACDecider]:
         solver = solver_class(args)
         solver.test()

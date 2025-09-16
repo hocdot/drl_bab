@@ -39,31 +39,27 @@ class SACDecider(Base):
         args = self.args
         if isinstance(x, torch.Tensor):
             return x
-        elif isinstance(x, list):
+        
+        if isinstance(x, list):
             if len(x) > 0:
                 if isinstance(x[0], int) or isinstance(x[0], np.int64):
                     x = torch.tensor(x, device=args.device, dtype=torch.long)
                     return x
-                else:
-                    raise NotImplementedError
-            else:
                 raise NotImplementedError
-        elif isinstance(x, np.ndarray):
+            raise NotImplementedError
+        
+        if isinstance(x, np.ndarray):
             if x.dtype == 'float64':
                 x = torch.tensor(x, device=args.device, dtype=torch.float)
                 return x
-            else:
-                raise NotImplementedError
-        else:
             raise NotImplementedError
+        raise NotImplementedError
 
     def inverse_transform(self, x):
-        args = self.args
         if isinstance(x, torch.Tensor):
             x = x.tolist()
             return x
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
 
     def init_hook(self, observation):
         x = self.transform(observation)
@@ -77,7 +73,6 @@ class SACDecider(Base):
         a = self.transform(a)
         e = self.actor.embedding(x)
         z = self.decoder_state
-        print(f'{e.shape=} {a.shape=} {z.shape=}')
         z = self.actor.decoder.gather_z(e, a)
         self.decoder_state = z
 

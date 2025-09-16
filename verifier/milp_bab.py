@@ -10,6 +10,7 @@ class MilpBabSolver:
         self.A = A
         self.b = b
         self.input_bounds = input_bounds
+        self.n_var = c.shape[0]
         
         # init best solution
         self.best_x = None
@@ -23,7 +24,6 @@ class MilpBabSolver:
     
     def branch_and_bound(self, action):
         # branch and bound
-        args = self.args
         queue = []
         expanded_action = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
         train_action = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
@@ -33,11 +33,11 @@ class MilpBabSolver:
         for node, i in zip(self.queue, action):
             # branch
             assert node.active[i] == 1, f'{i=} {node.active[i]=}'
-            if args.verbose:
+            if self.args.verbose:
                 print(f'    * branching {i=} {node.x_opt[i]=}')
             # init
             train_i = np.full([2], i, dtype=np.int64)
-            next_observation = np.zeros([2, args.n_var, args.n_input], dtype=np.float32)
+            next_observation = np.zeros([2, self.n_var, self.args.n_input], dtype=np.float32)
             done = np.ones([2], dtype=np.int32)
             reward = 0
             for j, child in enumerate(node.branch(i)):
@@ -49,7 +49,7 @@ class MilpBabSolver:
                     if child.active.sum() <= 0 and child.primal_estimate > self.best_y: 
                         self.best_x = child.x_opt # best integer solution so far
                         self.best_y = child.primal_estimate
-                        if args.verbose:
+                        if self.args.verbose:
                             print(f'    + found {self.best_y=} {len(queue)=}')
                             print(f'      {self.best_x=} {len(queue)=}')
                     # prune branch with dual bound worst than current best solution
@@ -60,14 +60,14 @@ class MilpBabSolver:
                         next_observation[j, ...] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125
-                        if args.verbose:
+                        if self.args.verbose:
                             print(f'    - appended {len(queue)=}')
                     else:
-                        if args.verbose:
+                        if self.args.verbose:
                             print(f'    - pruned {len(queue)=}')
                 else:
                     assert status == 'infeasible', f'{status=} {len(queue)=}'
-                    if args.verbose:
+                    if self.args.verbose:
                         print(f'    ? {status=} {len(queue)=}')
             # store training information
             train_action.append(train_i)
