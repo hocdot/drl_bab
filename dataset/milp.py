@@ -60,7 +60,7 @@ class MILPDataset(Dataset):
             tic = time.time()
             self.c, self.A, self.b, self.bounds = [], [], [], []
             for i in tqdm.tqdm(range(n_instance)):
-                c, A, b, bounds = generate_hard_ilp(args)
+                c, A, b, bounds = generate_hard_milp(args)
                 self.c.append(c)
                 self.A.append(A)
                 self.b.append(b)
