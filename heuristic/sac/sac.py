@@ -77,6 +77,7 @@ class SACDecider(Base):
         a = self.transform(a)
         e = self.actor.embedding(x)
         z = self.decoder_state
+        print(f'{e.shape=} {a.shape=} {z.shape=}')
         z = self.actor.decoder.gather_z(e, a)
         self.decoder_state = z
 
