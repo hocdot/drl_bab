@@ -7,7 +7,7 @@ import os
 
 from arguments import get_args
 
-def generate_hard_ilp(args):
+def generate_hard_milp(args):
     """
     Generate medium-to-hard 0-1 ILP instances (MDKP-like).
 

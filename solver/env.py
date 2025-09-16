@@ -1,10 +1,7 @@
 import numpy as np
-import torch
-import time
 
-from dataset.milp import generate_hard_ilp
+from dataset.milp import generate_hard_milp
 from dataset import create_dataloader
-
 from . import util
 
 class Env:
@@ -31,11 +28,11 @@ class Env:
             self.b = instance['b'][0]
             self.bounds = instance['bounds'][0]
         elif args.mode == 'train':
-            self.c, self.A, self.b, self.bounds = generate_hard_ilp(args)
+            self.c, self.A, self.b, self.bounds = generate_hard_milp(args)
         else:
             raise NotImplementedError
-        milp = util.create_milp(self.c, self.A, self.b, self.bounds)
-        root = util.Node(milp)
+        lp_model = util.create_model(self.c, self.A, self.b, self.bounds)
+        root = util.Node(lp_model)
         status = root.bound()
         if status == 'optimal':
             self.queue = [root]

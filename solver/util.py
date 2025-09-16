@@ -1,8 +1,8 @@
 from pyscipopt import Model, quicksum
 import numpy as np
-import copy
 
-def create_milp(c, A, b, bounds):
+
+def create_model(c, A, b, bounds):
     # build scip model
     model = Model()
     model.hideOutput()
@@ -20,25 +20,25 @@ def create_milp(c, A, b, bounds):
     model.setObjective(quicksum(float(c[j]) * X[j] for j in range(n_var)), sense='maximize')
     return model
 
-def copy_milp(milp):
-    milp.freeTransform()
-    new_milp = Model(sourceModel=milp)
-    new_milp.hideOutput()
-    return new_milp
+def clone_model(lp_model):
+    lp_model.freeTransform()
+    new_model = Model(sourceModel=lp_model)
+    new_model.hideOutput()
+    return new_model
 
 class Node:
 
-    def __init__(self, milp):
-        self.milp = milp
-        self.X = [x for x in milp.getVars()]
+    def __init__(self, lp_model):
+        self.lp_model = lp_model
+        self.X = [x for x in lp_model.getVars()]
 
     @property
     def primal_estimate(self):
-        return self.milp.getObjVal()
+        return self.lp_model.getObjVal()
 
     @property
     def dual_estimate(self):
-        return self.milp.getDualbound()
+        return self.lp_model.getDualbound()
 
     @property
     def active(self):
@@ -54,24 +54,24 @@ class Node:
         children = []
         x_opt = self.x_opt
         # left child
-        milp = copy_milp(self.milp)
-        X = [x for x in milp.getVars()]
-        milp.addCons(X[i] <= np.floor(x_opt[i]))
-        children.append(Node(milp))
+        lp_model = clone_model(self.lp_model)
+        X = [x for x in lp_model.getVars()]
+        lp_model.addCons(X[i] <= np.floor(x_opt[i]))
+        children.append(Node(lp_model))
         # left child
-        milp = copy_milp(self.milp)
-        X = [x for x in milp.getVars()]
-        milp.addCons(X[i] >= np.ceil(x_opt[i]))
-        children.append(Node(milp))
+        lp_model = clone_model(self.lp_model)
+        X = [x for x in lp_model.getVars()]
+        lp_model.addCons(X[i] >= np.ceil(x_opt[i]))
+        children.append(Node(lp_model))
         return children
 
     def bound(self):
-        self.milp.optimize()
-        sol = self.milp.getBestSol()
-        status = self.milp.getStatus()
+        self.lp_model.optimize()
+        sol = self.lp_model.getBestSol()
+        status = self.lp_model.getStatus()
         if status == 'optimal':
-            self.x_opt = np.array([self.milp.getSolVal(sol, x) for x in self.X], dtype=float)
+            self.x_opt = np.array([self.lp_model.getSolVal(sol, x) for x in self.X], dtype=float)
         return status
 
     def __del__(self):
-        self.milp.freeProb()
+        self.lp_model.freeProb()
