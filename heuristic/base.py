@@ -1,7 +1,7 @@
-from solver.env import Env
+from drl.env import Env
 import torch
 
-class BaseSolver:
+class Base:
 
     def __init__(self, args):
         # save args

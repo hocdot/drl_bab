@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..base import BaseSolver
+from ..base import Base
 
-class RoundingErrorSolver(BaseSolver):
+class RandomDecider(Base):
 
     def __init__(self, args):
         super().__init__(args)
@@ -10,15 +10,12 @@ class RoundingErrorSolver(BaseSolver):
     def select_action(self, observation):
         n_sub, n_var, n_feature = observation.shape
         active = observation[:, :, -1]
-        score = observation[:, :, 0]
         action = []
         for i in range(n_sub):
             indices = np.where(active[i] == 1)[0]
-            j = np.argmax(score[i][indices])
-            k = indices[j]
-            # j = np.random.choice(indices)
-            action.append(k)
+            j = np.random.choice(indices)
+            action.append(j)
         return action
 
     def __repr__(self):
-        return f'RoundingErrorSolver(mode={self.args.mode}, dataset={self.args.dataset})'
+        return f'RandomDecider(mode={self.args.mode}, dataset={self.args.dataset})'

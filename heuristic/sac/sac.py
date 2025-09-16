@@ -5,10 +5,10 @@ import torch
 import os
 
 from .replay_buffer import ReplayBuffer, TrainingData
-from model.sac import Actor, SoftQNetwork
-from ..base import BaseSolver
+from .model import Actor, SoftQNetwork
+from ..base import Base
 
-class SACSolver(BaseSolver):
+class SACDecider(Base):
 
     def __init__(self, args):
         super().__init__(args)
@@ -341,4 +341,4 @@ class SACSolver(BaseSolver):
             self.qf2_target.eval()
 
     def __repr__(self):
-        return f'SACSolver(mode={self.args.mode}, dataset={self.args.dataset})'
+        return f'SACDecider(mode={self.args.mode}, dataset={self.args.dataset})'
