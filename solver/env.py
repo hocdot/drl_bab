@@ -117,13 +117,12 @@ class Env:
                 # only process feasible region
                 if status == 'optimal':
                     # update best feasible solution
-                    if child.active.sum() <= 0:
-                        if child.primal_estimate > self.best_y:
-                            self.best_x = child.x_opt
-                            self.best_y = child.primal_estimate
-                            if args.verbose:
-                                print(f'    + found {self.best_y=} {len(queue)=}')
-                                print(f'      {self.best_x=} {len(queue)=}')
+                    if child.active.sum() <= 0 and child.primal_estimate > self.best_y: 
+                        self.best_x = child.x_opt # best integer solution so far
+                        self.best_y = child.primal_estimate
+                        if args.verbose:
+                            print(f'    + found {self.best_y=} {len(queue)=}')
+                            print(f'      {self.best_x=} {len(queue)=}')
                     # prune branch with dual bound worst than current best solution
                     if child.dual_estimate > self.best_y and child.active.sum() > 0:
                         # add information about new branch

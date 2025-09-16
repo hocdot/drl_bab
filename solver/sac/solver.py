@@ -5,8 +5,8 @@ import torch
 import os
 
 from .replay_buffer import ReplayBuffer, TrainingData
-from ..base import BaseSolver
 from model.sac import Actor, SoftQNetwork
+from ..base import BaseSolver
 
 class SACSolver(BaseSolver):
 
@@ -82,19 +82,16 @@ class SACSolver(BaseSolver):
 
     def select_action(self, observation):
         args = self.args
+        x = self.transform(observation)
+        z = self.decoder_state
         if args.mode == 'train':
-            x = self.transform(observation)
-            z = self.decoder_state
             action, _, _ = self.actor.get_action(x, z)
-            action = self.inverse_transform(action)
         elif args.mode == 'test':
-            x = self.transform(observation)
-            z = self.decoder_state
             logits = self.actor(x, z)
             action = torch.argmax(logits, dim=1)
-            action = self.inverse_transform(action)
         else:
             raise NotImplementedError
+        action = self.inverse_transform(action)
         return action
 
     def select_random_action(self, observation):
@@ -225,11 +222,11 @@ class SACSolver(BaseSolver):
         qv1_a = qv1.gather(1, data.action[:, 0][:, None]).squeeze()
         qv2_a = qv2.gather(1, data.action[:, 0][:, None]).squeeze()
         # begin print debug
-        r_ = data.reward[0].item()
-        done_ = data.done[0]
-        next_qv_ = next_qv[0].item()
-        qv1_a_ = qv1_a[0].item()
-        qv2_a_ = qv2_a[0].item()
+        # r_ = data.reward[0].item()
+        # done_ = data.done[0]
+        # next_qv_ = next_qv[0].item()
+        # qv1_a_ = qv1_a[0].item()
+        # qv2_a_ = qv2_a[0].item()
         # print(f'{r_=} {done_=} {next_qv_=} {qv1_a_=} {qv2_a_=}')
         # print()
         # end print debug
