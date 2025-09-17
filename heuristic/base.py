@@ -1,6 +1,5 @@
 import torch
 import tqdm
-import os
 
 from drl.env import Env
 
@@ -50,39 +49,35 @@ class Base:
         self.args.mode = 'train'
         self.load()
         # test each property
-        with open(os.path.join(self.args.csv_dir, f'{self.args.mode}_{self.args.dataset}_{self.args.solver}.csv'), 'w') as f:
-            f.write('episode,actor_loss,critic_loss,alpha_loss,train_value,test_value\n')
-            for epoch in range(self.args.n_train_epoch):
-                train_infos = []
-                # train
-                pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}')
-                for episode in pbar:
-                    train_info = self.train_episode()
-                    pbar.set_postfix(train_info)
-                    train_infos.append(train_info)
-                
-                # save checkpoint
-                self.save()
-                
-                # test
-                test_infos = self.test(use_tqdm=True)
-                
-                # update info
-                info = {
-                    'actor_loss': sum(info['actor_loss'] for info in train_infos) / self.args.n_train_episode,
-                    'critic_loss': sum(info['critic_loss'] for info in train_infos) / self.args.n_train_episode,
-                    'alpha_loss': sum(info['alpha_loss'] for info in train_infos) / self.args.n_train_episode,
-                    'train_value': sum(info['value'] for info in train_infos),
-                    'test_value': sum(info['value'] for info in test_infos)
-                }
-                print(info)
-                
-                # export csv
-                print(f'{epoch},{info["actor_loss"]},{info["critic_loss"]},{info["alpha_loss"]},{info["train_value"]},{info["test_value"]}', file=f)
-                
+        train_infos = []
+        for epoch in range(self.args.n_train_epoch):
+            # train
+            episode_infos = []
+            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}')
+            for episode in pbar:
+                info = self.train_episode()
+                pbar.set_postfix(info)
+                episode_infos.append(info)
+            
+            # save checkpoint
+            self.save()
+            
+            # test
+            test_infos = self.test(use_tqdm=True)
+            
+            # update info
+            epoch_info = {
+                'epoch': epoch,
+                'actor_loss': sum(info['actor_loss'] for info in episode_infos),
+                'critic_loss': sum(info['critic_loss'] for info in episode_infos),
+                'alpha_loss': sum(info['alpha_loss'] for info in episode_infos),
+                'train_value': sum(info['value'] for info in episode_infos),
+                'test_value': sum(info['value'] for info in test_infos),
+            }
+            print(epoch_info)
+            train_infos.append(epoch_info)
+        return train_infos
                             
-        self.save()
-
 
     def init_hook(self, observation):
         pass

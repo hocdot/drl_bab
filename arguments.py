@@ -27,11 +27,11 @@ def get_args():
     
     # sac parameter
     parser.add_argument('--n_buffer', type=int, default=500000) # 1e6
-    parser.add_argument('--n_start_learning', type=int, default=100) # 20000
+    parser.add_argument('--n_start_learning', type=int, default=10) # 20000
     parser.add_argument('--batch_size', type=int, default=100) # 64 by CleanRL, 12000 to utilize all RTX 4080
-    parser.add_argument('--actor_lr', type=float, default=3e-4) # 3e-4
+    parser.add_argument('--actor_lr', type=float, default=1e-3) # 3e-4
     parser.add_argument('--gamma', type=float, default=0.99)
-    parser.add_argument('--q_lr', type=float, default=3e-4) # 3e-4
+    parser.add_argument('--q_lr', type=float, default=1e-3) # 3e-4
     parser.add_argument('--n_optimize', type=int, default=5)
     parser.add_argument('--n_target_update', type=int, default=1) # 8000
     parser.add_argument('--tau', type=float, default=0.001) # 1.0

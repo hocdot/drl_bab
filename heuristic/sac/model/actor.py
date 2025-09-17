@@ -1,5 +1,4 @@
 from torch.distributions.categorical import Categorical
-import torch.nn.functional as F
 import torch.nn as nn
 import torch
 
@@ -17,6 +16,7 @@ class Actor(nn.Module):
         self.encoder   = Encoder(args)
         self.decoder   = Decoder(args)
         self.pointer   = Pointer(args)
+        self.device    = args.device
         self.init_weight()
 
     def init_weight(self):
@@ -24,35 +24,28 @@ class Actor(nn.Module):
             nn.init.uniform_(p.data, -0.08, 0.08)
 
     def forward(self, x, z):
-        # extract parameters
-        args = self.args
-        bs, n_node, _ = x.shape
-        # init
-        # mask = torch.zeros([bs, n_node], device=args.device)
         mask     = x[:, :, -1]
         sum_mask = (mask.sum(dim=1, keepdims=True) > 0).to(torch.float)
         ones     = torch.ones_like(mask)
         mask     = sum_mask * (mask) + (1 - sum_mask) * ones
-        x = x.to(args.device)
-        embedding, glimpse, encoder, decoder, pointer = \
-                self.embedding, self.glimpse, self.encoder, self.decoder, self.pointer
+        x = x.to(self.device)
         # embed
-        e = embedding(x)
+        e = self.embedding(x)
         # encode
-        ref, (h, c) = encoder(e)
+        ref, (h, c) = self.encoder(e)
         # decode
-        _, (h, c) = decoder(z, h, c)
+        _, (h, c) = self.decoder(z, h, c)
         q = h.squeeze(0)
         # glimpse
-        for i in range(args.n_glimpse):
-            q = glimpse(q, ref, mask)
+        for _ in range(self.args.n_glimpse):
+            q = self.glimpse(q, ref, mask)
         # pointer
-        logits = pointer(q, ref, mask)
+        logits = self.pointer(q, ref, mask)
         return logits
 
     def get_action(self, x, z):
         logits = self(x, z)
-        probs  = F.softmax(logits, dim=1)
+        probs  = logits.softmax(dim=1)
         m      = x[:, :, -1]
         sum_m  = (m.sum(dim=1, keepdims=True) > 0).to(torch.float)
         ones   = torch.ones_like(m)
@@ -63,17 +56,15 @@ class Actor(nn.Module):
         action = policy_dist.sample()
         # Action probabilities for calculating the adapted soft-Q loss
         action_probs = policy_dist.probs
-        log_prob = F.log_softmax(logits, dim=1)
+        log_prob = logits.log_softmax(dim=1)
         return action, log_prob, action_probs
 
     def decode_and_get_action(self, x, a):
-        # extract args
-        args = self.args
         n_subproblem = x.shape[0]
         # compute embedding
         e = self.embedding(x)
         # initialize z
-        z = torch.zeros(n_subproblem, 1, args.n_embed, device=args.device)
+        z = torch.zeros(n_subproblem, 1, self.args.n_embed, device=self.device)
         # gather z after reset (no action has been selected yet)
         indices = torch.where(a == -1)[0]
         if len(indices) > 0:

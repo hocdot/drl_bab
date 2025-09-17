@@ -1,4 +1,3 @@
-import torch.nn.functional as F
 import torch.nn as nn
 import torch
 
@@ -16,6 +15,7 @@ class SoftQNetwork(nn.Module):
         self.encoder    = Encoder(args)
         self.decoder    = Decoder(args)
         self.pointer    = Pointer2(args)
+        self.device     = args.device
         self.init_weight()
 
     def init_weight(self):
@@ -23,35 +23,28 @@ class SoftQNetwork(nn.Module):
             nn.init.uniform_(p.data, -0.08, 0.08)
 
     def forward(self, x, z):
-        # extract parameters
-        args = self.args
-        bs, n_node, _ = x.size()
-        x = x.to(args.device)
+        x = x.to(self.device)
         mask = x[:, :, -1]
-        embedding, glimpse, encoder, decoder, pointer = \
-                self.embedding, self.glimpse, self.encoder, self.decoder, self.pointer
         # embed
-        e = embedding(x)
+        e = self.embedding(x)
         # encode
-        ref, (h, c) = encoder(e)
+        ref, (h, c) = self.encoder(e)
         # decode
-        _, (h, c) = decoder(z, h, c)
+        _, (h, c) = self.decoder(z, h, c)
         q = h.squeeze(0)
         # glimpse
-        for i in range(args.n_glimpse):
-            q = glimpse(q, ref, mask)
+        for i in range(self.args.n_glimpse):
+            q = self.glimpse(q, ref, mask)
         # pointer
-        logits = pointer(q, ref, mask)
+        logits = self.pointer(q, ref, mask)
         return logits
 
     def decode_and_forward(self, x, a):
-        # extract args
-        args = self.args
         n_subproblem = x.shape[0]
         # compute embedding
         e = self.embedding(x)
         # initialize z
-        z = torch.zeros(n_subproblem, 1, args.n_embed, device=args.device)
+        z = torch.zeros(n_subproblem, 1, self.args.n_embed, device=self.device)
         # gather z after reset (no action has been selected yet)
         indices = torch.where(a == -1)[0]
         if len(indices) > 0:

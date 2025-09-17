@@ -22,15 +22,15 @@ class SACDecider(Base):
         self.qf2             = SoftQNetwork(args).to(args.device)
         self.qf1_target      = SoftQNetwork(args).to(args.device)
         self.qf2_target      = SoftQNetwork(args).to(args.device)
-        self.q_optimizer     = optim.Adam(list(self.qf1.parameters()) + list(self.qf2.parameters()), lr=args.q_lr, eps=1e-4)
-        self.actor_optimizer = optim.Adam(list(self.actor.parameters()), lr=args.actor_lr, eps=1e-4)
+        self.q_optimizer     = optim.AdamW(list(self.qf1.parameters()) + list(self.qf2.parameters()), lr=args.q_lr)
+        self.actor_optimizer = optim.AdamW(list(self.actor.parameters()), lr=args.actor_lr)
         self.qf1_target.load_state_dict(self.qf1.state_dict())
         self.qf2_target.load_state_dict(self.qf2.state_dict())
         if args.autotune_entropy:
             self.target_entropy = -args.target_entropy_scale * torch.log(1 / torch.tensor(args.n_var))
             self.log_alpha = torch.zeros(1, requires_grad=True, device=args.device)
             self.alpha = self.log_alpha.exp().item()
-            self.alpha_optimizer = optim.Adam([self.log_alpha], lr=args.actor_lr, eps=1e-4)
+            self.alpha_optimizer = optim.AdamW([self.log_alpha], lr=args.actor_lr)
         else:
             self.alpha = args.alpha
         self.replay_buffer = ReplayBuffer(args.n_buffer)
@@ -217,6 +217,10 @@ class SACDecider(Base):
         qf_loss = qf1_loss + qf2_loss
         self.q_optimizer.zero_grad()
         qf_loss.backward()
+        # print grad to check gradient vanishing/exploding
+        if self.global_step % 10 == 0:  # Print every 100 steps to avoid spam
+            self._print_gradients("Q-Networks", [self.qf1, self.qf2])
+        
         self.q_optimizer.step()
         return qf_loss.item()
 
@@ -233,6 +237,11 @@ class SACDecider(Base):
         actor_loss = (action_probs * (- min_qv)).mean()
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
+        # print grad to check gradient vanishing/exploding
+        
+        if self.global_step % 10 == 0:  # Print every 100 steps to avoid spam
+            self._print_gradients("Actor", [self.actor])
+            
         self.actor_optimizer.step()
         actor_loss = actor_loss.item()
         # train
@@ -301,6 +310,34 @@ class SACDecider(Base):
             self.qf2.eval()
             self.qf1_target.eval()
             self.qf2_target.eval()
+
+    def _print_gradients(self, network_name, networks):
+        """Print gradient statistics to check for vanishing/exploding gradients."""
+        print(f"\n=== {network_name} Gradient Stats (Step {self.global_step}) ===")
+        for i, network in enumerate(networks):
+            network_suffix = f"_{i+1}" if len(networks) > 1 else ""
+            print(f"{network_name}{network_suffix}:")
+            
+            grad_norms = []
+            for name, param in network.named_parameters():
+                if param.grad is not None:
+                    grad_norm = param.grad.norm().item()
+                    grad_norms.append(grad_norm)
+                    if grad_norm < 1e-6:
+                        print(f"  {name}: {grad_norm:.2e} (VANISHING)")
+                    elif grad_norm > 10.0:
+                        print(f"  {name}: {grad_norm:.2e} (EXPLODING)")
+                    else:
+                        print(f"  {name}: {grad_norm:.6f}")
+                else:
+                    print(f"  {name}: None (no gradient)")
+            
+            if grad_norms:
+                mean_grad = sum(grad_norms) / len(grad_norms)
+                max_grad = max(grad_norms)
+                min_grad = min(grad_norms)
+                print(f"  Summary - Mean: {mean_grad:.6f}, Max: {max_grad:.6f}, Min: {min_grad:.6f}")
+            print()
 
     def __repr__(self):
         return f'SACDecider(mode={self.args.mode}, dataset={self.args.dataset})'
