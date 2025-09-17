@@ -9,4 +9,4 @@ if __name__ == '__main__':
     for solver_class in [CostBasedDecider, RandomDecider, RoundingErrorDecider, SACDecider]:
         solver = solver_class(args)
         solver.test()
-        print()
+        

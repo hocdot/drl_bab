@@ -1,5 +1,7 @@
-from drl.env import Env
 import torch
+import tqdm
+
+from drl.env import Env
 
 class Base:
 
@@ -17,9 +19,12 @@ class Base:
         self.load()
         args = self.args
         # test each property
-        for _ in range(args.n_test_episode):
+        infos = []
+        pbar = tqdm.tqdm(range(args.n_test_episode))
+        for _ in pbar:
             info = self.test_episode()
-            print('[test]', self, info)
+            infos.append(info)
+            pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos))
 
     def test_episode(self):
         # extract args
@@ -27,7 +32,7 @@ class Base:
         env  = self.env
         # reset environment
         observation, done = env.reset()
-        info = {'episode': env.episode, 'value': 0}
+        info = {'episode': env.episode, 'value': 0, 'done': done}
         self.init_hook(observation)
         # step loop
         while not done:
@@ -35,8 +40,10 @@ class Base:
                 action = self.select_action(observation)
             next_observation, reward, done, step_info = env.step(action)
             self.step_hook(next_observation)
-            info['value'] += reward
             observation = next_observation
+            # update info
+            info['value'] += reward
+        info['done'] = done
         return info
 
     def train(self):
