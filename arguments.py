@@ -7,6 +7,7 @@ torch.set_printoptions(4, sci_mode=False)
 def create_folders(args):
     os.makedirs(args.dataset_dir, exist_ok=True)
     os.makedirs(args.checkpoint_dir, exist_ok=True)
+    os.makedirs(args.csv_dir, exist_ok=True)
 
 def get_args():
     # create args parser
@@ -16,9 +17,9 @@ def get_args():
     parser.add_argument('--solver', type=str, default='sac')
     
     # train
-    parser.add_argument('--n_train_epoch', type=int, default=1)
-    parser.add_argument('--n_train_episode', type=int, default=10)
-    parser.add_argument('--n_test_episode', type=int, default=5)
+    parser.add_argument('--n_train_epoch', type=int, default=500)
+    parser.add_argument('--n_train_episode', type=int, default=1000)
+    parser.add_argument('--n_test_episode', type=int, default=100)
     
     # dataset
     parser.add_argument('--n_var', type=int, default=10)
@@ -26,8 +27,7 @@ def get_args():
     
     # sac parameter
     parser.add_argument('--n_buffer', type=int, default=500000) # 1e6
-    parser.add_argument('--n_start_learning', type=int, default=5) # 20000
-    parser.add_argument('--n_save', type=int, default=10) # (episodes)
+    parser.add_argument('--n_start_learning', type=int, default=2000) # 20000
     parser.add_argument('--batch_size', type=int, default=100) # 64 by CleanRL, 12000 to utilize all RTX 4080
     parser.add_argument('--actor_lr', type=float, default=1e-3) # 3e-4
     parser.add_argument('--gamma', type=float, default=0.99)
@@ -51,7 +51,7 @@ def get_args():
     parser.add_argument('--checkpoint_dir', type=str, default='./data/checkpoint')
     parser.add_argument('--dataset_dir', type=str, default='./data/dataset')
     # parser.add_argument('--figure_dir', type=str, default='./data/figure')
-    # parser.add_argument('--csv_dir', type=str, default='./data/csv')
+    parser.add_argument('--csv_dir', type=str, default='./data/csv')
     
     # metric
     # parser.add_argument('--metric', type=str, default='value')

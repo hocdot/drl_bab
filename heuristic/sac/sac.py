@@ -126,6 +126,7 @@ class SACDecider(Base):
 
     def train_episode(self):
         # reset environment
+        self.args.mode = 'train'
         observation, done = self.env.reset()
         info = {'episode': self.env.episode, 'step': self.global_step, 'value': 0.0, 'actor_loss': 0.0, 'critic_loss': 0.0, 'alpha_loss': 0.0}
         self.init_hook(observation)
@@ -178,6 +179,7 @@ class SACDecider(Base):
             info['critic_loss'] /= episode_step
             info['alpha_loss'] /= episode_step
         info['n_buffer'] = len(self.replay_buffer)
+        info['done'] = done
         # exit()
         return info
 
