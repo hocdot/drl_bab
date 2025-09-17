@@ -15,7 +15,7 @@ class Env:
 
     def load_instance(self):
         args = self.args
-        if args.mode == 'test':
+        if args.mode == 'test' or 1:
             try:
                 instance = next(self.loader)
             except StopIteration:
@@ -25,6 +25,7 @@ class Env:
             A = instance['A'][0]
             b = instance['b'][0]
             input_bounds = instance['bounds'][0]
+            # print(f'[debug] loaded instance {args.mode}')
         elif args.mode == 'train':
             c, A, b, input_bounds = generate_hard_milp(args)
         else:

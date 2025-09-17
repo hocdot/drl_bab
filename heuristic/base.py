@@ -25,7 +25,7 @@ class Base:
             info = self.test_episode()
             infos.append(info)
             if use_tqdm:
-                pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos))
+                pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos), mode=self.args.mode)
         return infos
 
     def test_episode(self):
@@ -58,9 +58,7 @@ class Base:
                 pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}')
                 for episode in pbar:
                     train_info = self.train_episode()
-                    train_info['global_step'] = self.global_step
                     pbar.set_postfix(train_info)
-                    
                     train_infos.append(train_info)
                 
                 # save checkpoint

@@ -180,6 +180,8 @@ class SACDecider(Base):
             info['alpha_loss'] /= episode_step
         info['n_buffer'] = len(self.replay_buffer)
         info['done'] = done
+        info['global_step'] = self.global_step
+        info['mode'] = self.args.mode
         # exit()
         return info
 
