@@ -26,10 +26,10 @@ class MilpBabSolver:
         # branch and bound
         queue = []
         expanded_action = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
-        train_action = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
-        train_next_observation = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
-        train_done = [] # list<n_subproblem><ndarray:2>: for training
-        train_reward = [] # list<n_subproblem>: for training
+        double_actions = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
+        double_next_observations = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
+        double_dones = [] # list<n_subproblem><ndarray:2>: for training
+        double_rewards = [] # list<n_subproblem>: for training
         for node, i in zip(self.queue, action):
             # branch
             assert node.active[i] == 1, f'{i=} {node.active[i]=}'
@@ -57,12 +57,13 @@ class MilpBabSolver:
                         # add information about new branch
                         queue.append(child)
                         expanded_action.append(i)
-                        next_observation[j, ...] = self.get_node_observation(child)
+                        next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125
                         if self.args.verbose:
                             print(f'    - appended {len(queue)=}')
                     else:
+                        # next_observation[j] = self.get_node_observation(child)
                         if self.args.verbose:
                             print(f'    - pruned {len(queue)=}')
                 else:
@@ -70,10 +71,10 @@ class MilpBabSolver:
                     if self.args.verbose:
                         print(f'    ? {status=} {len(queue)=}')
             # store training information
-            train_action.append(train_i)
-            train_next_observation.append(next_observation)
-            train_done.append(done)
-            train_reward.append(reward)
+            double_actions.append(train_i)
+            double_next_observations.append(next_observation)
+            double_dones.append(done)
+            double_rewards.append(reward)
         
         # update self.queue
         while len(self.queue):
@@ -82,7 +83,7 @@ class MilpBabSolver:
         self.queue = queue
         
         # expanded information for training/inference
-        return train_action, train_next_observation, expanded_action, train_done, train_reward
+        return double_actions, double_next_observations, expanded_action, double_dones, double_rewards
 
 
     def get_info(self):

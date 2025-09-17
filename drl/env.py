@@ -47,16 +47,18 @@ class Env:
 
     def step(self, action):
         # update
-        actions, next_observations, expanded_actions, done, rewards = self.solver.branch_and_bound(action)
-        self.train_action = actions
-        self.train_next_observation = next_observations
+        double_actions, double_next_observations, expanded_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
+        # save for training
+        self.train_action = double_actions
+        self.train_next_observation = double_next_observations
+        self.train_done = double_dones
+        self.train_reward = double_rewards
+        # last actions
         self.expanded_action = expanded_actions
-        self.train_done = done
-        self.train_reward = rewards
         # get reward
         reward = - len(self.solver.queue)
         # get info
-        next_observation = self.solver.get_observation()
+        remaining_next_observation = self.solver.get_observation() # remaining subproblems
         info = self.solver.get_info()
         done = len(self.solver.queue) <= 0
-        return next_observation, reward, done, info
+        return remaining_next_observation, reward, done, info
