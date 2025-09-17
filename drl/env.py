@@ -38,7 +38,7 @@ class Env:
         # load instance
         c, A, b, input_bounds = self.load_instance()
         self.solver = MilpBabSolver(c, A, b, input_bounds, self.args)
-        self.expanded_action = [-1] if len(self.solver.queue) else []
+        self.prev_actions = [-1] if len(self.solver.queue) else []
         # gather observation
         observation = self.solver.get_observation()
         # done
@@ -47,14 +47,14 @@ class Env:
 
     def step(self, action):
         # update
-        double_actions, double_next_observations, expanded_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
+        double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
         # save for training
         self.train_action = double_actions
         self.train_next_observation = double_next_observations
         self.train_done = double_dones
         self.train_reward = double_rewards
         # last actions
-        self.expanded_action = expanded_actions
+        self.prev_actions = prev_actions
         # get reward
         reward = - len(self.solver.queue)
         # get info

@@ -66,7 +66,7 @@ class SACDecider(Base):
 
     def step_hook(self, next_observation):
         x = self.transform(next_observation)
-        a = self.env.expanded_action
+        a = self.env.prev_actions
         if len(a) == 0:
             return
         a = self.transform(a)
@@ -145,7 +145,7 @@ class SACDecider(Base):
                     elif i == 2:
                         action = self.select_rounding_error_action(observation)
             # store previous action
-            pa = np.array(self.env.expanded_action)
+            pa = np.array(self.env.prev_actions)
             # send to environment
             next_observation, reward, done, step_info = self.env.step(action)
             # extract training data

@@ -25,7 +25,7 @@ class MilpBabSolver:
     def branch_and_bound(self, action):
         # branch and bound
         queue = []
-        expanded_action = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
+        prev_actions = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
         double_actions = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_next_observations = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_dones = [] # list<n_subproblem><ndarray:2>: for training
@@ -56,7 +56,7 @@ class MilpBabSolver:
                     if child.dual_estimate > self.best_y and child.active.sum() > 0:
                         # add information about new branch
                         queue.append(child)
-                        expanded_action.append(i)
+                        prev_actions.append(i)
                         next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125
@@ -83,7 +83,7 @@ class MilpBabSolver:
         self.queue = queue
         
         # expanded information for training/inference
-        return double_actions, double_next_observations, expanded_action, double_dones, double_rewards
+        return double_actions, double_next_observations, prev_actions, double_dones, double_rewards
 
 
     def get_info(self):
