@@ -28,7 +28,6 @@ class Base:
         return infos
 
     def test_episode(self):
-        self.args.mode = 'test'
         # reset environment
         observation, done = self.env.reset()
         info = {'episode': self.env.episode, 'value': 0, 'done': done}
@@ -53,7 +52,7 @@ class Base:
         for epoch in range(self.args.n_train_epoch):
             # train
             episode_infos = []
-            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}')
+            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
             for episode in pbar:
                 info = self.train_episode()
                 pbar.set_postfix(info)
@@ -63,7 +62,7 @@ class Base:
             self.save()
             
             # test
-            test_infos = self.test(use_tqdm=True)
+            # test_infos = self.test(use_tqdm=True)
             
             # update info
             epoch_info = {
@@ -72,7 +71,7 @@ class Base:
                 'critic_loss': sum(info['critic_loss'] for info in episode_infos),
                 'alpha_loss': sum(info['alpha_loss'] for info in episode_infos),
                 'train_value': sum(info['value'] for info in episode_infos),
-                'test_value': sum(info['value'] for info in test_infos),
+                # 'test_value': sum(info['value'] for info in test_infos),
             }
             print(epoch_info)
             train_infos.append(epoch_info)

@@ -11,7 +11,11 @@ if __name__ == '__main__':
         solver = SACDecider(args)
     else:
         raise NotImplementedError
-    train_infos = solver.train()
+    
+    try:
+        train_infos = solver.train()
+    except KeyboardInterrupt:
+        print('[+] KeyboardInterrupt')
 
     # export csv
     df = pd.DataFrame(train_infos)

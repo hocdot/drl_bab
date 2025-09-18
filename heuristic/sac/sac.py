@@ -218,7 +218,7 @@ class SACDecider(Base):
         self.q_optimizer.zero_grad()
         qf_loss.backward()
         # print grad to check gradient vanishing/exploding
-        if self.global_step % 10 == 0:  # Print every 100 steps to avoid spam
+        if self.global_step % 10000 == 0:  # Print every 100 steps to avoid spam
             self._print_gradients("Q-Networks", [self.qf1, self.qf2])
         
         self.q_optimizer.step()
@@ -239,7 +239,7 @@ class SACDecider(Base):
         actor_loss.backward()
         # print grad to check gradient vanishing/exploding
         
-        if self.global_step % 10 == 0:  # Print every 100 steps to avoid spam
+        if self.global_step % 10000 == 0:  # Print every 100 steps to avoid spam
             self._print_gradients("Actor", [self.actor])
             
         self.actor_optimizer.step()
