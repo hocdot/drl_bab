@@ -30,6 +30,7 @@ class MilpBabSolver:
         double_next_observations = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_dones = [] # list<n_subproblem><ndarray:2>: for training
         double_rewards = [] # list<n_subproblem>: for training
+        assert len(self.queue) == len(action), f'{len(self.queue)=} {len(action)=}'
         for node, i in zip(self.queue, action):
             # branch
             assert node.active[i] == 1, f'{i=} {node.active[i]=}'
@@ -46,18 +47,19 @@ class MilpBabSolver:
                 # only process feasible region
                 if status == 'optimal':
                     # update best feasible solution
-                    if child.active.sum() <= 0 and child.primal_estimate > self.best_y: 
-                        self.best_x = child.x_opt # best integer solution so far
-                        self.best_y = child.primal_estimate
-                        if self.args.verbose:
-                            print(f'    + found {self.best_y=} {len(queue)=}')
-                            print(f'      {self.best_x=} {len(queue)=}')
+                    if child.active.sum() <= 0:
+                        if child.primal_estimate > self.best_y: 
+                            self.best_x = child.x_opt # best integer solution so far
+                            self.best_y = child.primal_estimate
+                            if self.args.verbose:
+                                print(f'    + found {self.best_y=} {len(queue)=}')
+                                print(f'      {self.best_x=} {len(queue)=}')
                     # prune branch with dual bound worst than current best solution
                     if child.dual_estimate > self.best_y and child.active.sum() > 0:
                         # add information about new branch
                         queue.append(child)
                         prev_actions.append(i)
-                        next_observation[j] = self.get_node_observation(child)
+                        next_observation[j, ...] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125
                         if self.args.verbose:

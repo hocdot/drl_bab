@@ -8,7 +8,8 @@ def create_folders(args):
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(args.dataset_dir, exist_ok=True)
     os.makedirs(args.figure_dir, exist_ok=True)
-    os.makedirs(args.csv_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.csv_dir, 'train'), exist_ok=True)
+    os.makedirs(os.path.join(args.csv_dir, 'test'), exist_ok=True)
 
 def get_args():
     # create args parser
@@ -24,7 +25,7 @@ def get_args():
     
     # dataset
     parser.add_argument('--n_var', type=int, default=10)
-    parser.add_argument('--n_constraint', type=int, default=20)
+    parser.add_argument('--n_constraint', type=int, default=10)
     
     # sac parameter
     parser.add_argument('--n_buffer', type=int, default=500000) # 1e6

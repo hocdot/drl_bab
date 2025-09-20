@@ -9,7 +9,7 @@ from arguments import get_args
 if __name__ == '__main__':
     args = get_args()
     args.mode = 'test'
-    for solver_class in [CostBasedDecider, RandomDecider, RoundingErrorDecider, SACDecider]:
+    for solver_class in [CostBasedDecider, RandomDecider, RoundingErrorDecider, SACDecider][:-1]:
         solver = solver_class(args)
         infos =solver.test()
         df = pd.DataFrame(infos)
