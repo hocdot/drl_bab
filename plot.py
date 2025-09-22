@@ -59,9 +59,14 @@ def plot_line(args):
     label = f'{args.solver}'
     fig, ax = plt.subplots(1, 2)
     for i, metric in enumerate(['actor_loss', 'critic_loss']):
-        path = os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.solver}.csv')
-        y = load(args, path, metric)
-        ax[i].plot(y, '-', label=metric)
+        for n_enc_dec_layer in [1, 2, 3]:
+            for enc_dec_type in ['gru', 'lstm']:
+                label = f'{args.solver}_{enc_dec_type}_{n_enc_dec_layer}'
+                path = os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
+                if not os.path.exists(path):
+                    continue
+                y = load(args, path, metric)
+                ax[i].plot(y, '-', label=label)
         ax[i].set_xlabel('epoch')
         ax[i].set_ylabel('loss')
         ax[i].legend()
@@ -69,8 +74,11 @@ def plot_line(args):
     # save figure
     path = os.path.join(args.figure_dir, f'train_{args.solver}_loss.jpg')
     plt.savefig(path)
+    print(f'[+] saved {path=}')
+    plt.cla()
+    plt.clf()
 
 if __name__ == '__main__':
     args = get_args()
-    plot_cdf(args)
-    # plot_line(args)
+    # plot_cdf(args)
+    plot_line(args)
