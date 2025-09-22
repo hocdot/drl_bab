@@ -17,7 +17,7 @@ def plot_cdf(args):
     # scenarios
     args.dataset = 'milp'
     args.mode = 'test'
-    solvers = ['RandomDecider', 'CostBasedDecider', 'RoundingErrorDecider',  'SACDecider']
+    solvers = ['RandomDecider', 'CostBasedDecider', 'RoundingErrorDecider']
     for solver in solvers:
         # assign args
         args.solver = solver
@@ -27,6 +27,18 @@ def plot_cdf(args):
         y = load(args, path, 'value')
         y = np.sort(y)
         plt.plot(y, label=label)
+    
+    args.solver = 'SACDecider'
+    for n_enc_dec_layer in [1, 2, 3]:
+        for enc_dec_type in ['gru', 'lstm']:
+            label = f'{args.solver}_{enc_dec_type}_{n_enc_dec_layer}'
+            path = os.path.join(args.csv_dir, 'test', f'{args.mode}_{args.dataset}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
+            if not os.path.exists(path):
+                continue
+            y = load(args, path, 'value')
+            y = np.sort(y)
+            plt.plot(y, label=label)
+        
     # decorate
     plt.ylabel(f'value')
     plt.legend()
@@ -34,6 +46,7 @@ def plot_cdf(args):
     # save figure
     path = os.path.join(args.figure_dir, f'cdf.jpg')
     plt.savefig(path)
+    print(f'[+] saved {path=}')
     plt.cla()
     plt.clf()
     
@@ -60,4 +73,4 @@ def plot_line(args):
 if __name__ == '__main__':
     args = get_args()
     plot_cdf(args)
-    plot_line(args)
+    # plot_line(args)

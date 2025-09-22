@@ -24,6 +24,7 @@ class SACDecider(Base):
         self.qf2_target      = SoftQNetwork(args).to(args.device)
         self.q_optimizer     = optim.AdamW(list(self.qf1.parameters()) + list(self.qf2.parameters()), lr=args.q_lr)
         self.actor_optimizer = optim.AdamW(list(self.actor.parameters()), lr=args.actor_lr)
+        self.actor_scaler    = torch.amp.GradScaler(args.device)
         self.qf1_target.load_state_dict(self.qf1.state_dict())
         self.qf2_target.load_state_dict(self.qf2.state_dict())
         if args.autotune_entropy:
@@ -218,7 +219,7 @@ class SACDecider(Base):
         self.q_optimizer.zero_grad()
         qf_loss.backward()
         # print grad to check gradient vanishing/exploding
-        if self.global_step % 10000 == 0:  # Print every 100 steps to avoid spam
+        if self.global_step % 100 == 0:  # Print every 100 steps to avoid spam
             self._print_gradients("Q-Networks", [self.qf1, self.qf2])
         
         self.q_optimizer.step()
@@ -236,13 +237,14 @@ class SACDecider(Base):
         # print(f'{action_probs.shape=} {min_qv.shape=}')
         actor_loss = (action_probs * (- min_qv)).mean()
         self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        # print grad to check gradient vanishing/exploding
+        self.actor_scaler.scale(actor_loss).backward()
+        self.actor_scaler.step(self.actor_optimizer)
+        self.actor_scaler.update()
         
-        if self.global_step % 10000 == 0:  # Print every 100 steps to avoid spam
+        # print grad to check gradient vanishing/exploding
+        if self.global_step % 100 == 0:  # Print every 100 steps to avoid spam
             self._print_gradients("Actor", [self.actor])
             
-        self.actor_optimizer.step()
         actor_loss = actor_loss.item()
         # train
         if self.args.autotune_entropy:
@@ -286,7 +288,7 @@ class SACDecider(Base):
 
     def save(self):
         # save model
-        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}.pt')
+        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
         data = {
             'actor': self.actor.state_dict(),
             'qf1': self.qf1.state_dict(),
@@ -296,7 +298,7 @@ class SACDecider(Base):
         print(f'[+] saved {path}')
 
     def load(self):
-        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}.pt')
+        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
         if os.path.exists(path):
             print(f'[+] loading {path}')
             data = torch.load(path)

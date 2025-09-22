@@ -28,10 +28,11 @@ class SoftQNetwork(nn.Module):
         # embed
         e = self.embedding(x)
         # encode
-        ref, (h, c) = self.encoder(e)
+        ref, (h0, c0) = self.encoder(e)
         # decode
-        _, (h, c) = self.decoder(z, h, c)
-        q = h.squeeze(0)
+        _, (h, _) = self.decoder(z, h0, c0)
+        # q = h.squeeze(0)    
+        q = h[-1] # or mean?
         # glimpse
         for i in range(self.args.n_glimpse):
             q = self.glimpse(q, ref, mask)
