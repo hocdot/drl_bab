@@ -25,10 +25,10 @@ def get_args():
     
     # dataset
     parser.add_argument('--n_var', type=int, default=10)
-    parser.add_argument('--n_constraint', type=int, default=10)
+    parser.add_argument('--n_constraint', type=int, default=20)
     
     # sac parameter
-    parser.add_argument('--enc_dec_type', type=str, default='gru') # lstm
+    parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm
     parser.add_argument('--n_enc_dec_layer', type=int, default=2) # 3
     parser.add_argument('--n_buffer', type=int, default=500000) # 1e6
     parser.add_argument('--n_start_learning', type=int, default=10) # 20000

@@ -15,15 +15,18 @@ def plot_cdf(args):
     plt.cla()
     plt.clf()
     # scenarios
+    plt.figure(figsize=(8, 10))
+    
     args.dataset = 'milp'
     args.mode = 'test'
     solvers = ['RandomDecider', 'CostBasedDecider', 'RoundingErrorDecider']
+    base_path = os.path.join(args.csv_dir, 'test', f'{args.mode}_{args.dataset}_{args.n_var}_{args.n_constraint}')
     for solver in solvers:
         # assign args
         args.solver = solver
         label = f'{args.solver}'
         # load csv
-        path = os.path.join(args.csv_dir, 'test', f'{args.mode}_{args.dataset}_{args.solver}.csv')
+        path = f'{base_path}_{args.solver}.csv'
         y = load(args, path, 'value')
         y = np.sort(y)
         plt.plot(y, label=label)
@@ -32,7 +35,7 @@ def plot_cdf(args):
     for n_enc_dec_layer in [1, 2, 3]:
         for enc_dec_type in ['gru', 'lstm']:
             label = f'{args.solver}_{enc_dec_type}_{n_enc_dec_layer}'
-            path = os.path.join(args.csv_dir, 'test', f'{args.mode}_{args.dataset}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
+            path = f'{base_path}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv'
             if not os.path.exists(path):
                 continue
             y = load(args, path, 'value')
@@ -62,7 +65,7 @@ def plot_line(args):
         for n_enc_dec_layer in [1, 2, 3]:
             for enc_dec_type in ['gru', 'lstm']:
                 label = f'{args.solver}_{enc_dec_type}_{n_enc_dec_layer}'
-                path = os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
+                path = os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.n_var}_{args.n_constraint}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
                 if not os.path.exists(path):
                     continue
                 y = load(args, path, metric)
@@ -80,5 +83,5 @@ def plot_line(args):
 
 if __name__ == '__main__':
     args = get_args()
-    # plot_cdf(args)
-    plot_line(args)
+    plot_cdf(args)
+    # plot_line(args)

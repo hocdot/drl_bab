@@ -312,6 +312,8 @@ class SACDecider(Base):
             self.qf2.eval()
             self.qf1_target.eval()
             self.qf2_target.eval()
+            return True
+        return False
 
     def _print_gradients(self, network_name, networks):
         """Print gradient statistics to check for vanishing/exploding gradients."""
