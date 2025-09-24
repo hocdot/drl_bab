@@ -103,7 +103,14 @@ class SACDecider(Base):
         # reset environment
         self.args.mode = 'train'
         observation, done = self.env.reset()
-        info = {'episode': self.env.episode, 'step': self.global_step, 'value': 0.0, 'actor_loss': 0.0, 'critic_loss': 0.0, 'alpha_loss': 0.0}
+        info = {
+            'episode': self.env.episode, 
+            'step': self.global_step, 
+            'value': 0.0, 
+            'actor_loss': 0.0, 
+            'critic_loss': 0.0, 
+            'alpha_loss': 0.0,
+        }
         self.init_hook(observation)
         episode_step = 0
         # step loop
@@ -155,9 +162,13 @@ class SACDecider(Base):
         # exit()
         return info
 
+    @property
+    def checkpoint_path(self):
+        return os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
+
     def save(self):
         # save model
-        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
+        path = self.checkpoint_path
         data = {
             'actor': self.actor.state_dict(),
             'qf1': self.qf1.state_dict(),
@@ -167,7 +178,7 @@ class SACDecider(Base):
         print(f'[+] saved {path}')
 
     def load(self):
-        path = os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
+        path = self.checkpoint_path
         if os.path.exists(path):
             print(f'[+] loading {path}')
             data = torch.load(path)
