@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-from heuristic.baseline import CostBasedDecider, RandomDecider, RoundingErrorDecider
+from heuristic.milp_baseline import CostBasedDecider, RandomDecider, RoundingErrorDecider
 from heuristic.sac.sac import SACDecider
 from arguments import get_args
 

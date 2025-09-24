@@ -1,4 +1,4 @@
-from verifier.milp_bab import MilpBabSolver
+from milp_solver.milp_bab import MilpBabSolver
 from dataset.milp import generate_hard_milp
 from dataset import create_dataloader
 
