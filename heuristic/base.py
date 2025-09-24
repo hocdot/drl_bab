@@ -36,12 +36,15 @@ class Base:
         while not done:
             with torch.no_grad():
                 action = self.select_action(observation)
-            next_observation, reward, done, step_info = self.env.step(action)
+            next_observation, reward, done, step_info, early_stop = self.env.step(action)
+            if early_stop:
+                break
             self.step_hook(next_observation)
             observation = next_observation
             # update info
             info['value'] += reward
         info['done'] = done
+        info['early_stop'] = early_stop
         return info
 
     def train(self):

@@ -61,4 +61,5 @@ class Env:
         remaining_next_observation = self.solver.get_observation() # remaining subproblems
         info = self.solver.get_info()
         done = len(self.solver.queue) <= 0
-        return remaining_next_observation, reward, done, info
+        early_stop = len(self.solver.queue) >= self.args.n_max_subproblem
+        return remaining_next_observation, reward, done, info, early_stop
