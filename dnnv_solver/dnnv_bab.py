@@ -134,8 +134,8 @@ class DnnvBabSolver:
             else:
                 raise NotImplementedError
             mask = masks[name].view(lb.shape) 
-            assert (lb[torch.where(mask == 0)] < 0).all()
-            assert (ub[torch.where(mask == 0)] > 0).all()
+            assert (lb[torch.where(mask == 1)] < 0).all()
+            assert (ub[torch.where(mask == 1)] > 0).all()
             x = torch.stack([
                 lb.flatten(1),
                 ub.flatten(1),
