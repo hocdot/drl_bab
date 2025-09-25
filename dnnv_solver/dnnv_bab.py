@@ -7,8 +7,8 @@ from .abstractor.utils import new_slopes
 
 from .helper.misc.result import AbstractResults
 
+from .heuristic.util import compute_masks, _compute_babsr_scores
 from .heuristic.domains_list import DomainsList
-from .heuristic.util import compute_masks
 
 from .setting import Settings
 
@@ -155,13 +155,46 @@ class DnnvBabSolver:
         ret.append(x)
         return ret
     
-    def get_observation(self):
+    
+    def get_observation(self, return_fsb_score=False):
         """remaining subproblems"""
         subproblems = self.queue.pick_out_worst_domains(len(self.queue))
+        if return_fsb_score:
+            return self.get_node_data(subproblems), self.get_fsb_score(subproblems)
         return self.get_node_data(subproblems)
         
         
     def get_info(self):
         return None
     
+    def get_fsb_score(self, domain_params: AbstractResults) -> torch.Tensor:
+    
+        masks = compute_masks(
+            lower_bounds=domain_params.lower_bounds,
+            upper_bounds=domain_params.upper_bounds,
+            device=self.device,
+            non_blocking=False,
+        )
+
+        # features
+        batch = len(domain_params.input_lowers)
+        scores_1, scores_2 = _compute_babsr_scores(
+            abstractor=self.abstractor,
+            lower_bounds=domain_params.lower_bounds,
+            upper_bounds=domain_params.upper_bounds,
+            lAs=domain_params.lAs,
+            batch=batch,
+            masks=masks,
+            reduce_op=self.fsb_heuristic.decision_reduceop,
+            number_bounds=domain_params.cs.shape[1]
+        )
+
+        dummy_input = torch.zeros_like(domain_params.input_lowers, device=self.device).flatten(1)
+        dummy_output = torch.zeros_like(domain_params.output_lbs, device=self.device).flatten(1)
+        score_1 = torch.cat([dummy_input] + scores_1 + [dummy_output], dim=-1)
+        score_2 = torch.cat([dummy_input] + scores_2 + [dummy_output], dim=-1)
+        score = torch.stack([score_1, score_2], dim=-1)
+        return score
+    
     from .verifier.utils import _setup_restart, _init_abstractor
+    from .graph.onnx2networkx import get_edge_data
