@@ -66,3 +66,8 @@ def prepare_io(args):
     else:
         for onnx, vnnlib in tqdm.tqdm(instance_generator(args), total=args.n_property):
             read_instance(onnx, vnnlib, args)
+
+if __name__ == '__main__':
+    from arguments import get_args
+    args = get_args()
+    prepare_io(args)

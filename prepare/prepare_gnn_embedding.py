@@ -10,6 +10,7 @@ from torch_geometric.nn import GCNConv
 from .prepare_io import instance_generator, extract_instance
 from dnnv_solver.dnnv_bab import DnnvBabSolver
 
+
 class Embedding(nn.Module):
 
     def __init__(self, n_input, n_hidden, device):
@@ -124,3 +125,9 @@ def prepare_embed(args):
         path = os.path.join(embed_dir, data.name[0])
         torch.save(e, path)
         # print(f'    + saved {e.shape=} at {path}')
+
+
+if __name__ == '__main__':
+    from arguments import get_args
+    args = get_args()
+    prepare_embed(args)
