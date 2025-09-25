@@ -1,5 +1,6 @@
 matplotlib
 pyscipopt
+beartype
 joblib
 pandas
 numpy

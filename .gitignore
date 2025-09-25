@@ -1,4 +1,5 @@
 data/
+rac/
 
 # Ignore __pycache__ folder recursively
 **/__pycache__

@@ -21,6 +21,10 @@ class MilpBabSolver:
         root = Node(lp_model)
         status = root.bound()
         self.queue = [root] if status == 'optimal' else []
+        
+    @property
+    def remaining_subproblem(self):
+        return len(self.queue)
     
     def branch_and_bound(self, action):
         # branch and bound
@@ -30,7 +34,7 @@ class MilpBabSolver:
         double_next_observations = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_dones = [] # list<n_subproblem><ndarray:2>: for training
         double_rewards = [] # list<n_subproblem>: for training
-        assert len(self.queue) == len(action), f'{len(self.queue)=} {len(action)=}'
+        assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
         for node, i in zip(self.queue, action):
             # branch
             assert node.active[i] == 1, f'{i=} {node.active[i]=}'
@@ -79,7 +83,7 @@ class MilpBabSolver:
             double_rewards.append(reward)
         
         # update self.queue
-        while len(self.queue):
+        while self.remaining_subproblem:
             node = self.queue.pop(0)
             del node
         self.queue = queue

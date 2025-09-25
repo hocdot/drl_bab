@@ -19,7 +19,7 @@ def get_args():
     parser.add_argument('--solver', type=str, default='sac')
     
     # train
-    parser.add_argument('--n_train_epoch', type=int, default=100)
+    parser.add_argument('--n_train_epoch', type=int, default=1000)
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
     
