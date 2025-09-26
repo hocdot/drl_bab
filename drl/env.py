@@ -9,11 +9,10 @@ class Env:
         self.args = args
         # create dataloader dict
         self.dataloader_dict = create_dataloader(args)
-        # if args.mode == 'test':
         self.loader = iter(self.dataloader_dict[args.mode])
         self.episode = 0
 
-    def load_instance(self):
+    def load_milp_instance(self):
         args = self.args
         if args.mode == 'test':
             try:
@@ -31,30 +30,38 @@ class Env:
             raise NotImplementedError
         return c, A, b, input_bounds
     
+    def reset_solver(self):
+        if self.args.dataset == 'milp':
+            c, A, b, input_bounds = self.load_milp_instance()
+            solver = MilpBabSolver(c, A, b, input_bounds, self.args)
+        else:
+            raise NotImplementedError
+        return solver
+    
     def reset(self):
-        # extract data
+        # load new instance
         self.episode += 1
         self.n_step = 1
-        # load instance
-        c, A, b, input_bounds = self.load_instance()
-        self.solver = MilpBabSolver(c, A, b, input_bounds, self.args)
+        self.solver = self.reset_solver()
         self.prev_actions = [-1] if self.solver.remaining_subproblem else []
-        # gather observation
         observation = self.solver.get_observation()
-        # done
         done = self.solver.remaining_subproblem <= 0
         return observation, done
 
     def step(self, action):
-        # update
         double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
+        # assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
+        # assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
+        # assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
+        # assert len(double_actions) == len(prev_actions), f'{double_actions=} {prev_actions=}'
+        
         # save for training
-        self.train_action = double_actions
-        self.train_next_observation = double_next_observations
-        self.train_done = double_dones
-        self.train_reward = double_rewards
+        self.train_action = double_actions # (n_subproblem, 2)
+        self.train_next_observation = double_next_observations # (n_subproblem, 2, n_var, n_feature)
+        self.train_done = double_dones # (n_subproblem, 2)
+        self.train_reward = double_rewards # (n_subproblem,)
         # last actions
-        self.prev_actions = prev_actions
+        self.prev_actions = prev_actions # (n_subproblem,)
         # get reward
         reward = - self.solver.remaining_subproblem
         # get info

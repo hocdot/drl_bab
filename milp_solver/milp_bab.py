@@ -63,7 +63,7 @@ class MilpBabSolver:
                         # add information about new branch
                         queue.append(child)
                         prev_actions.append(i)
-                        next_observation[j, ...] = self.get_node_observation(child)
+                        next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125
                         if self.args.verbose:
