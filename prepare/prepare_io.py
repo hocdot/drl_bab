@@ -43,7 +43,7 @@ def read_instance(onnx, vnnlib, args):
         x, y = iv.get_observation(return_fsb_score=True)
         x = torch.cat(x, dim=1)
         y = y.cpu()
-        print(f'{x.shape=} {y.shape=}')
+        print(f'{onnx=} {x.shape=} {y.shape=}')
         exit()
         # print(f'{x[0].max(dim=0)} {x[0].min(dim=0)} {y[0].max(dim=0)} {y[0].min(dim=0)}')
         # save data
