@@ -163,7 +163,7 @@ class SACDecider(Base):
 
     @property
     def checkpoint_path(self):
-        return os.path.join(self.args.checkpoint_dir, f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
+        return os.path.join(self.args.checkpoint_dir, self.args.dataset, f'{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
 
     def save(self):
         # save model
@@ -192,6 +192,7 @@ class SACDecider(Base):
             self.qf1_target.eval()
             self.qf2_target.eval()
             return True
+        print(f'[-] not found {path}')
         return False
 
 
