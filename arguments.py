@@ -6,7 +6,7 @@ torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
     os.makedirs(args.checkpoint_dir, exist_ok=True)
-    os.makedirs(args.dataset_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.dataset_dir, args.dataset), exist_ok=True)
     os.makedirs(args.figure_dir, exist_ok=True)
     os.makedirs(os.path.join(args.csv_dir, 'train'), exist_ok=True)
     os.makedirs(os.path.join(args.csv_dir, 'test'), exist_ok=True)
