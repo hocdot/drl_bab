@@ -133,8 +133,8 @@ class SACDecider(Base):
             nd = np.array(self.env.train_done)
             nr = np.array(self.env.train_reward)
             # push data to replay buffer
-            print('[+] push to replay_buffer')
-            print(f'    - {pa.shape=} {o.shape=} {a.shape=} {no.shape=} {nd.shape=} {nr.shape=}')
+            # print('[+] push to replay_buffer')
+            # print(f'    - {pa.shape=} {o.shape=} {a.shape=} {no.shape=} {nd.shape=} {nr.shape=}')
             for i in range(len(pa)):
                 self.replay_buffer.push(pa[i], o[i], a[i], no[i], nd[i], nr[i])
             # print()

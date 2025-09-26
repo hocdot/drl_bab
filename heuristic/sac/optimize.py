@@ -5,6 +5,9 @@ from .replay_buffer import TrainingData
 
 def print_gradients(self, network_name, networks):
     """Print gradient statistics to check for vanishing/exploding gradients."""
+    if self.global_step % 5000:
+        return
+    
     print(f"\n=== {network_name} Gradient Stats (Step {self.global_step}) ===")
     for i, network in enumerate(networks):
         network_suffix = f"_{i+1}" if len(networks) > 1 else ""
@@ -64,8 +67,7 @@ def optimize_qf(self, data):
     self.q_optimizer.zero_grad()
     qf_loss.backward()
     # print grad to check gradient vanishing/exploding
-    if self.global_step % 100 == 0:  # Print every 100 steps to avoid spam
-        self.print_gradients("Q-Networks", [self.qf1, self.qf2])
+    self.print_gradients("Q-Networks", [self.qf1, self.qf2])
     
     self.q_optimizer.step()
     return qf_loss.item()
@@ -87,8 +89,7 @@ def optimize_actor(self, data):
     self.actor_scaler.update()
     
     # print grad to check gradient vanishing/exploding
-    if self.global_step % 100 == 0:  # Print every 100 steps to avoid spam
-        self.print_gradients("Actor", [self.actor])
+    self.print_gradients("Actor", [self.actor])
         
     actor_loss = actor_loss.item()
     # train
