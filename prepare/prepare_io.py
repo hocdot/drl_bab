@@ -31,13 +31,9 @@ def instance_generator(args):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
 
 def read_instance(onnx, vnnlib, args):
-    # path = vnnlib.replace('/vnnlib', '/io').replace('.vnnlib', '.pt')
     root_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     basename = f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}'
-    # print(f'{path=}')
-    # if os.path.exists(path):
-        # return
-    # initialize iv
+
     net, input_shape, objs = extract_instance(onnx, vnnlib)
     count = 0 
     while len(objs):
@@ -47,18 +43,21 @@ def read_instance(onnx, vnnlib, args):
         
         if os.path.exists(path):
             continue
+        
+        # initialize dnn solver
         iv = DnnvBabSolver(net=net, input_shape=input_shape, objective=obj, args=args)
         print(f'{count=} {onnx=} {vnnlib=} {iv.remaining_subproblem=}')
         if not iv.remaining_subproblem:
             continue
-        # load first observation
-        x, y = iv.get_observation(return_fsb_score=True)
-        x = torch.cat(x, dim=1)
-        y = y.cpu()
+        
+        # extract observation and score
+        observation, score = iv.get_observation(return_fsb_score=True)
+        observation = torch.cat(observation, dim=1)
+        score = score.cpu()
         # print(f'{onnx=} {x.shape=} {y.shape=}')
         # print(f'{x[0].max(dim=0)} {x[0].min(dim=0)} {y[0].max(dim=0)} {y[0].min(dim=0)}')
         # save data
-        data = {'x': x, 'y': y}
+        data = {'observation': observation, 'score': score}
         torch.save(data, path)
         # collect garbage
         del iv
