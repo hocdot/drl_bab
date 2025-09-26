@@ -35,6 +35,7 @@ class DnnvBabSolver:
             decision_topk=10, 
         )
     
+    @property
     def remaining_subproblem(self):
         return len(self.queue)
     
