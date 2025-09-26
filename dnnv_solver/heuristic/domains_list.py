@@ -6,9 +6,6 @@ import torch
 import time
 import os
 
-if typing.TYPE_CHECKING:
-    import abstractor
-
 from ..helper.proof.reasoning_domains import ReasoningDomains
 from ..helper.misc.tensor_storage import TensorStorage
 from ..helper.misc.result import AbstractResults
@@ -24,8 +21,8 @@ class DomainsList:
     "List of unverified branches"
 
     @beartype
-    def __init__(self: 'DomainsList', 
-                 net: 'abstractor.auto_LiRPA.BoundedModule',
+    def __init__(self, 
+                 net, # 'BoundedModule'
                  objective_ids: torch.Tensor,
                  output_lbs: torch.Tensor,
                  input_lowers: torch.Tensor, 
@@ -386,11 +383,14 @@ class DomainsList:
         new_lower_bounds = {k: v[indices].to(device=device, non_blocking=True) for k, v in self.all_lower_bounds.items()}
         new_upper_bounds = {k: v[indices].to(device=device, non_blocking=True) for k, v in self.all_upper_bounds.items()}
 
+        # lAs
+        new_lAs = {k: lA[indices].to(device=device, non_blocking=True) for (k, lA) in self.all_lAs.items()}
+
         # output
         new_output_lowers = self.all_output_lowers[indices].to(device=device, non_blocking=True)
         
         # properties
-        # new_cs = self.all_cs[indices].to(device=device, non_blocking=True)
+        new_cs = self.all_cs[indices].to(device=device, non_blocking=True)
         new_rhs = self.all_rhs[indices].to(device=device, non_blocking=True)
         
         self._check_consistent()
@@ -402,7 +402,8 @@ class DomainsList:
             'lower_bounds': new_lower_bounds, 
             'upper_bounds': new_upper_bounds, 
             'output_lbs': new_output_lowers,
-            # 'cs': new_cs,
+            'lAs': new_lAs,
+            'cs': new_cs,
             'rhs': new_rhs,
         })
         

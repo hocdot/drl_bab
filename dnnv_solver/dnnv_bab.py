@@ -1,4 +1,5 @@
 from beartype import beartype
+import numpy as np
 import torch
 import copy
 
@@ -8,9 +9,8 @@ from .abstractor.utils import new_slopes
 from .helper.misc.result import AbstractResults
 
 from .heuristic.util import compute_masks, _compute_babsr_scores
+from .heuristic.decision_heuristics import DecisionHeuristic
 from .heuristic.domains_list import DomainsList
-
-from .setting import Settings
 
 
 class DnnvBabSolver:
@@ -28,7 +28,12 @@ class DnnvBabSolver:
         
         assert len(objective.lower_bounds) == 1, f'{len(objective.lower_bounds)=}'
         self.queue = self.initialize(objective)
-    
+        
+        self.fsb_heuristic = DecisionHeuristic(
+            input_split=False, 
+            decision_method='smart',
+            decision_topk=10, 
+        )
     
     def remaining_subproblem(self):
         return len(self.queue)
@@ -62,7 +67,7 @@ class DnnvBabSolver:
             lower_bounds=ret.lower_bounds,
             upper_bounds=ret.upper_bounds,
             lAs=ret.lAs,
-            slopes=ret.slopes if Settings.update_interm_bounds else slopes, # pruned slopes
+            slopes=slopes, # pruned slopes
             histories=copy.deepcopy(ret.histories),
             cs=ret.cs,
             rhs=ret.rhs,
@@ -159,7 +164,7 @@ class DnnvBabSolver:
     
     def get_observation(self, return_fsb_score=False):
         """remaining subproblems"""
-        subproblems = self.queue.pick_out_worst_domains(len(self.queue))
+        subproblems = self.queue.pick_out_worst_domains(len(self.queue), device=self.device)
         if return_fsb_score:
             return self.get_node_data(subproblems), self.get_fsb_score(subproblems)
         return self.get_node_data(subproblems)
@@ -197,5 +202,20 @@ class DnnvBabSolver:
         score = torch.stack([score_1, score_2], dim=-1)
         return score
     
+    
+    def _compute_neuron_index_mapping(self, domain_params: AbstractResults) -> None:
+        self.neuron_index_mapping = {}
+        ordered_names = [_.name for _ in self.abstractor.net.split_nodes]
+        count = np.prod(self.input_shape)
+        for name in ordered_names:
+            assert domain_params.lower_bounds[name].shape[0] == 1
+            n_hiddens = domain_params.lower_bounds[name].numel()
+            self.neuron_index_mapping.update(
+                {int(count + i): (name, i, 0.0) for i in range(n_hiddens)}
+            )
+            count += n_hiddens
+        
+        self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}
+
     from .verifier.utils import _setup_restart, _init_abstractor
     from .graph.onnx2networkx import get_edge_data
