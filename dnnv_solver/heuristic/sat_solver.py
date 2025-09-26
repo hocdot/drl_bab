@@ -5,7 +5,7 @@ import torch
 import copy
 import time
 
-from helper.misc.logger import logger
+from ..helper.misc.logger import logger
 
 class SATSolver:
     

@@ -2,19 +2,14 @@ from __future__ import annotations
 from collections import defaultdict
 from beartype import beartype
 import numpy as np
-import typing
 import random
 import torch
 import tqdm
 import os
 
-if typing.TYPE_CHECKING:
-    import abstractor
-    
-from heuristic.util import _compute_babsr_scores
-from helper.misc.result import AbstractResults
-from helper.misc.logger import logger
-from setting import Settings
+from .util import _compute_babsr_scores
+from ..helper.misc.result import AbstractResults
+from ..helper.misc.logger import logger
 
 LARGE = 1e6
 SMALL = 1.0 / LARGE
@@ -31,7 +26,7 @@ class DecisionHeuristic:
 
     @beartype
     @torch.no_grad()
-    def __call__(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', domain_params: AbstractResults) -> torch.Tensor | list[list]:
+    def __call__(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults) -> torch.Tensor | list[list]:
         if self.input_split:
             if (self.decision_method == 'smart') and (domain_params.lAs is not None):
                 return self.smart_input_branching(
@@ -77,7 +72,7 @@ class DecisionHeuristic:
 
 
     @beartype
-    def get_topk_scores(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', domain_params: AbstractResults, 
+    def get_topk_scores(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults, 
                         topk_scores: torch.return_types.topk, topk_backup_scores: torch.return_types.topk, score_length: np.ndarray, 
                         topk: int) -> tuple[torch.Tensor | list, list]:
         # output placeholders
@@ -186,7 +181,7 @@ class DecisionHeuristic:
     
     # hidden branching
     @beartype
-    def smart_hidden_branching(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', 
+    def smart_hidden_branching(self: 'DecisionHeuristic', abstractor, 
                                  domain_params: AbstractResults) -> list[list]:
         batch = len(domain_params.input_lowers)
         topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
@@ -284,7 +279,7 @@ class DecisionHeuristic:
 
 
     @beartype
-    def naive_input_branching(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', 
+    def naive_input_branching(self: 'DecisionHeuristic', abstractor, 
                         domain_params: AbstractResults) -> torch.Tensor:
         n_inputs = domain_params.input_uppers.flatten(1).shape[1]
         topk = min(self.decision_topk, n_inputs)
@@ -323,7 +318,7 @@ class DecisionHeuristic:
     
     
     @beartype
-    def smart_input_branching(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', 
+    def smart_input_branching(self: 'DecisionHeuristic', abstractor, 
                         domain_params: AbstractResults) -> torch.Tensor:
         lAs_factors = domain_params.lAs[abstractor.net.input_name[0]].flatten(2).abs().clamp(min=0.1)
         diff = (domain_params.input_uppers - domain_params.input_lowers).flatten(1).unsqueeze(1)
@@ -335,7 +330,7 @@ class DecisionHeuristic:
 
 
     @beartype
-    def naive_hidden_branching(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', domain_params: AbstractResults, mode: str) -> list[list]:
+    def naive_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults, mode: str) -> list[list]:
         batch = len(domain_params.input_lowers)
         split_node_names = [_.name for _ in abstractor.net.split_nodes]
         split_node_points = {k: abstractor.net.split_activations[k][0][0].get_split_point() for k in split_node_names}
@@ -399,7 +394,7 @@ class DecisionHeuristic:
         
         return decisions
 
-    def get_topk_scores_greedy(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor', domain_params: AbstractResults,
+    def get_topk_scores_greedy(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults,
                         topk_scores: torch.return_types.topk, score_length: np.ndarray, topk: int) -> tuple[torch.Tensor, list]:
         topk_decisions = []
         batch = len(domain_params.input_lowers)
@@ -464,7 +459,7 @@ class DecisionHeuristic:
         return topk_output_lbs, topk_decisions
 
     
-    def greedy_hidden_branching(self: 'DecisionHeuristic', abstractor: 'abstractor.abstractor.NetworkAbstractor',
+    def greedy_hidden_branching(self: 'DecisionHeuristic', abstractor,
                                  domain_params: AbstractResults) -> list[list]:
         # print('brute_force_hidden_branching')
         batch = len(domain_params.input_lowers)

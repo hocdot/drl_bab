@@ -6,9 +6,9 @@ import os
 
 
 from .utils import optimize_dnn, optimize_dnn_2, filter_dnf_pairs, verify_dnf_pairs
-from helper.network.read_onnx import parse_onnx, decompose_pytorch
+from ..helper.network.read_onnx import parse_onnx, decompose_pytorch
 
-from setting import Settings
+from ..setting import Settings
 
 def setup_gpu_tightener_settings():
     config = {

@@ -2,8 +2,8 @@ from beartype import beartype
 import numpy as np
 import torch
 
-from helper.network.read_onnx import custom_quirks
-from helper.spec.read_vnnlib import read_vnnlib
+from ..network.read_onnx import custom_quirks
+from ..spec.read_vnnlib import read_vnnlib
 
 
 class Objective:

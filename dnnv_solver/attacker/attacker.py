@@ -4,15 +4,15 @@ import torch
 import time
 import os
 
-from helper.network.onnx2pytorch import ConvertModel
-from helper.spec.objective import DnfObjectives
+from ..helper.network.onnx2pytorch import ConvertModel
+from ..helper.spec.objective import DnfObjectives
 
-from helper.misc.torch_cuda_memory import is_cuda_out_of_memory, gc_cuda
-from helper.misc.check import check_solution
-from helper.misc.logger import logger
+from ..helper.misc.torch_cuda_memory import is_cuda_out_of_memory, gc_cuda
+from ..helper.misc.check import check_solution
+from ..helper.misc.logger import logger
 
-from attacker.random_attack import RandomAttacker
-from attacker.pgd_attack.general import attack
+from .random_attack import RandomAttacker
+from .pgd_attack.general import attack
 
     
 import pdb

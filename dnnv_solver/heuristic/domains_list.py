@@ -9,14 +9,14 @@ import os
 if typing.TYPE_CHECKING:
     import abstractor
 
-from helper.proof.reasoning_domains import ReasoningDomains
-from helper.misc.tensor_storage import TensorStorage
-from helper.misc.result import AbstractResults
-from helper.misc.logger import logger
+from ..helper.proof.reasoning_domains import ReasoningDomains
+from ..helper.misc.tensor_storage import TensorStorage
+from ..helper.misc.result import AbstractResults
+from ..helper.misc.logger import logger
 
-from abstractor.utils import _copy_history
-from heuristic.util import compute_masks
-from setting import Settings
+from ..abstractor.utils import _copy_history
+from ..heuristic.util import compute_masks
+from ..setting import Settings
 
 
 class DomainsList:

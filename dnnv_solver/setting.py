@@ -10,7 +10,7 @@ except:
     print("[!] Gurobi License not found!")
     USE_GUROBI = False
     
-from configure.advanced import BaseSettings, AdvancedSettings
+from .configure.advanced import BaseSettings, AdvancedSettings
 
 class GlobalSettings(BaseSettings):
 
@@ -82,7 +82,7 @@ class GlobalSettings(BaseSettings):
         # self.skip_preprocess = False
         
         # load specific settings from json
-        if args.setting_file is not None:
+        if hasattr(args, 'setting_file') and args.setting_file is not None:
             assert os.path.exists(args.setting_file), f"Setting file not found: {args.setting_file=}"
             settings = json.load(open(args.setting_file))
             for key, value in settings.items():
@@ -90,3 +90,4 @@ class GlobalSettings(BaseSettings):
                 setattr(self, key, value)
 
 Settings = GlobalSettings()
+Settings.setup()

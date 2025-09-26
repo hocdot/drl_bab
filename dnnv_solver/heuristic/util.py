@@ -5,12 +5,12 @@ import typing
 import torch
 import copy
 
-from helper.misc.result import AbstractResults
-from heuristic.sat_solver import SATSolver
-from helper.misc.logger import logger
+from ..helper.misc.result import AbstractResults
+from ..heuristic.sat_solver import SATSolver
+from ..helper.misc.logger import logger
 
-from abstractor.auto_LiRPA.bound_ops import *
-from abstractor.utils import _append_tensor
+from ..abstractor.auto_LiRPA.bound_ops import *
+from ..abstractor.utils import _append_tensor
 
 if typing.TYPE_CHECKING:
     import abstractor
@@ -31,7 +31,7 @@ def compute_masks(lower_bounds: dict, upper_bounds: dict, device: str, non_block
 
 
 @beartype
-def _compute_babsr_scores(abstractor: 'abstractor.abstractor.NetworkAbstractor', 
+def _compute_babsr_scores(abstractor, 
                           lower_bounds: dict, upper_bounds: dict, 
                           lAs: dict, masks: dict, 
                           reduce_op: Callable, 

@@ -8,32 +8,29 @@ import torch
 import time
 import copy
 import os
-
-if typing.TYPE_CHECKING:
-    import verifier
     
-from heuristic.restart_heuristics import get_restart_strategy, HIDDEN_SPLIT_RESTART_STRATEGIES
-from heuristic.util import compute_masks, _history_to_conflict_clause
-from heuristic.decision_heuristics import DecisionHeuristic
-from heuristic.domains_list import DomainsList
+from ..heuristic.restart_heuristics import get_restart_strategy, HIDDEN_SPLIT_RESTART_STRATEGIES
+from ..heuristic.util import compute_masks, _history_to_conflict_clause
+from ..heuristic.decision_heuristics import DecisionHeuristic
+from ..heuristic.domains_list import DomainsList
 
-from tightener.cpu_tightener import MILPTightener
-from tightener.gpu_tightener import GPUTightener
+from ..tightener.cpu_tightener import MILPTightener
+from ..tightener.gpu_tightener import GPUTightener
 
-from attacker.pgd_attack.general import general_attack
-from attacker.mip_attack import MIPAttacker
-from attacker.attacker import Attacker
+from ..attacker.pgd_attack.general import general_attack
+from ..attacker.mip_attack import MIPAttacker
+from ..attacker.attacker import Attacker
 
-from abstractor.abstractor import NetworkAbstractor
+from ..abstractor.abstractor import NetworkAbstractor
 
-from helper.misc.result import AbstractResults, ReturnStatus
-from helper.proof.create_aptp import create_aptp
-from helper.spec.objective import DnfObjectives
-from helper.misc.check import check_solution
-from helper.misc.logger import logger
+from ..helper.misc.result import AbstractResults, ReturnStatus
+from ..helper.proof.create_aptp import create_aptp
+from ..helper.spec.objective import DnfObjectives
+from ..helper.misc.check import check_solution
+from ..helper.misc.logger import logger
 
 
-from setting import Settings
+from ..setting import Settings
 
 
 def get_used_gpu_memory(return_percentage: bool = False):
@@ -71,7 +68,7 @@ def _check_invoke_mip_presolving(self):
     return True
 
 @beartype
-def _prune_objective(self: verifier.verifier.Verifier, objective: typing.Any) -> typing.Any:
+def _prune_objective(self, objective: typing.Any) -> typing.Any:
     assert self.domains_list is not None
     
     all_remaining_ids = torch.unique(self.domains_list.all_objective_ids.data)
@@ -120,7 +117,7 @@ def _prune_domains(domain_params: AbstractResults, remaining_indices: torch.Tens
 
 
 @beartype
-def _mip_attack(self: verifier.verifier.Verifier, reference_bounds: dict | None) -> tuple[bool, torch.Tensor | None]:
+def _mip_attack(self, reference_bounds: dict | None) -> tuple[bool, torch.Tensor | None]:
     if not Settings.use_attack:
         return False, None
     
@@ -131,7 +128,7 @@ def _mip_attack(self: verifier.verifier.Verifier, reference_bounds: dict | None)
     
     
 @beartype
-def _preprocess(self: verifier.verifier.Verifier, objectives: typing.Any, force_split: str | None = None) -> tuple:
+def _preprocess(self, objectives: typing.Any, force_split: str | None = None) -> tuple:
     # determine search algorithm
     self.refined_betas = None
     
@@ -283,12 +280,12 @@ def _preprocess(self: verifier.verifier.Verifier, objectives: typing.Any, force_
     return objectives, refined_intermediate_bounds
 
 @beartype
-def _check_timeout(self: verifier.verifier.Verifier, timeout: int | float) -> bool:
+def _check_timeout(self, timeout: int | float) -> bool:
     return time.time() - self.start_time > timeout 
 
 
 @beartype
-def _init_abstractor(self: verifier.verifier.Verifier, method: str, objective: typing.Any, extra_opts: dict = {}, preprocess: bool = False) -> None:
+def _init_abstractor(self, method: str, objective: typing.Any, extra_opts: dict = {}, preprocess: bool = False) -> None:
     if hasattr(self, 'abstractor'):
         # del self.abstractor.net
         del self.abstractor
@@ -306,7 +303,7 @@ def _init_abstractor(self: verifier.verifier.Verifier, method: str, objective: t
     
 
 @beartype
-def _setup_restart_naive(self: verifier.verifier.Verifier, nth_restart: int, objective: typing.Any) -> None | dict:
+def _setup_restart_naive(self, nth_restart: int, objective: typing.Any) -> None | dict:
     print(f'[+] _setup_restart_naive')
     self.num_restart = nth_restart + 1
     # TODO: select splitting method (input/hidden)
@@ -347,7 +344,7 @@ def _setup_restart_naive(self: verifier.verifier.Verifier, nth_restart: int, obj
 
 
 @beartype
-def _setup_restart(self: verifier.verifier.Verifier, nth_restart: int, objective: typing.Any) -> None | dict:
+def _setup_restart(self, nth_restart: int, objective: typing.Any) -> None | dict:
     self.num_restart = nth_restart + 1
     params = get_restart_strategy(nth_restart, input_split=self.input_split)
     if params is None:
@@ -413,7 +410,7 @@ def _setup_restart(self: verifier.verifier.Verifier, nth_restart: int, objective
 
 
 @beartype
-def _pre_attack(self: verifier.verifier.Verifier, dnf_objectives: DnfObjectives, 
+def _pre_attack(self, dnf_objectives: DnfObjectives, 
                 timeout: int | float = 10.0) -> tuple[bool, torch.Tensor | None]:
     if Settings.use_attack:
         return Attacker(self.net, dnf_objectives, self.input_shape, device=self.device).run(timeout=timeout)
@@ -427,7 +424,7 @@ def _random_idx(total_samples: int, num_samples: int, device: str = 'cpu') -> to
 
 
 @beartype
-def _attack(self: verifier.verifier.Verifier, domain_params: AbstractResults, timeout: int | float,
+def _attack(self, domain_params: AbstractResults, timeout: int | float,
             n_sample: int = 50, n_interval: int = 1) -> torch.Tensor | None:
     if not Settings.use_attack:
         return None
@@ -489,14 +486,14 @@ def _attack(self: verifier.verifier.Verifier, domain_params: AbstractResults, ti
 
 
 @beartype
-def _get_learned_conflict_clauses(self: verifier.verifier.Verifier) -> dict:
+def _get_learned_conflict_clauses(self) -> dict:
     if hasattr(self.domains_list, 'all_conflict_clauses'):
         return self.domains_list.all_conflict_clauses
     return {}
 
 
 @beartype
-def _check_invoke_cpu_tightening(self: verifier.verifier.Verifier, patience_limit: int = 10):
+def _check_invoke_cpu_tightening(self, patience_limit: int = 10):
     if not hasattr(self, 'milp_tightener'):
         return False
     
@@ -520,7 +517,7 @@ def _check_invoke_cpu_tightening(self: verifier.verifier.Verifier, patience_limi
     return True
     
 @beartype
-def _check_invoke_gpu_tightening(self: verifier.verifier.Verifier, patience_limit: int = 10):
+def _check_invoke_gpu_tightening(self, patience_limit: int = 10):
     if not hasattr(self, 'gpu_tightener'):
         return False
 
@@ -544,7 +541,7 @@ def _check_invoke_gpu_tightening(self: verifier.verifier.Verifier, patience_limi
     
 
 @beartype
-def _update_tightening_patience(self: verifier.verifier.Verifier, minimum_lowers: float, old_domains_length: int) -> None:
+def _update_tightening_patience(self, minimum_lowers: float, old_domains_length: int) -> None:
     current_domains_length = len(self.domains_list)
     if (minimum_lowers > self.last_minimum_lowers) or (current_domains_length <= self.batch):
         self.tightening_patience -= 1
@@ -561,7 +558,7 @@ def _update_tightening_patience(self: verifier.verifier.Verifier, minimum_lowers
             
     
 @beartype
-def _check_full_assignment(self: verifier.verifier.Verifier, domain_params: AbstractResults) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+def _check_full_assignment(self, domain_params: AbstractResults) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if self.input_split:
         return None, None
     
@@ -617,7 +614,7 @@ def _check_full_assignment(self: verifier.verifier.Verifier, domain_params: Abst
 
         
 @beartype
-def _save_stats(self: verifier.verifier.Verifier) -> None:
+def _save_stats(self) -> None:
     for k, v in self._get_learned_conflict_clauses().items():
         if k not in self.all_conflict_clauses:
             self.all_conflict_clauses[k] = []
@@ -627,7 +624,7 @@ def _save_stats(self: verifier.verifier.Verifier) -> None:
         
         
 @beartype
-def get_stats(self: verifier.verifier.Verifier) -> tuple[int, int]:
+def get_stats(self) -> tuple[int, int]:
     depths = {}
     for k, v in self.all_conflict_clauses.items():
         depths[k] = max(map(lambda x: sum(len(_[0]) for _ in x.values()), v)) if len(v) else 0
@@ -636,7 +633,7 @@ def get_stats(self: verifier.verifier.Verifier) -> tuple[int, int]:
 
 
 @beartype
-def _check_adv_f64(self: verifier.verifier.Verifier, adv: torch.Tensor, objective: typing.Any) -> bool:
+def _check_adv_f64(self, adv: torch.Tensor, objective: typing.Any) -> bool:
     lower_bounds_f64 = objective.lower_bounds_f64.view(-1, *self.input_shape[1:]).to(self.device)
     upper_bounds_f64 = objective.upper_bounds_f64.view(-1, *self.input_shape[1:]).to(self.device)
     cs_f64 = objective.cs_f64.to(self.device)
@@ -648,7 +645,7 @@ def _check_adv_f64(self: verifier.verifier.Verifier, adv: torch.Tensor, objectiv
 
 
 @beartype
-def _check_adv(self: verifier.verifier.Verifier, adv: torch.Tensor, objective: typing.Any) -> bool:
+def _check_adv(self, adv: torch.Tensor, objective: typing.Any) -> bool:
     lower_bounds = objective.lower_bounds.view(-1, *self.input_shape[1:]).to(self.device)
     upper_bounds = objective.upper_bounds.view(-1, *self.input_shape[1:]).to(self.device)
     cs = objective.cs.to(self.device)
@@ -659,7 +656,7 @@ def _check_adv(self: verifier.verifier.Verifier, adv: torch.Tensor, objective: t
     return False
 
 @beartype
-def get_unsat_core(self: verifier.verifier.Verifier) -> None | dict:
+def get_unsat_core(self) -> None | dict:
     if self.status != ReturnStatus.UNSAT:
         return None
     
@@ -672,7 +669,7 @@ def get_unsat_core(self: verifier.verifier.Verifier) -> None | dict:
         
         
 @beartype
-def get_proof_tree(self: verifier.verifier.Verifier) -> None | dict:
+def get_proof_tree(self) -> None | dict:
     unsat_core = self.get_unsat_core()
     if not unsat_core:
         return None
@@ -685,7 +682,7 @@ def get_proof_tree(self: verifier.verifier.Verifier) -> None | dict:
         
     
 @beartype
-def export_proof(self: verifier.verifier.Verifier, dnf_objectives: DnfObjectives, output_dir: str) -> None:
+def export_proof(self, dnf_objectives: DnfObjectives, output_dir: str) -> None:
     os.system(f'rm -rf {output_dir}')
     os.makedirs(output_dir, exist_ok=True)
     logger.info(f'Exporting APTP proofs at {output_dir=}')

@@ -15,7 +15,7 @@ except:
     print("onnxsim not found. Please install it with `pip install onnxsim`.")
     use_onnxsim = False
     
-from helper.misc.error import *
+from ..misc.error import *
 from . import onnx2pytorch
 
 custom_quirks = {

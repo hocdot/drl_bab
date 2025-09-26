@@ -20,6 +20,7 @@ class DnnvBabSolver:
         self.net = net
         self.input_shape = input_shape
         self.objective = objective
+        self.device = args.device
     
         # hyper parameters
         self.input_split = False
@@ -33,12 +34,12 @@ class DnnvBabSolver:
         return len(self.queue)
     
     
-    def initialize(self, objective, preconditions: dict, reference_bounds: dict | None) -> DomainsList | list:
+    def initialize(self, objective) -> DomainsList | list:
         # init abstractor
         self._setup_restart(0, objective)
         
         # init bounds
-        ret = self.abstractor.initialize(objective, reference_bounds=reference_bounds)
+        ret = self.abstractor.initialize(objective, reference_bounds=None)
         
         # check verified
         assert len(ret.output_lbs) == len(objective.cs)
@@ -66,7 +67,7 @@ class DnnvBabSolver:
             cs=ret.cs,
             rhs=ret.rhs,
             input_split=self.input_split,
-            preconditions=preconditions,
+            preconditions={},
         )
 
     def branch_and_bound(self, action):

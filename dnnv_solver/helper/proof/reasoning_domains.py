@@ -4,9 +4,9 @@ import torch
 import json
 import os
 
-from helper.misc.tensor_storage import TensorStorage
-from helper.misc.result import AbstractResults
-from setting import Settings
+from ..misc.tensor_storage import TensorStorage
+from ..misc.result import AbstractResults
+from ...setting import Settings
 
 class ReasoningStep:
     

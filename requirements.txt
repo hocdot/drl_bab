@@ -1,6 +1,10 @@
 torch_geometric==2.5.3
+sortedcontainers
+onnxruntime
+torchvision
 matplotlib
 pyscipopt
+gurobipy
 beartype
 joblib
 pandas
@@ -8,3 +12,4 @@ numpy
 scipy
 torch
 tqdm
+onnx

@@ -2,10 +2,10 @@ from beartype import beartype
 import torch
 import time
 
-from helper.network.onnx2pytorch import ConvertModel
+from ...helper.network.onnx2pytorch import ConvertModel
+from ...helper.misc.adam_clipping import AdamClipping
 
 from .util import get_loss, check_adv_multi, serialize_specs
-from helper.misc.adam_clipping import AdamClipping
 
 
 @beartype

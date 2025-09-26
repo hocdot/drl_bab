@@ -1,7 +1,7 @@
 from beartype import beartype
 import torch
 
-from helper.network.onnx2pytorch import ConvertModel
+from ..network.onnx2pytorch import ConvertModel
 
 @beartype
 @torch.no_grad()

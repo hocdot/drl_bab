@@ -4,11 +4,11 @@ import tqdm
 import time
 import os
 
-from attacker.pgd_attack.general import attack as pgd_attack
-from helper.spec.objective import Objective, DnfObjectives
-from helper.misc.adam_clipping import AdamClipping
-from helper.misc.check import check_solution
-from helper.misc.logger import logger
+from ..attacker.pgd_attack.general import attack as pgd_attack
+from ..helper.spec.objective import Objective, DnfObjectives
+from ..helper.misc.adam_clipping import AdamClipping
+from ..helper.misc.check import check_solution
+from ..helper.misc.logger import logger
 
 def generate_simple_specs(dnf_pairs, n_outputs):
     """

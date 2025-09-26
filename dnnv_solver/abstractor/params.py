@@ -1,7 +1,7 @@
 from beartype.typing import Callable
 from beartype import beartype
 
-from setting import Settings
+from ..setting import Settings
 
 @beartype
 def get_check_abstractor_params() -> dict:

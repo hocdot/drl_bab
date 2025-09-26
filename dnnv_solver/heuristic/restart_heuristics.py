@@ -1,6 +1,6 @@
 from beartype import beartype
 
-from setting import Settings
+from ..setting import Settings
 
 INPUT_SPLIT_RESTART_STRATEGIES = [
     {'input_split': True, 'abstract_method': 'forward+backward', 'decision_method': 'naive', 'decision_topk': 1},

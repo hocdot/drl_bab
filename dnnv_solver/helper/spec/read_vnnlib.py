@@ -11,9 +11,8 @@ from pathlib import Path
 import numpy as np
 import tqdm
 import re
-import os
 
-from helper.misc.logger import logger
+from ..misc.logger import logger
 
 @beartype
 def read_statements(vnnlib_filename: Path):
