@@ -55,12 +55,7 @@ class FsbRegression(nn.Module):
 
 def prepare_embed(args):
     # create result dirs if not exist
-    embed_dir = os.path.join(args.benchmark_dir, args.benchmark, 'embed')
-    if args.clear:
-        print(f'[+] clearing caches')
-        cmd = f'rm -rf {embed_dir}'
-        print(f'    $ {cmd}')
-        os.system(cmd)
+    embed_dir = os.path.join(args.dataset_dir, args.dataset, 'embed')
     os.makedirs(embed_dir, exist_ok=True)
     # load graph
     # load a shared edge_index edge_weight

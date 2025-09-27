@@ -30,7 +30,7 @@ def instance_generator(args):
     for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df)):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
 
-def read_instance(onnx, vnnlib, args):
+def process_instance(onnx, vnnlib, args):
     root_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     basename = f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}'
 
@@ -53,11 +53,23 @@ def read_instance(onnx, vnnlib, args):
         # extract observation and score
         observation, score = iv.get_observation(return_fsb_score=True)
         observation = torch.cat(observation, dim=1)
+        edge_weight, edge_index = iv.get_edge_data(obj)
+        
         score = score.cpu()
-        # print(f'{onnx=} {x.shape=} {y.shape=}')
+        observation = observation.cpu()
+        edge_weight = edge_weight.cpu()
+        edge_index = edge_index.cpu()
+        
+        print(f'{onnx=} {observation.shape=} {score.shape=} {edge_weight.shape=} {edge_index.shape=}')
         # print(f'{x[0].max(dim=0)} {x[0].min(dim=0)} {y[0].max(dim=0)} {y[0].min(dim=0)}')
+        
         # save data
-        data = {'observation': observation, 'score': score}
+        data = {
+            'observation': observation, 
+            'score': score,
+            'edge_weight': edge_weight,
+            'edge_index': edge_index,
+        }
         torch.save(data, path)
         # collect garbage
         del iv
@@ -73,9 +85,10 @@ def prepare_io(args):
     # with parallel_config(backend='threading', n_jobs=os.cpu_count()//2):
     #     Parallel()(delayed(read_instance)(onnx, vnnlib, args) for onnx, vnnlib in instance_generator(args))
     for (onnx, vnnlib) in instance_generator(args):
-        read_instance(onnx, vnnlib, args)
+        process_instance(onnx, vnnlib, args)
 
 if __name__ == '__main__':
     from arguments import get_args
     args = get_args()
+    args.device = 'cpu'
     prepare_io(args)

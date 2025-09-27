@@ -17,7 +17,7 @@ class DnnvBabSolver:
     
     def __init__(self, net, input_shape, objective, args):
         self.args = args
-        self.net = net
+        self.net = net.to(args.device)
         self.input_shape = input_shape
         self.objective = objective
         self.device = args.device
@@ -30,7 +30,7 @@ class DnnvBabSolver:
         self.queue = self.initialize(objective)
         
         self.fsb_heuristic = DecisionHeuristic(
-            input_split=False, 
+            input_split=self.input_split, 
             decision_method='smart',
             decision_topk=10, 
         )

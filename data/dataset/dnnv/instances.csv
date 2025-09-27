@@ -1,0 +1,2 @@
+onnx/mnist-net_256x2.onnx,vnnlib/prop_1_0.03.vnnlib
+onnx/mnistfc-medium-net-151.onnx,vnnlib/prop_2_0.03.vnnlib
