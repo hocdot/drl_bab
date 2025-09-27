@@ -178,7 +178,7 @@ class DnnvBabSolver:
     
     def get_observation(self, return_fsb_score=False):
         """remaining subproblems"""
-        subproblems = self.queue.pick_out_worst_domains(len(self.queue), device=self.device)
+        subproblems = self.queue.get_all_domains(device=self.device)
         if return_fsb_score:
             return self.get_node_data(subproblems), self.get_fsb_score(subproblems)
         return self.get_node_data(subproblems)
@@ -216,6 +216,11 @@ class DnnvBabSolver:
         score = torch.stack([score_1, score_2], dim=-1)
         return score
     
+    def get_fsb_action(self) -> torch.Tensor:
+        subproblems = self.queue.get_all_domains(device=self.device)
+        decisions = self.fsb_heuristic(self.abstractor, subproblems)
+        action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]
+        return action
     
     def _compute_neuron_index_mapping(self, domain_params: AbstractResults) -> None:
         self.neuron_index_mapping = {}

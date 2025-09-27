@@ -1,5 +1,7 @@
 from dataset.milp_dataset import generate_hard_milp
 from milp_solver.milp_bab import MilpBabSolver
+from dnnv_solver.dnnv_bab import DnnvBabSolver
+from prepare.prepare_io import extract_instance
 from dataset import create_dataloader
 
 class Env:
@@ -30,17 +32,22 @@ class Env:
         return c, A, b, input_bounds
     
     def load_dnnv_instance(self):
-        if self.args.mode == 'test':
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
+        try:
+            instance = next(self.loader)
+        except StopIteration:
+            self.loader = iter(self.dataloader_dict[self.args.mode])
+            instance = next(self.loader)
+        return instance['onnx'][0], instance['vnnlib'][0]
         
     def reset_solver(self):
         if self.args.dataset == 'milp':
             c, A, b, input_bounds = self.load_milp_instance()
             solver = MilpBabSolver(c, A, b, input_bounds, self.args)
         else:
-            raise NotImplementedError
+            onnx, vnnlib = self.load_dnnv_instance()
+            net, input_shape, objs = extract_instance(onnx, vnnlib)
+            assert len(objs) == 1, f'{len(objs)=}'
+            solver = DnnvBabSolver(net, input_shape, objs, self.args)
         return solver
     
     def reset(self):

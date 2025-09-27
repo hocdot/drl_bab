@@ -409,6 +409,46 @@ class DomainsList:
         
         
     @beartype
+    def get_all_domains(self: 'DomainsList', device: str = 'cpu') -> AbstractResults:
+        indices = torch.arange(len(self), device=device)
+        # objective ids
+        new_objective_ids = self.all_objective_ids.to(device=device, non_blocking=True)
+
+        # input bounds
+        new_input_lowers = self.all_input_lowers[indices].to(device=device, non_blocking=True)
+        new_input_uppers = self.all_input_uppers[indices].to(device=device, non_blocking=True)
+
+        # hidden bounds
+        new_lower_bounds = {k: v[indices].to(device=device, non_blocking=True) for k, v in self.all_lower_bounds.items()}
+        new_upper_bounds = {k: v[indices].to(device=device, non_blocking=True) for k, v in self.all_upper_bounds.items()}
+
+        # lAs
+        new_lAs = {k: lA[indices].to(device=device, non_blocking=True) for (k, lA) in self.all_lAs.items()}
+
+        # output
+        new_output_lowers = self.all_output_lowers[indices].to(device=device, non_blocking=True)
+        
+        # properties
+        new_cs = self.all_cs[indices].to(device=device, non_blocking=True)
+        new_rhs = self.all_rhs[indices].to(device=device, non_blocking=True)
+        
+        self._check_consistent()
+        
+        return AbstractResults(**{
+            'objective_ids': new_objective_ids,
+            'input_lowers': new_input_lowers, 
+            'input_uppers': new_input_uppers, 
+            'lower_bounds': new_lower_bounds, 
+            'upper_bounds': new_upper_bounds, 
+            'output_lbs': new_output_lowers,
+            'lAs': new_lAs,
+            'cs': new_cs,
+            'rhs': new_rhs,
+        })
+        
+        
+        
+    @beartype
     @torch.no_grad()
     def update_refined_bounds(self: 'DomainsList', domain_params: typing.Any) -> None:
         # updating
