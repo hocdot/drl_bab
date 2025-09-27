@@ -33,6 +33,10 @@ def instance_generator(args):
 def process_instance(onnx, vnnlib, args):
     root_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     basename = f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}'
+    
+    graph_dir = os.path.join(args.dataset_dir, args.dataset, 'graph')
+    graph_name = f'{os.path.basename(onnx)}___graph.pt'
+    graph_path = os.path.join(graph_dir, graph_name)
 
     net, input_shape, objs = extract_instance(onnx, vnnlib)
     count = 0 
@@ -53,24 +57,31 @@ def process_instance(onnx, vnnlib, args):
         # extract observation and score
         observation, score = iv.get_observation(return_fsb_score=True)
         observation = torch.cat(observation, dim=1)
-        edge_weight, edge_index = iv.get_edge_data(obj)
         
         score = score.cpu()
         observation = observation.cpu()
-        edge_weight = edge_weight.cpu()
-        edge_index = edge_index.cpu()
-        
-        print(f'{onnx=} {observation.shape=} {score.shape=} {edge_weight.shape=} {edge_index.shape=}')
-        # print(f'{x[0].max(dim=0)} {x[0].min(dim=0)} {y[0].max(dim=0)} {y[0].min(dim=0)}')
-        
+
         # save data
         data = {
             'observation': observation, 
             'score': score,
-            'edge_weight': edge_weight,
-            'edge_index': edge_index,
         }
         torch.save(data, path)
+        
+        # save edge data
+        if not os.path.exists(graph_path):
+            edge_weight, edge_index = iv.get_edge_data(obj)
+            edge_weight = edge_weight.cpu()
+            edge_index = edge_index.cpu()
+            data = {
+                'edge_weight': edge_weight,
+                'edge_index': edge_index,
+            }
+            torch.save(data, graph_path)
+            
+        # print(f'{onnx=} {observation.shape=} {score.shape=}')
+        # print(f'{x[0].max(dim=0)} {x[0].min(dim=0)} {y[0].max(dim=0)} {y[0].min(dim=0)}')
+        
         # collect garbage
         del iv
         gc_cuda()
@@ -80,6 +91,8 @@ def prepare_io(args):
     # create result dirs if not exist
     io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     os.makedirs(io_dir, exist_ok=True)
+    graph_dir = os.path.join(args.dataset_dir, args.dataset, 'graph')
+    os.makedirs(graph_dir, exist_ok=True)
     # form a torch geometric dataset from hard instances list
     print('[+] reading onnxs and vnnlibs')
     # with parallel_config(backend='threading', n_jobs=os.cpu_count()//2):

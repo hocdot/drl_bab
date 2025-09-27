@@ -164,7 +164,7 @@ def prepare_graph(net, input_shape, objective):
                 node_to_id=node_to_id,
             )
         elif isinstance(layer, torch.nn.ReLU):
-            continue
+            pass
         elif isinstance(layer, torch.nn.Flatten):
             layer_node_labels = layer_node_labels.reshape(1, -1)
         elif layer.__class__.__name__ == 'Transpose':
