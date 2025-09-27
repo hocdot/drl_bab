@@ -167,11 +167,10 @@ def prepare_graph(net, input_shape, objective):
             continue
         elif isinstance(layer, torch.nn.Flatten):
             layer_node_labels = layer_node_labels.reshape(1, -1)
+        elif layer.__class__.__name__ == 'Transpose':
+            layer_node_labels = np.transpose(layer_node_labels, layer.dims)
         else:
             print('Unsupported:', layer, type(layer))
-            print(layer.dims)
-            print(layer_node_labels)
-            
             raise
 
         layer_id += 1
