@@ -114,6 +114,7 @@ class DnnvBabSolver:
         new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).tolist()
         new_dones = torch.stack(torch.chunk(dones, 2), dim=1).tolist()
         new_rewards = torch.stack(torch.chunk(rewards, 2), dim=1).tolist()
+        # previous actions align with remaining subproblems, no need to reorder
         new_prev_actions = prev_actions.tolist()
         return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
         
