@@ -87,6 +87,7 @@ class DnnvBabSolver:
         # update queue
         self.queue.add(abstraction_ret, action)
         
+        # TODO: this is NOT in a correct order used in training
         # training information
         double_actions = action * 2
         double_next_observations = self.get_node_data(abstraction_ret)
