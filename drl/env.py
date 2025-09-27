@@ -1,3 +1,5 @@
+import numpy as np
+
 from dataset.milp_dataset import generate_hard_milp
 from milp_solver.milp_bab import MilpBabSolver
 from dnnv_solver.dnnv_bab import DnnvBabSolver
@@ -62,6 +64,8 @@ class Env:
 
     def step(self, action):
         double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
+        # print(f'{np.array(double_actions).shape=} {np.array(double_next_observations).shape=} {np.array(prev_actions).shape=} {np.array(double_dones).shape=} {np.array(double_rewards).shape=}')
+        # print(f'{double_actions=} {prev_actions=} {double_dones=} {double_rewards=}')
         assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
         assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
         assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'

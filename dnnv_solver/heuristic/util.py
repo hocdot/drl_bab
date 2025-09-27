@@ -137,7 +137,7 @@ def _get_bias_term(input_node, ratio: torch.Tensor) -> torch.Tensor:
     
     
 @beartype
-def update_hidden_bounds_histories(self: 'heuristic.domains_list.DomainsList', lower_bounds: dict, upper_bounds: dict, 
+def update_hidden_bounds_histories(self, lower_bounds: dict, upper_bounds: dict, 
                                    histories: list, literal: int, batch_idx: int | torch.Tensor) -> bool:
     assert literal != 0
     # extract decision
@@ -187,7 +187,7 @@ def create_one(masks: dict, clauses: list, var_mapping: dict) -> tuple[SATSolver
 
 
 @beartype
-def init_sat_solver(self: 'heuristic.domains_list.DomainsList', objective_ids: torch.Tensor, remain_idx: torch.Tensor,
+def init_sat_solver(self, objective_ids: torch.Tensor, remain_idx: torch.Tensor,
                     lower_bounds: dict, upper_bounds: dict, histories: list, preconditions: dict) -> torch.Tensor:
     assert torch.equal(objective_ids, torch.unique(objective_ids))
     # initial learned conflict clauses
@@ -233,7 +233,7 @@ def init_sat_solver(self: 'heuristic.domains_list.DomainsList', objective_ids: t
     
     
 @beartype
-def boolean_propagation(self: 'heuristic.domains_list.DomainsList', domain_params: AbstractResults, decisions: list, batch_idx: int | torch.Tensor) -> SATSolver | None:
+def boolean_propagation(self, domain_params: AbstractResults, decisions: list, batch_idx: int | torch.Tensor) -> SATSolver | None:
     assert len(decisions) * 2 == len(domain_params.input_lowers) == len(domain_params.sat_solvers) 
     
     # new solver
@@ -273,7 +273,7 @@ def boolean_propagation(self: 'heuristic.domains_list.DomainsList', domain_param
 
 
 @beartype
-def save_conflict_clauses(self: 'heuristic.domains_list.DomainsList', domain_params: AbstractResults, select_index: torch.Tensor) -> None:
+def save_conflict_clauses(self, domain_params: AbstractResults, select_index: torch.Tensor) -> None:
     assert domain_params.objective_ids is not None
     for i in select_index:
         self.all_conflict_clauses[int(domain_params.objective_ids[i])].append(domain_params.histories[i])

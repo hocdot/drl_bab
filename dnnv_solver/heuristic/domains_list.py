@@ -410,7 +410,7 @@ class DomainsList:
         
     @beartype
     def get_all_domains(self: 'DomainsList', device: str = 'cpu') -> AbstractResults:
-        indices = torch.arange(len(self), device=device)
+        indices = torch.arange(len(self))
         # objective ids
         new_objective_ids = self.all_objective_ids.to(device=device, non_blocking=True)
 
@@ -432,6 +432,18 @@ class DomainsList:
         new_cs = self.all_cs[indices].to(device=device, non_blocking=True)
         new_rhs = self.all_rhs[indices].to(device=device, non_blocking=True)
         
+        # alpha
+        new_slopes = defaultdict(dict)
+        for k, v in self.all_slopes.items():
+            new_slopes[k] = {kk: vv[:, :, indices].to(device=device, non_blocking=True) for (kk, vv) in v.items()}
+            
+        # masks
+        new_masks = compute_masks(
+            lower_bounds=new_lower_bounds, 
+            upper_bounds=new_upper_bounds, 
+            device=device,
+        )
+        
         self._check_consistent()
         
         return AbstractResults(**{
@@ -441,6 +453,8 @@ class DomainsList:
             'lower_bounds': new_lower_bounds, 
             'upper_bounds': new_upper_bounds, 
             'output_lbs': new_output_lowers,
+            'masks': new_masks,
+            'slopes': new_slopes,
             'lAs': new_lAs,
             'cs': new_cs,
             'rhs': new_rhs,

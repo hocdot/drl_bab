@@ -77,15 +77,15 @@ class DnnvBabSolver:
         )
 
     def branch_and_bound(self, action):
-        # pick all subproblems
         assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
-        pick_ret = self.queue.pick_out(len(self.queue))
-        
+        # convert DRL action format to DNNV decision format
+        decisions = [list(self.neuron_index_mapping[a]) for a in action]
+        # pick all subproblems
+        pick_ret = self.queue.pick_out(len(action))
         # bounding
-        abstraction_ret = self.abstractor.forward(action, pick_ret)
-        
+        abstraction_ret = self.abstractor.forward(decisions, pick_ret)
         # update queue
-        self.queue.add(abstraction_ret, action)
+        self.queue.add(abstraction_ret, decisions)
         
         # NOTE: this is NOT in a correct order used in training
         # training information
@@ -94,12 +94,9 @@ class DnnvBabSolver:
         
         # unverified indices
         remaining_index = torch.where((abstraction_ret.output_lbs.detach().cpu() <= abstraction_ret.rhs.detach().cpu()).all(1))[0]
-        double_dones = torch.ones([2 * len(double_actions)], dtype=torch.int32)
+        double_dones = torch.ones_like(double_actions, dtype=torch.int32)
         double_dones[remaining_index] = 0
-        
         double_rewards = sum(torch.chunk(1 - double_dones, 2)) * (-1 / 125) # TODO: magic number
-        double_rewards = double_rewards.tolist()
-        
         # previous actions
         prev_actions = double_actions[remaining_index]
         
@@ -113,14 +110,14 @@ class DnnvBabSolver:
         new_actions = torch.stack(torch.chunk(actions, 2), dim=1).tolist()
         new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).tolist()
         new_dones = torch.stack(torch.chunk(dones, 2), dim=1).tolist()
-        new_rewards = torch.stack(torch.chunk(rewards, 2), dim=1).tolist()
-        # previous actions align with remaining subproblems, no need to reorder
+        # aligned with remaining subproblems, no need to reorder
+        new_rewards = rewards.tolist()
         new_prev_actions = prev_actions.tolist()
         return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
         
         
     @beartype
-    def get_node_data(self, domain_params: AbstractResults) -> list[torch.Tensor]:
+    def get_node_data(self, domain_params: AbstractResults) -> torch.Tensor:
         assert len(domain_params.input_lowers) == len(domain_params.input_uppers)
         # assert all([len(v) == 1 for v in domain_params.lower_bounds.values()])
         # assert all([len(v) == 1 for v in domain_params.upper_bounds.values()])
@@ -173,7 +170,7 @@ class DnnvBabSolver:
         x = torch.stack([lb, ub, bias, mask], dim=-1)
         # print(f'output: {name=} {x.shape=}')
         ret.append(x)
-        return ret
+        return torch.cat(ret, dim=1)
     
     
     def get_observation(self, return_fsb_score=False):
@@ -219,6 +216,7 @@ class DnnvBabSolver:
     def get_fsb_action(self) -> torch.Tensor:
         subproblems = self.queue.get_all_domains(device=self.device)
         decisions = self.fsb_heuristic(self.abstractor, subproblems)
+        # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]
         return action
     
