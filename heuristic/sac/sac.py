@@ -135,6 +135,7 @@ class SACDecider(Base):
             # push data to replay buffer
             # print('[+] push to replay_buffer')
             # print(f'    - {pa.shape=} {o.shape=} {a.shape=} {no.shape=} {nd.shape=} {nr.shape=}')
+            assert len(pa) == len(o) == len(a) == len(no) == len(nd) == len(nr), f'{len(pa)=} {len(o)=} {len(a)=} {len(no)=} {len(nd)=} {len(nr)=}'
             for i in range(len(pa)):
                 self.replay_buffer.push(pa[i], o[i], a[i], no[i], nd[i], nr[i])
             # print()
