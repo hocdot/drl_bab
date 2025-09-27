@@ -1,5 +1,5 @@
+from dataset.milp_dataset import generate_hard_milp
 from milp_solver.milp_bab import MilpBabSolver
-from dataset.milp import generate_hard_milp
 from dataset import create_dataloader
 
 class Env:
@@ -13,23 +13,28 @@ class Env:
         self.episode = 0
 
     def load_milp_instance(self):
-        args = self.args
-        if args.mode == 'test':
+        if self.args.mode == 'test':
             try:
                 instance = next(self.loader)
             except StopIteration:
-                self.loader = iter(self.dataloader_dict[args.mode])
+                self.loader = iter(self.dataloader_dict[self.args.mode])
                 instance = next(self.loader)
             c = instance['c'][0]
             A = instance['A'][0]
             b = instance['b'][0]
             input_bounds = instance['bounds'][0]
-        elif args.mode == 'train':
-            c, A, b, input_bounds = generate_hard_milp(args)
+        elif self.args.mode == 'train':
+            c, A, b, input_bounds = generate_hard_milp(self.args)
         else:
             raise NotImplementedError
         return c, A, b, input_bounds
     
+    def load_dnnv_instance(self):
+        if self.args.mode == 'test':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+        
     def reset_solver(self):
         if self.args.dataset == 'milp':
             c, A, b, input_bounds = self.load_milp_instance()
