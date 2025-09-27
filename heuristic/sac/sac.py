@@ -123,7 +123,7 @@ class SACDecider(Base):
             # store previous action
             pa = np.array(self.env.prev_actions)
             # send to environment
-            next_observation, reward, done, step_info, early_stop = self.env.step(action)
+            remaining_next_observation, reward, done, early_stop = self.env.step(action)
             if early_stop:
                 break
             # extract training data
@@ -147,9 +147,9 @@ class SACDecider(Base):
                     info['alpha_loss'] += alpha_loss
                     episode_step += 1
             # update
-            self.step_hook(next_observation)
+            self.step_hook(remaining_next_observation)
             info['value'] += reward
-            observation = next_observation
+            observation = remaining_next_observation
             self.global_step += 1
         if episode_step > 0:
             info['actor_loss'] /= episode_step

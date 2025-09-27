@@ -50,10 +50,10 @@ class Env:
 
     def step(self, action):
         double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
-        # assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
-        # assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
-        # assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
-        # assert len(double_actions) == len(prev_actions), f'{double_actions=} {prev_actions=}'
+        assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
+        assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
+        assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
+        assert self.solver.remaining_subproblem == len(prev_actions), f'{double_actions=} {prev_actions=}'
         
         # save for training
         self.train_action = double_actions # (n_subproblem, 2)
@@ -66,7 +66,6 @@ class Env:
         reward = - self.solver.remaining_subproblem
         # get info
         remaining_next_observation = self.solver.get_observation() # remaining subproblems
-        info = self.solver.get_info()
         done = self.solver.remaining_subproblem <= 0
         early_stop = self.solver.remaining_subproblem >= self.args.n_max_subproblem
-        return remaining_next_observation, reward, done, info, early_stop
+        return remaining_next_observation, reward, done, early_stop

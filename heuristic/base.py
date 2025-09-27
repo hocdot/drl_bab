@@ -36,11 +36,11 @@ class Base:
         while not done:
             with torch.no_grad():
                 action = self.select_action(observation)
-            next_observation, reward, done, step_info, early_stop = self.env.step(action)
+            remaining_next_observation, reward, done, early_stop = self.env.step(action)
             if early_stop:
                 break
-            self.step_hook(next_observation)
-            observation = next_observation
+            self.step_hook(remaining_next_observation)
+            observation = remaining_next_observation
             # update info
             info['value'] += reward
         info['done'] = done
@@ -64,9 +64,6 @@ class Base:
             # save checkpoint
             self.save()
             
-            # test
-            # test_infos = self.test(use_tqdm=True)
-            
             # update info
             epoch_info = {
                 'epoch': epoch,
@@ -74,7 +71,6 @@ class Base:
                 'critic_loss': sum(info['critic_loss'] for info in episode_infos),
                 'alpha_loss': sum(info['alpha_loss'] for info in episode_infos),
                 'train_value': sum(info['value'] for info in episode_infos),
-                # 'test_value': sum(info['value'] for info in test_infos),
             }
             print(epoch_info)
             train_infos.append(epoch_info)

@@ -87,24 +87,35 @@ class DnnvBabSolver:
         # update queue
         self.queue.add(abstraction_ret, action)
         
-        # TODO: this is NOT in a correct order used in training
+        # NOTE: this is NOT in a correct order used in training
         # training information
-        double_actions = action * 2
+        double_actions = torch.tensor(action * 2)
         double_next_observations = self.get_node_data(abstraction_ret)
         
         # unverified indices
         remaining_index = torch.where((abstraction_ret.output_lbs.detach().cpu() <= abstraction_ret.rhs.detach().cpu()).all(1))[0]
         double_dones = torch.ones([2 * len(double_actions)], dtype=torch.int32)
         double_dones[remaining_index] = 0
-        double_dones = double_dones.tolist()
         
         double_rewards = sum(torch.chunk(1 - double_dones, 2)) * (-1 / 125) # TODO: magic number
         double_rewards = double_rewards.tolist()
         
         # previous actions
-        prev_actions = torch.tensor(double_actions)[remaining_index].tolist()
+        prev_actions = double_actions[remaining_index]
         
-        return double_actions, double_next_observations, prev_actions, double_dones, double_rewards
+        # NOTE: correct order used in training
+        return self._reorder_tensors(double_actions, double_next_observations, prev_actions, double_dones, double_rewards)
+    
+    def _reorder_tensors(self, actions, next_observations, prev_actions, dones, rewards):
+        '''
+            Convert [a1, b1, c1, a2, b2, c2] to [[a1, a2], [b1, b2], [c1, c2]]
+        '''
+        new_actions = torch.stack(torch.chunk(actions, 2), dim=1).tolist()
+        new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).tolist()
+        new_dones = torch.stack(torch.chunk(dones, 2), dim=1).tolist()
+        new_rewards = torch.stack(torch.chunk(rewards, 2), dim=1).tolist()
+        new_prev_actions = prev_actions.tolist()
+        return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
         
         
     @beartype

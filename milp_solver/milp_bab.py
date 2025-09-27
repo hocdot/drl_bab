@@ -69,7 +69,7 @@ class MilpBabSolver:
                         if self.args.verbose:
                             print(f'    - appended {len(queue)=}')
                     else:
-                        # next_observation[j] = self.get_node_observation(child)
+                        next_observation[j] = self.get_node_observation(child)
                         if self.args.verbose:
                             print(f'    - pruned {len(queue)=}')
                 else:
