@@ -99,7 +99,8 @@ def prepare_embed(args):
         loss = total_loss / len(loader)
         print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {i=} {loss=:0.6f}')
     # exporting embedding
-    print('[+] exporting GCN embeddings')
+    loader = DataLoader(data_list, batch_size=1, shuffle=False)
+    print(f'[+] exporting GCN embeddings for {len(loader)=} instances')
     for i, data in enumerate(tqdm.tqdm(loader)):
         # forward
         indices = torch.where(data.x[0, :, -1] == 1)[0] # 1 - not selected, 0 - selected

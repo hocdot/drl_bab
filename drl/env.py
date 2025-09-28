@@ -1,6 +1,7 @@
 from beartype import beartype
 import numpy as np
 import torch
+import os
 
 from dataset.milp_dataset import generate_hard_milp
 from milp_solver.milp_bab import MilpBabSolver
@@ -47,11 +48,16 @@ class Env:
         if self.args.dataset == 'milp':
             c, A, b, input_bounds = self.load_milp_instance()
             solver = MilpBabSolver(c, A, b, input_bounds, self.args)
+            self.observation_embedding = None
         else:
             onnx, vnnlib = self.load_dnnv_instance()
             net, input_shape, objs = extract_instance(onnx, vnnlib)
             assert len(objs) == 1, f'{len(objs)=}'
             solver = DnnvBabSolver(net, input_shape, objs, self.args)
+            # load observation embedding
+            embed_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'embed')
+            embed_path = os.path.join(embed_dir, f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
+            self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
         return solver
     
     def reset(self):
@@ -62,7 +68,24 @@ class Env:
         self.prev_actions = [-1] if self.solver.remaining_subproblem else []
         done = self.solver.remaining_subproblem <= 0
         observation = self.solver.get_observation() if not done else None
+        assert len(observation) == 1, f'{len(observation)=}'
+        if self.observation_embedding is not None:
+            init_mask = torch.tensor(observation[..., -1])
+            self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
+            # print(f'{self.active_neuron_index=}')
+            observation = self._concat_observation_embedding(observation)
         return observation, done
+    
+    def _concat_observation_embedding(self, observation):
+        if self.observation_embedding is None:
+            return observation
+        new_observation = observation[:, self.active_neuron_index] # (B, n_active_neuron, n_raw_feature)
+        # print(f'{new_observation=}')
+        obs_emb = self.observation_embedding.unsqueeze(0).expand(new_observation.size(0), -1, -1)  # (B, n_active_neuron, gnn_embedding)
+        new_observation = torch.cat([obs_emb, new_observation], dim=-1)
+        assert ((new_observation[..., -1] == 0) | (new_observation[..., -1] == 1)).all(), f'{new_observation[..., -1]=}'
+        # print(f'{new_observation.shape=} {self.observation_embedding.shape=} {self.active_neuron_index.shape=}')
+        return new_observation
 
     @beartype
     def step(self, action) -> tuple[np.ndarray | torch.Tensor, int, bool, bool]:
