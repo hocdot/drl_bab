@@ -82,7 +82,7 @@ class DnnvBabSolver:
         # convert DRL action format to DNNV decision format
         decisions = [list(self.neuron_index_mapping[a]) for a in action]
         # pick all subproblems
-        pick_ret = self.queue.pick_out(len(action))
+        pick_ret = self.queue.pick_out(len(action), device=self.device)
         # bounding
         abstraction_ret = self.abstractor.forward(decisions, pick_ret)
         # update queue
