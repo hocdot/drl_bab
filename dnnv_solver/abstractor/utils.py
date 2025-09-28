@@ -191,7 +191,9 @@ def update_histories(self, histories: list[dict], decisions: list[list]) -> list
     for i, h in enumerate(double_histories):
         bi = i % batch
         n_name, n_id, n_point = decisions[bi]
-        # FIXME: check repeated decisions
+        # check repeated decisions for relu only
+        if (n_id in h[n_name][0]) and (n_point == 0):
+            raise ValueError(f'Repeated decision: {n_name=} {n_id=} {n_point=}')
         loc = _append_tensor(h[n_name][0], n_id, dtype=torch.long)
         sign = _append_tensor(h[n_name][1], +1 if i < batch else -1)
         beta = _append_tensor(h[n_name][2], n_point)
