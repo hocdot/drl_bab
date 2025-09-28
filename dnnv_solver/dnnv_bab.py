@@ -128,7 +128,7 @@ class DnnvBabSolver:
         lb = domain_params.input_lowers.flatten(1).cpu()
         ub = domain_params.input_uppers.flatten(1).cpu()
         bias = torch.zeros_like(lb).cpu()
-        mask = torch.zeros_like(lb).cpu() # convert to heursitic form: 1 - not selected, 0 - selected
+        mask = torch.zeros_like(lb).cpu() # 1 - not selected, 0 - selected
         x = torch.stack([lb, ub, bias, mask], dim=-1)
         # print(f'input: {x.shape=}')
         ret.append(x)
@@ -158,7 +158,7 @@ class DnnvBabSolver:
                 lb.flatten(1),
                 ub.flatten(1),
                 bias.flatten(1),
-                mask.flatten(1), # convert to heursitic form: 1 - not selected, 0 - selected
+                mask.flatten(1), # 1 - not selected, 0 - selected
             ], dim=-1)
             ret.append(x)
             # print(f'hidden: {name=} {x.shape=}')
@@ -167,7 +167,7 @@ class DnnvBabSolver:
         lb = domain_params.output_lbs.flatten(1).cpu()
         ub = torch.zeros_like(lb).cpu()
         bias = torch.zeros_like(lb).cpu()
-        mask = torch.zeros_like(lb).cpu() # convert to heursitic form: 1 - not selected, 0 - selected
+        mask = torch.zeros_like(lb).cpu() # 1 - not selected, 0 - selected
         x = torch.stack([lb, ub, bias, mask], dim=-1)
         # print(f'output: {name=} {x.shape=}')
         ret.append(x)
