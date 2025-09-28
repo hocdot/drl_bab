@@ -1,5 +1,6 @@
 from beartype import beartype
 import numpy as np
+import torch
 
 from dataset.milp_dataset import generate_hard_milp
 from milp_solver.milp_bab import MilpBabSolver
@@ -59,12 +60,12 @@ class Env:
         self.n_step = 1
         self.solver = self.reset_solver()
         self.prev_actions = [-1] if self.solver.remaining_subproblem else []
-        observation = self.solver.get_observation()
         done = self.solver.remaining_subproblem <= 0
+        observation = self.solver.get_observation() if not done else None
         return observation, done
 
     @beartype
-    def step(self, action) -> tuple[np.ndarray, int, bool, bool]:
+    def step(self, action) -> tuple[np.ndarray | torch.Tensor, int, bool, bool]:
         double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
         # print(f'{np.array(double_actions).shape=} {np.array(double_next_observations).shape=} {np.array(prev_actions).shape=} {np.array(double_dones).shape=} {np.array(double_rewards).shape=}')
         # print(f'{double_actions=} {prev_actions=} {double_dones=} {double_rewards=}')

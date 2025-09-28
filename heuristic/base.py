@@ -31,6 +31,9 @@ class Base:
         # reset environment
         observation, done = self.env.reset()
         info = {'episode': self.env.episode, 'value': 0, 'done': done}
+        if done:
+            return info
+        
         self.init_hook(observation)
         # step loop
         while not done:
