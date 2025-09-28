@@ -97,7 +97,7 @@ class DnnvBabSolver:
         remaining_index = torch.where((abstraction_ret.output_lbs.detach().cpu() <= abstraction_ret.rhs.detach().cpu()).all(1))[0]
         double_dones = torch.ones_like(double_actions, dtype=torch.int32)
         double_dones[remaining_index] = 0
-        double_rewards = sum(torch.chunk(1 - double_dones, 2)) * (-1 / 125) # TODO: magic number
+        double_rewards = sum(torch.chunk(1 - double_dones, 2)) * (-1 / 50) # TODO: magic number
         # previous actions
         prev_actions = double_actions[remaining_index]
         

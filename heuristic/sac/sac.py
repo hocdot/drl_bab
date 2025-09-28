@@ -38,25 +38,22 @@ class SACDecider(Base):
 
     def transform(self, x):
         if isinstance(x, torch.Tensor):
-            return x
+            return x.to(self.args.device)
         
         if isinstance(x, list):
             if len(x) > 0:
                 if isinstance(x[0], int) or isinstance(x[0], np.int64):
-                    x = torch.tensor(x, device=self.args.device, dtype=torch.long)
-                    return x
+                    return torch.tensor(x, device=self.args.device, dtype=torch.long)
                 raise NotImplementedError
             raise NotImplementedError
         
         if isinstance(x, np.ndarray):
             if x.dtype == 'float64':
-                x = torch.tensor(x, device=self.args.device, dtype=torch.float)
-                return x
+                return torch.tensor(x, device=self.args.device, dtype=torch.float)
             if x.dtype == 'int64':
-                x = torch.tensor(x, device=self.args.device, dtype=torch.long)
-                return x
-            print(f'{x.shape=} {x.dtype=}')
+                return torch.tensor(x, device=self.args.device, dtype=torch.long)
             raise NotImplementedError
+        print(f'{x.shape=} {x.dtype=}')
         raise NotImplementedError
 
     def inverse_transform(self, x):
@@ -94,13 +91,16 @@ class SACDecider(Base):
         return action
     
     def select_heuristic_action(self, observation):
-        i = self.global_step % 3
-        if i == 0:
-            action = select_random_action(observation)
-        elif i == 1:
-            action = select_cost_based_action(observation)
-        elif i == 2:
-            action = select_rounding_error_action(observation)
+        if self.args.dataset == 'milp':
+            i = self.global_step % 3
+            if i == 0:
+                action = select_random_action(observation)
+            elif i == 1:
+                action = select_cost_based_action(observation)
+            elif i == 2:
+                action = select_rounding_error_action(observation)
+        else:
+            action = self.env.solver.get_fsb_action()
         return action
 
     def train_episode(self):
@@ -114,8 +114,9 @@ class SACDecider(Base):
             'critic_loss': 0.0, 
             'alpha_loss': 0.0,
         }
-        self.init_hook(observation)
+        self.init_hook(observation) if not done else None
         episode_step = 0
+        early_stop = False
         # step loop
         while not done:
             # select action
