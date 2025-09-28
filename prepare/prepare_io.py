@@ -68,7 +68,8 @@ def process_instance(onnx, vnnlib, args):
     
     # extract observation and score
     observation, score = iv.get_observation(return_fsb_score=True)
-    observation = torch.cat(observation, dim=1)
+    print(f'{observation.shape=} {score.shape=}')
+    # observation = torch.cat(observation, dim=1)
     
     # save io data
     score = score.cpu()
