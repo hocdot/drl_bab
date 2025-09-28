@@ -91,6 +91,7 @@ def process_instance(onnx, vnnlib, args):
 
 def prepare_io(args):
     # create result dirs if not exist
+    assert args.dataset == 'dnnv', f'{args.dataset=}'
     io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     os.makedirs(io_dir, exist_ok=True)
     graph_dir = os.path.join(args.dataset_dir, args.dataset, 'graph')
