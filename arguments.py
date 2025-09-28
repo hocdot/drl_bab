@@ -52,6 +52,12 @@ def get_args():
     parser.add_argument('--n_input', type=int, default=3)
     parser.add_argument('--n_embed', type=int, default=128)
     
+    # gcn embedding parameter
+    parser.add_argument('--gcn_embed_n_hidden', type=int, default=128)
+    parser.add_argument('--gcn_embed_n_epoch', type=int, default=100)
+    parser.add_argument('--gcn_embed_batch_size', type=int, default=128)
+    parser.add_argument('--gcn_embed_lr', type=float, default=1e-3)
+    
     # data directory
     parser.add_argument('--checkpoint_dir', type=str, default='./data/checkpoint')
     parser.add_argument('--dataset_dir', type=str, default='./data/dataset')

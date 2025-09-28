@@ -54,47 +54,35 @@ class FsbRegression(nn.Module):
         return y_hat
 
 def prepare_embed(args):
+    assert args.dataset == 'dnnv', f'{args.dataset=}'
     # create result dirs if not exist
     embed_dir = os.path.join(args.dataset_dir, args.dataset, 'embed')
     os.makedirs(embed_dir, exist_ok=True)
     # load graph
-    # load a shared edge_index edge_weight
-    for onnx, vnnlib in instance_generator(args):
+    # FIXME: handle multiple graphs
+    for onnx, _ in instance_generator('instances.csv',args):
         break
-    graph_dir = os.path.join(args.benchmark_dir, args.benchmark, 'graph')
-    graph_path = os.path.basename(onnx).replace('.onnx', '.pt')
-    path = os.path.join(graph_dir, graph_path)
-    os.makedirs(graph_dir, exist_ok=True)
-    if os.path.exists(path):
-        data = torch.load(path)
-        edge_weight = data['edge_weight']
-        edge_index = data['edge_index']
-    else:
-        net, input_shape, objs = extract_instance(onnx, vnnlib)
-        obj = objs.pop(1)
-        iv = DnnvBabSolver(net=net, input_shape=input_shape, objective=obj, args=args)
-        edge_weight, edge_index = iv.get_edge_data(obj)
-        data = {'edge_weight': edge_weight, 'edge_index': edge_index}
-        torch.save(data, path)
+    graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
+    data = torch.load(graph_path)
+    edge_weight = data['edge_weight']
+    edge_index = data['edge_index']
     # load prepared io
-    io_dir = os.path.join(args.benchmark_dir, args.benchmark, 'io')
+    io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     data_list = []
     print('[+] loading preprocessed io')
     for name in tqdm.tqdm(os.listdir(io_dir)):
         path = os.path.join(io_dir, name)
         data = torch.load(path)
-        data = Data(x=data['x'],
-                    y=data['y'],
-                    name=os.path.basename(path))
+        data = Data(x=data['observation'], y=data['score'], name=os.path.basename(path))
         data_list.append(data)
     # create dataloader from graphs dataset
-    loader = DataLoader(data_list, batch_size=args.gcn_batch_size, shuffle=True)
-    #
-    net = FsbRegression(4, args.gcn_n_hidden, 2, args.device).to(args.device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=args.gcn_lr)
+    loader = DataLoader(data_list, batch_size=args.gcn_embed_batch_size, shuffle=True)
+    # initialize model
+    net = FsbRegression(4, args.gcn_embed_n_hidden, 2, args.device).to(args.device)
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.gcn_embed_lr)
     # training loop
     print('[+] training FsbRegression using GCNConv')
-    for epoch in range(args.gcn_n_epoch):
+    for epoch in range(args.gcn_embed_n_epoch):
         total_loss = 0
         for i, data in enumerate(loader):
             optimizer.zero_grad()
@@ -109,17 +97,17 @@ def prepare_embed(args):
             # if i > 1000:
             #     break
         loss = total_loss / len(loader)
-        print(f'    * {epoch=}/{args.gcn_n_epoch} {i=} {loss=:0.6f}')
+        print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {i=} {loss=:0.6f}')
     # exporting embedding
     print('[+] exporting GCN embeddings')
     for i, data in enumerate(tqdm.tqdm(loader)):
         # forward
-        indices = torch.where(data.x[0, :, -1] == 0)[0]
+        indices = torch.where(data.x[0, :, -1] == 1)[0] # 1 - not selected, 0 - selected
         e = net.embedding(data, edge_index, edge_weight)[0, indices].detach().cpu()
         # save gcn embedding
         path = os.path.join(embed_dir, data.name[0])
         torch.save(e, path)
-        # print(f'    + saved {e.shape=} at {path}')
+        print(f'    + saved {e.shape=} at {path}')
 
 
 if __name__ == '__main__':
