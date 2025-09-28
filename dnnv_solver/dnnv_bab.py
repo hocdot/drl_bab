@@ -76,7 +76,8 @@ class DnnvBabSolver:
             preconditions={},
         )
 
-    def branch_and_bound(self, action):
+    @beartype
+    def branch_and_bound(self, action) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
         # convert DRL action format to DNNV decision format
         decisions = [list(self.neuron_index_mapping[a]) for a in action]
@@ -107,12 +108,12 @@ class DnnvBabSolver:
         '''
             Convert [a1, b1, c1, a2, b2, c2] to [[a1, a2], [b1, b2], [c1, c2]]
         '''
-        new_actions = torch.stack(torch.chunk(actions, 2), dim=1).tolist()
-        new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).tolist()
-        new_dones = torch.stack(torch.chunk(dones, 2), dim=1).tolist()
+        new_actions = torch.stack(torch.chunk(actions, 2), dim=1).cpu().numpy()
+        new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).cpu().numpy()
+        new_dones = torch.stack(torch.chunk(dones, 2), dim=1).cpu().numpy()
         # aligned with remaining subproblems, no need to reorder
-        new_rewards = rewards.tolist()
-        new_prev_actions = prev_actions.tolist()
+        new_rewards = rewards.cpu().numpy()
+        new_prev_actions = prev_actions.cpu().numpy()
         return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
         
         

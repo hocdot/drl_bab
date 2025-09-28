@@ -52,6 +52,10 @@ class SACDecider(Base):
             if x.dtype == 'float64':
                 x = torch.tensor(x, device=self.args.device, dtype=torch.float)
                 return x
+            if x.dtype == 'int64':
+                x = torch.tensor(x, device=self.args.device, dtype=torch.long)
+                return x
+            print(f'{x.shape=} {x.dtype=}')
             raise NotImplementedError
         raise NotImplementedError
 
@@ -121,17 +125,17 @@ class SACDecider(Base):
                 else:
                     action = self.select_heuristic_action(observation)
             # store previous action
-            pa = np.array(self.env.prev_actions)
+            pa = self.env.prev_actions
             # send to environment
             remaining_next_observation, reward, done, early_stop = self.env.step(action)
             if early_stop:
                 break
             # extract training data
             o = observation
-            a = np.array(self.env.train_action)
-            no = np.array(self.env.train_next_observation)
-            nd = np.array(self.env.train_done)
-            nr = np.array(self.env.train_reward)
+            a = self.env.train_action
+            no = self.env.train_next_observation
+            nd = self.env.train_done
+            nr = self.env.train_reward
             # push data to replay buffer
             # print('[+] push to replay_buffer')
             # print(f'    - {pa.shape=} {o.shape=} {a.shape=} {no.shape=} {nd.shape=} {nr.shape=}')

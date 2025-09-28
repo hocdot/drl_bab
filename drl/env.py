@@ -1,3 +1,4 @@
+from beartype import beartype
 import numpy as np
 
 from dataset.milp_dataset import generate_hard_milp
@@ -62,7 +63,8 @@ class Env:
         done = self.solver.remaining_subproblem <= 0
         return observation, done
 
-    def step(self, action):
+    @beartype
+    def step(self, action) -> tuple[np.ndarray, int, bool, bool]:
         double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(action) # 2 x subproblems
         # print(f'{np.array(double_actions).shape=} {np.array(double_next_observations).shape=} {np.array(prev_actions).shape=} {np.array(double_dones).shape=} {np.array(double_rewards).shape=}')
         # print(f'{double_actions=} {prev_actions=} {double_dones=} {double_rewards=}')

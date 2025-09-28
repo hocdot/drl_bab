@@ -1,3 +1,4 @@
+from beartype import beartype
 import numpy as np
 
 from .milp_util import create_model, Node
@@ -26,7 +27,8 @@ class MilpBabSolver:
     def remaining_subproblem(self):
         return len(self.queue)
     
-    def branch_and_bound(self, action):
+    @beartype
+    def branch_and_bound(self, action) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # branch and bound
         queue = []
         prev_actions = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
@@ -89,7 +91,11 @@ class MilpBabSolver:
         self.queue = queue
         
         # expanded information for training/inference
-        return double_actions, double_next_observations, prev_actions, double_dones, double_rewards
+        return (np.array(double_actions), 
+                np.array(double_next_observations), 
+                np.array(prev_actions), 
+                np.array(double_dones), 
+                np.array(double_rewards))
 
 
     def get_info(self):
