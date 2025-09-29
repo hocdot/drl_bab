@@ -123,12 +123,12 @@ class Env:
         raw_action = self._convert_action_to_raw_action(action)
         
         # bound
-        double_actions, double_next_observations, prev_actions, double_dones, double_rewards = self.solver.branch_and_bound(raw_action) # 2 x subproblems
+        double_raw_actions, double_next_observations, prev_raw_actions, double_dones, double_rewards = self.solver.branch_and_bound(raw_action) # 2 x subproblems
         
         # convert to active neuron format for dnnv
         double_next_observations = self._concat_observation_embedding_3d(double_next_observations)
-        double_actions = self._convert_raw_action_to_action(double_actions)
-        prev_actions = self._convert_raw_action_to_action(prev_actions)
+        double_actions = self._convert_raw_action_to_action(double_raw_actions)
+        prev_actions = self._convert_raw_action_to_action(prev_raw_actions)
         
         # print(f'{np.array(double_actions).shape=} {np.array(double_next_observations).shape=} {np.array(prev_actions).shape=} {np.array(double_dones).shape=} {np.array(double_rewards).shape=}')
         assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
