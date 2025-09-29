@@ -9,7 +9,7 @@ def select_random_action(observation):
     for i in range(n_sub):
         indices = np.where(active[i] == 1)[0]
         j = np.random.choice(indices)
-        action.append(j)
+        action.append(int(j))
     return action
 
 class RandomDecider(Base):

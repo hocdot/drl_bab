@@ -105,7 +105,7 @@ class SACDecider(Base):
         while not done:
             # select action
             with torch.no_grad():
-                if self.global_step > self.args.n_start_learning or 1:
+                if self.global_step > self.args.n_start_learning:
                     action = self.select_action(observation)
                 else:
                     action = self.select_heuristic_action(observation)

@@ -12,7 +12,7 @@ def select_cost_based_action(observation):
         j = np.argmax(score[i][indices])
         k = indices[j]
         # j = np.random.choice(indices)
-        action.append(k)
+        action.append(int(k))
     return action
 
 class CostBasedDecider(Base):
