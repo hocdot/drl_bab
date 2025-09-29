@@ -60,7 +60,8 @@ class Env:
             self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
         return solver
     
-    def reset(self):
+    @beartype
+    def reset(self) -> tuple[torch.Tensor, bool]:
         # load new instance
         self.episode += 1
         self.n_step = 1

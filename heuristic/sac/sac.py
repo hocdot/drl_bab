@@ -1,5 +1,5 @@
+from beartype import beartype
 import torch.optim as optim
-# import numpy as np
 import torch
 import os
 
@@ -36,35 +36,18 @@ class SACDecider(Base):
             self.alpha = args.alpha
         self.replay_buffer = ReplayBuffer(args.n_buffer)
 
-    def transform(self, x):
-        if isinstance(x, torch.Tensor):
-            return x.to(self.args.device)
-        
-        print(x)
-        print(type(x))
-        raise NotImplementedError
-        
-        if isinstance(x, list):
-            if len(x) > 0:
-                if isinstance(x[0], int) or isinstance(x[0], np.int64):
-                    return torch.tensor(x, device=self.args.device, dtype=torch.long)
-                raise NotImplementedError
-            raise NotImplementedError
-        
-        if isinstance(x, np.ndarray):
-            if x.dtype == 'float64':
-                return torch.tensor(x, device=self.args.device, dtype=torch.float)
-            if x.dtype == 'int64':
-                return torch.tensor(x, device=self.args.device, dtype=torch.long)
-            raise NotImplementedError
-        print(f'{x.shape=} {x.dtype=}')
-        raise NotImplementedError
+    @beartype
+    def transform(self, x: torch.Tensor) -> torch.Tensor:
+        return x.to(self.args.device)
 
-    def init_hook(self, observation):
+    @beartype
+    def init_hook(self, observation: torch.Tensor):
         x = self.transform(observation)
         self.decoder_state = self.actor.decoder.get_z0(x)
 
-    def step_hook(self, next_observation):
+
+    @beartype
+    def step_hook(self, next_observation: torch.Tensor):
         x = self.transform(next_observation)
         a = self.env.prev_actions
         if len(a) == 0:
@@ -75,7 +58,8 @@ class SACDecider(Base):
         z = self.actor.decoder.gather_z(e, a)
         self.decoder_state = z
 
-    def select_action(self, observation):
+    @beartype
+    def select_action(self, observation: torch.Tensor) -> list[int]:
         x = self.transform(observation)
         z = self.decoder_state
         if self.args.mode == 'train':
@@ -87,7 +71,8 @@ class SACDecider(Base):
             raise NotImplementedError
         return action.tolist()
     
-    def select_heuristic_action(self, observation):
+    @beartype
+    def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
         if self.args.dataset == 'milp':
             i = self.global_step % 3
             if i == 0:

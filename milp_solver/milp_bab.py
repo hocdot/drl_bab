@@ -1,5 +1,6 @@
 from beartype import beartype
 import numpy as np
+import torch
 
 from .milp_util import create_model, Node
 
@@ -28,7 +29,7 @@ class MilpBabSolver:
         return len(self.queue)
     
     @beartype
-    def branch_and_bound(self, action) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def branch_and_bound(self, action: list[int]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # branch and bound
         queue = []
         prev_actions = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
@@ -91,11 +92,11 @@ class MilpBabSolver:
         self.queue = queue
         
         # expanded information for training/inference
-        return (np.array(double_actions), 
-                np.array(double_next_observations), 
-                np.array(prev_actions), 
-                np.array(double_dones), 
-                np.array(double_rewards))
+        return (torch.tensor(double_actions, dtype=torch.long), 
+                torch.tensor(double_next_observations, dtype=torch.float32), 
+                torch.tensor(prev_actions, dtype=torch.long), 
+                torch.tensor(double_dones, dtype=torch.int8), 
+                torch.tensor(double_rewards, dtype=torch.float32))
 
 
     def get_info(self):
@@ -133,5 +134,5 @@ class MilpBabSolver:
                 node_info['active'],
             ]).T
             observation.append(node_observation)
-        observation = np.array(observation) # n_subproblem, n_var, n_feature
+        observation = torch.from_numpy(np.array(observation)).to(torch.float32) # n_subproblem, n_var, n_feature
         return observation
