@@ -100,13 +100,18 @@ class SACDecider(Base):
             elif i == 2:
                 action = select_rounding_error_action(observation)
         else:
+            # raw action
             action = self.env.solver.get_fsb_action()
+            # active neuron index
+            action = [self.env.reverse_active_neuron_index[int(a)] for a in action]
+            assert all(0 <= a <= observation.shape[-2] for a in action), f'{observation.shape=} {action=}'
         return action
 
     def train_episode(self):
         # reset environment
         self.args.mode = 'train'
         observation, done = self.env.reset()
+        print(f'{observation.shape=}')
         info = {
             'episode': self.env.episode, 
             'value': 0.0, 
@@ -121,7 +126,7 @@ class SACDecider(Base):
         while not done:
             # select action
             with torch.no_grad():
-                if self.global_step > self.args.n_start_learning:
+                if self.global_step > self.args.n_start_learning or 1:
                     action = self.select_action(observation)
                 else:
                     action = self.select_heuristic_action(observation)
