@@ -8,8 +8,9 @@ class FsbDecider(Base):
 
     def select_action(self, observation):
         action = self.env.solver.get_fsb_action()
+        action = [self.env.reverse_active_neuron_index[int(a)] for a in action]
         assert len(action) == len(observation), f'{len(action)=} {[o.shape for o in observation]=}'
-        print(f'{action=}')
+        assert all(0 <= a <= observation.shape[-2] for a in action), f'{observation.shape=} {action=}'
         return action
 
     def __repr__(self):

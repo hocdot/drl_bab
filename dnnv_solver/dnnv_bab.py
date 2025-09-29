@@ -77,7 +77,7 @@ class DnnvBabSolver:
         )
 
     @beartype
-    def branch_and_bound(self, action) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def branch_and_bound(self, action) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
         # convert DRL action format to DNNV decision format
         decisions = [list(self.neuron_index_mapping[a]) for a in action]
@@ -104,16 +104,17 @@ class DnnvBabSolver:
         # NOTE: correct order used in training
         return self._reorder_tensors(double_actions, double_next_observations, prev_actions, double_dones, double_rewards)
     
-    def _reorder_tensors(self, actions, next_observations, prev_actions, dones, rewards):
+    @beartype
+    def _reorder_tensors(self, actions: torch.Tensor, next_observations: torch.Tensor, prev_actions: torch.Tensor, dones: torch.Tensor, rewards: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         '''
             Convert [a1, b1, c1, a2, b2, c2] to [[a1, a2], [b1, b2], [c1, c2]]
         '''
-        new_actions = torch.stack(torch.chunk(actions, 2), dim=1).cpu().numpy()
-        new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).cpu().numpy()
-        new_dones = torch.stack(torch.chunk(dones, 2), dim=1).cpu().numpy()
+        new_actions = torch.stack(torch.chunk(actions, 2), dim=1).cpu()
+        new_next_observations = torch.stack(torch.chunk(next_observations, 2), dim=1).cpu()
+        new_dones = torch.stack(torch.chunk(dones, 2), dim=1).cpu()
         # aligned with remaining subproblems, no need to reorder
-        new_rewards = rewards.cpu().numpy()
-        new_prev_actions = prev_actions.cpu().numpy()
+        new_rewards = rewards.cpu()
+        new_prev_actions = prev_actions.cpu()
         return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
         
         

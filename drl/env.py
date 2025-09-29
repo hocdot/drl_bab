@@ -80,7 +80,9 @@ class Env:
         assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
         return observation, done
 
-    def _concat_observation_embedding_2d(self, observation):
+
+    @beartype
+    def _concat_observation_embedding_2d(self, observation: torch.Tensor) -> torch.Tensor:
         if self.args.dataset == 'milp':
             return observation
         new_observation = observation[:, self.active_neuron_index] # (B, n_active_neuron, n_raw_feature)
@@ -89,30 +91,34 @@ class Env:
         assert ((new_observation[..., -1] == 0) | (new_observation[..., -1] == 1)).all(), f'{new_observation[..., -1]=}'
         return new_observation
 
-    def _concat_observation_embedding_3d(self, observation):
+    @beartype
+    def _concat_observation_embedding_3d(self, observation: torch.Tensor) -> torch.Tensor:
         if self.args.dataset == 'milp':
             return observation
-        new_observation = torch.from_numpy(observation[:, :, self.active_neuron_index]) # (B, 2, n_active_neuron, n_raw_feature)
+        new_observation = observation[:, :, self.active_neuron_index] # (B, 2, n_active_neuron, n_raw_feature)
         assert new_observation.shape[1] == 2, f'{new_observation.shape=}'
         obs_emb = self.observation_embedding.unsqueeze(0).unsqueeze(0).expand(new_observation.shape[0], 2, -1, -1)  # (B, 2, n_active_neuron, gnn_embedding)
         new_observation = torch.cat([obs_emb, new_observation], dim=-1)
         assert ((new_observation[..., -1] == 0) | (new_observation[..., -1] == 1)).all(), f'{new_observation[..., -1]=}'
-        return new_observation.numpy()
+        return new_observation
     
-    def _convert_action_to_raw_action(self, action):
+    @beartype
+    def _convert_action_to_raw_action(self, action: list[int]) -> list[int]:
         if self.args.dataset == 'milp':
             return action
         return [int(self.active_neuron_index[a]) for a in action]
     
-    def _convert_raw_action_to_action(self, raw_action):
+    @beartype
+    def _convert_raw_action_to_action(self, raw_action: torch.Tensor) -> torch.Tensor:
         if self.args.dataset == 'milp':
             return raw_action
         orig_shape = raw_action.shape
         action = [self.reverse_active_neuron_index[int(a)] for a in raw_action.flatten()]
-        action = np.array(action).reshape(orig_shape)
+        action = torch.tensor(action).view(orig_shape)
         return action
     
-    def step(self, action) -> tuple[np.ndarray | torch.Tensor, int, bool, bool]:
+    @beartype
+    def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool]:
         # convert to active neuron format for dnnv
         raw_action = self._convert_action_to_raw_action(action)
         

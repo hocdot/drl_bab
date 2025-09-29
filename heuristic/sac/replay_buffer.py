@@ -1,5 +1,4 @@
 from collections import namedtuple, deque
-import numpy as np
 import random
 import torch
 
@@ -19,7 +18,7 @@ class ReplayBuffer:
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        batch_size = np.min([batch_size, len(self)])
+        batch_size = min(batch_size, len(self))
         return random.sample(self.memory, batch_size)
 
     def __len__(self):
@@ -30,9 +29,17 @@ class TrainingData:
 
     def __init__(self, transitions, args):
         batch                 = Transition(*zip(*transitions))
-        self.prev_action      = torch.tensor(batch.prev_action, device=args.device, dtype=torch.long)
-        self.observation      = torch.from_numpy(np.stack(batch.observation)).to(device=args.device, dtype=torch.float32)
-        self.action           = torch.from_numpy(np.stack(batch.action)).to(device=args.device, dtype=torch.long)
-        self.next_observation = torch.from_numpy(np.stack(batch.next_observation)).to(device=args.device, dtype=torch.float32)
-        self.done             = torch.from_numpy(np.stack(batch.done)).to(device=args.device, dtype=torch.int8)
-        self.reward           = torch.tensor(batch.reward, device=args.device, dtype=torch.float32)
+
+        self.prev_action      = torch.tensor(batch.prev_action).to(device=args.device, dtype=torch.long) # (b, )
+        self.action           = torch.stack(batch.action).to(device=args.device, dtype=torch.long) # (b, 2)
+        self.done             = torch.stack(batch.done).to(device=args.device, dtype=torch.int8) # (b, 2)
+        self.reward           = torch.tensor(batch.reward).to(device=args.device, dtype=torch.float32) # (b, )
+
+        # padding due to active neuron index
+        self.observation = torch.nn.utils.rnn.pad_sequence(
+                batch.observation, batch_first=True, padding_value=0.0
+            ).to(device=args.device, dtype=torch.float32)
+        self.next_observation = torch.nn.utils.rnn.pad_sequence(
+                [b.transpose(0, 1) for b in batch.next_observation], batch_first=True, padding_value=0.0
+            ).to(device=args.device, dtype=torch.float32).transpose(1, 2)
+        

@@ -1,5 +1,5 @@
 import torch.optim as optim
-import numpy as np
+# import numpy as np
 import torch
 import os
 
@@ -40,6 +40,10 @@ class SACDecider(Base):
         if isinstance(x, torch.Tensor):
             return x.to(self.args.device)
         
+        print(x)
+        print(type(x))
+        raise NotImplementedError
+        
         if isinstance(x, list):
             if len(x) > 0:
                 if isinstance(x[0], int) or isinstance(x[0], np.int64):
@@ -54,12 +58,6 @@ class SACDecider(Base):
                 return torch.tensor(x, device=self.args.device, dtype=torch.long)
             raise NotImplementedError
         print(f'{x.shape=} {x.dtype=}')
-        raise NotImplementedError
-
-    def inverse_transform(self, x):
-        if isinstance(x, torch.Tensor):
-            x = x.tolist()
-            return x
         raise NotImplementedError
 
     def init_hook(self, observation):
@@ -87,8 +85,7 @@ class SACDecider(Base):
             action = torch.argmax(logits, dim=1)
         else:
             raise NotImplementedError
-        action = self.inverse_transform(action)
-        return action
+        return action.tolist()
     
     def select_heuristic_action(self, observation):
         if self.args.dataset == 'milp':
@@ -103,15 +100,12 @@ class SACDecider(Base):
             # raw action
             action = self.env.solver.get_fsb_action()
             # active neuron index
-            action = [self.env.reverse_active_neuron_index[int(a)] for a in action]
-            assert all(0 <= a <= observation.shape[-2] for a in action), f'{observation.shape=} {action=}'
         return action
 
     def train_episode(self):
         # reset environment
         self.args.mode = 'train'
         observation, done = self.env.reset()
-        print(f'{observation.shape=}')
         info = {
             'episode': self.env.episode, 
             'value': 0.0, 
