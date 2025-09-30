@@ -72,7 +72,7 @@ class GlobalSettings(BaseSettings):
         self._add_advanced_settings(args)
         
         # TODO: remove this
-        # self.use_mip_verify = False
+        self.use_mip_verify = False
         # self.use_mip_tightening = False
         # self.use_restart = False
         # self.use_attack = False

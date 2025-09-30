@@ -76,11 +76,11 @@ class SACDecider(Base):
         if self.args.dataset == 'milp':
             i = self.global_step % 3
             if i == 0:
-                action = select_random_action(observation)
+                action = select_rounding_error_action(observation)
             elif i == 1:
                 action = select_cost_based_action(observation)
             elif i == 2:
-                action = select_rounding_error_action(observation)
+                action = select_random_action(observation)
         else:
             # raw action
             action = self.env.solver.get_fsb_action()

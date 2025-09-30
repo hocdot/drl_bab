@@ -23,8 +23,8 @@ def infer_milp(args):
             args.enc_dec_type = enc_dec_type
             args.n_enc_dec_layer = n_enc_dec_layer
             path = os.path.join(args.csv_dir, 'test', f'{base_label}_{solver_class.__name__}_{args.enc_dec_type}_{args.n_enc_dec_layer}.csv')
-            if os.path.exists(path):
-                continue
+            # if os.path.exists(path):
+            #     continue
             solver = solver_class(args)
             if not solver.load():
                 continue

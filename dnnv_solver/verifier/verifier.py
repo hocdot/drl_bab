@@ -11,23 +11,23 @@ import copy
 import os
 
 
-from heuristic.restart_heuristics import HIDDEN_SPLIT_RESTART_STRATEGIES, INPUT_SPLIT_RESTART_STRATEGIES
-from heuristic.domains_list import DomainsList
+from ..heuristic.restart_heuristics import HIDDEN_SPLIT_RESTART_STRATEGIES, INPUT_SPLIT_RESTART_STRATEGIES
+from ..heuristic.domains_list import DomainsList
 
-from verifier.utils import _prune_domains, get_used_gpu_memory
-from verifier.mip_solver import MIPSolver
+from .utils import _prune_domains, get_used_gpu_memory
+from .mip_solver import MIPSolver
 
-from abstractor.auto_LiRPA.utils import stop_criterion_batch_any
-from abstractor.utils import new_slopes
+from ..abstractor.auto_LiRPA.utils import stop_criterion_batch_any
+from ..abstractor.utils import new_slopes
 
-from helper.misc.torch_cuda_memory import is_cuda_out_of_memory, gc_cuda
-from helper.misc.error import VerifierInitializeError
-from helper.network.onnx2pytorch import ConvertModel
-from helper.spec.objective import DnfObjectives
-from helper.misc.result import ReturnStatus
-from helper.misc.logger import logger
+from ..helper.misc.torch_cuda_memory import is_cuda_out_of_memory, gc_cuda
+from ..helper.misc.error import VerifierInitializeError
+from ..helper.network.onnx2pytorch import ConvertModel
+from ..helper.spec.objective import DnfObjectives
+from ..helper.misc.result import ReturnStatus
+from ..helper.misc.logger import logger
 
-from setting import Settings
+from ..setting import Settings
 
 
 class Verifier:

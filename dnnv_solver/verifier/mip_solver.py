@@ -3,9 +3,9 @@ import torch
 import time
 import math
 
-from abstractor.abstractor import NetworkAbstractor
-from helper.misc.check import check_solution
-from helper.misc.result import ReturnStatus
+from ..abstractor.abstractor import NetworkAbstractor
+from ..helper.misc.check import check_solution
+from ..helper.misc.result import ReturnStatus
 
 class MIPSolver:
     

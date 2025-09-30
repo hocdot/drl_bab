@@ -1,7 +1,7 @@
 from beartype import beartype
 import torch
 
-from helper.network.read_onnx import inference_onnx
+from ..network.read_onnx import inference_onnx
 
 @beartype
 def get_adv_string(inputs: torch.Tensor, net_path: str) -> str:
