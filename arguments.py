@@ -23,10 +23,13 @@ def get_args():
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
     
-    # dataset
+    # milp parameter
     parser.add_argument('--n_var', type=int, default=10)
     parser.add_argument('--n_constraint', type=int, default=10)
     parser.add_argument('--n_max_subproblem', type=int, default=300)
+    
+    # dnnv parameter
+    parser.add_argument('--use_attack', action='store_true')
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm

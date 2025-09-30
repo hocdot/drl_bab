@@ -37,7 +37,8 @@ def infer_dnnv(args):
     base_label = f'{args.mode}_{args.dataset}'
     for solver_class in [FsbDecider]:
         path = os.path.join(args.csv_dir, 'test', f'{base_label}_{solver_class.__name__}.csv')
-        if not os.path.exists(path):
+        # if not os.path.exists(path):
+        if 1:
             solver = solver_class(args)
             infos = solver.test()
             df = pd.DataFrame(infos)

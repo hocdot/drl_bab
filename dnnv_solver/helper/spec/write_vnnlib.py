@@ -51,7 +51,8 @@ def write_vnnlib_classify_single(
 
 def write_vnnlib_classify(
     spec_path: str,  
-    data_lb: float, data_ub: float, 
+    data_lb: float, 
+    data_ub: float, 
     prediction: torch.Tensor,
     negate_spec=False,
     single_output=False) -> str:

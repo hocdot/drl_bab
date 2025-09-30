@@ -41,6 +41,13 @@ class DnnvBabSolver:
     
     
     def initialize(self, objective) -> DomainsList | list:
+        # check attacked
+        if self.args.use_attack:
+            is_attacked, _ = self._pre_attack(copy.deepcopy(objective), timeout=1.0)
+            print(f'[+] {is_attacked=}')
+            if is_attacked:
+                return []
+        
         # init abstractor
         self._setup_restart(0, objective)
         
@@ -236,5 +243,5 @@ class DnnvBabSolver:
         
         self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}
 
-    from .verifier.utils import _setup_restart, _init_abstractor
+    from .verifier.utils import _setup_restart, _init_abstractor, _pre_attack
     from .graph.onnx2networkx import get_edge_data
