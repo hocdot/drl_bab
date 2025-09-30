@@ -26,14 +26,18 @@ def instance_generator(csv_name,args):
     df = pd.read_csv(path, header=None)
     print(f'[+] Generate {len(df)} instances')
     #
-    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df)):
+    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}'):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
         
-def seperate_vnnlib(args):
+def seperate_vnnlib(args, input_csv_name, output_csv_name):
     output_dir = os.path.join(args.dataset_dir, args.dataset)
-    os.makedirs(os.path.join(output_dir, 'vnnlib_processed'), exist_ok=True)
-    with open(os.path.join(output_dir, 'instances_processed.csv'), 'w') as f:
-        for (onnx, vnnlib) in instance_generator('instances.csv', args):
+    if os.path.exists(os.path.join(output_dir, output_csv_name)):
+        return
+    
+    vnnlib_dir_name = 'vnnlib_processed'
+    os.makedirs(os.path.join(output_dir, vnnlib_dir_name), exist_ok=True)
+    with open(os.path.join(output_dir, output_csv_name), 'w') as f:
+        for (onnx, vnnlib) in instance_generator(input_csv_name, args):
             net, input_shape, objs = extract_instance(onnx, vnnlib)
             count = 0
             obj = objs.pop(1)
@@ -41,30 +45,36 @@ def seperate_vnnlib(args):
             x = ((obj.lower_bounds + obj.upper_bounds) * 0.5).view(input_shape)
             pred = net(x)
             spec_names = write_vnnlib_classify_single(
-                spec_path=os.path.join(output_dir, 'vnnlib_processed', os.path.basename(os.path.splitext(vnnlib)[0])),
+                spec_path=os.path.join(output_dir, vnnlib_dir_name, os.path.basename(os.path.splitext(vnnlib)[0])),
                 data_lb=obj.lower_bounds,
                 data_ub=obj.upper_bounds,
                 prediction=pred,
                 negate_spec=True,
             )
             for spec_name in spec_names:
-                print(f'onnx/{os.path.basename(onnx)},vnnlib_processed/{spec_name}', file=f)
+                print(f'onnx/{os.path.basename(onnx)},{vnnlib_dir_name}/{spec_name}', file=f)
             count += 1
 
 def process_instance(onnx, vnnlib, args):
     io_path = os.path.join(args.dataset_dir, args.dataset, 'io', f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
+    io_filtered_path = os.path.splitext(io_path)[0] + '.txt'
     if os.path.exists(io_path):
-        return
+        return True
 
+    if os.path.exists(io_filtered_path):
+        return False
+    
     net, input_shape, objs = extract_instance(onnx, vnnlib)
     assert len(objs) == 1, f'{len(objs)=}'
     obj = objs.pop(1)
     
     # initialize dnn solver
     iv = DnnvBabSolver(net=net, input_shape=input_shape, objective=obj, args=args)
-    print(f'{onnx=} {vnnlib=} {iv.remaining_subproblem=}')
+    # print(f'{onnx=} {vnnlib=} {iv.remaining_subproblem=}')
     if not iv.remaining_subproblem:
-        return
+        with open(io_filtered_path, 'w') as f:
+            print('filtered', file=f)
+        return False
     
     # extract observation and score
     observation, score = iv.get_observation(return_fsb_score=True)
@@ -89,6 +99,7 @@ def process_instance(onnx, vnnlib, args):
     del iv
     gc_cuda()
     gc.collect()
+    return True
 
 def prepare_io(args):
     # create result dirs if not exist
@@ -98,14 +109,16 @@ def prepare_io(args):
     graph_dir = os.path.join(args.dataset_dir, args.dataset, 'graph')
     os.makedirs(graph_dir, exist_ok=True)
     # form a torch geometric dataset from hard instances list
-    print('[+] seperate vnnlibs')
-    seperate_vnnlib(args)
+    print(f'[+] seperate vnnlibs')
+    seperate_vnnlib(args, input_csv_name='instances_raw.csv', output_csv_name='instances_seperated.csv')
     
-    print('[+] processing onnxs and vnnlibs')
+    print(f'[+] processing onnxs and vnnlibs')
     # with parallel_config(backend='threading', n_jobs=os.cpu_count()//2):
     #     Parallel()(delayed(read_instance)(onnx, vnnlib, args) for onnx, vnnlib in instance_generator(args))
-    for (onnx, vnnlib) in instance_generator('instances_processed.csv', args):
-        process_instance(onnx, vnnlib, args)
+    with open(os.path.join(args.dataset_dir, args.dataset, 'instances_processed.csv'), 'w') as f:
+        for (onnx, vnnlib) in instance_generator('instances_seperated.csv', args):
+            if process_instance(onnx, vnnlib, args):
+                print(f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}', file=f)
 
 if __name__ == '__main__':
     from arguments import get_args

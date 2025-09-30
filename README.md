@@ -3,6 +3,7 @@
 ### Pretrain GNN Embedding
 
 ```bash
+python3 -m prepare.generate_raw_instances --dataset dnnv
 python3 -m prepare.prepare_io --dataset dnnv
 python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ```

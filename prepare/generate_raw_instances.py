@@ -55,5 +55,5 @@ if __name__ == '__main__':
                 )
                 print(f'onnx/{onnx_name},vnnlib/{vnnlib_name}', file=f)
                 count += 1
-                if count >= 100:
+                if count >= args.n_vnnlib_per_onnx:
                     break
