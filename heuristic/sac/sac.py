@@ -105,10 +105,10 @@ class SACDecider(Base):
         while not done:
             # select action
             with torch.no_grad():
-                if self.global_step > self.args.n_start_learning:
-                    action = self.select_action(observation)
-                else:
+                if (self.global_step <= self.args.n_start_learning) or (self.global_step % 10 == 0):
                     action = self.select_heuristic_action(observation)
+                else:
+                    action = self.select_action(observation)
             # store previous action
             pa = self.env.prev_actions
             # send to environment
