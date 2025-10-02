@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument('--use_attack', action='store_true')
     parser.add_argument('--n_vnnlib_per_onnx', type=int, default=1)
     parser.add_argument('--vnnlib_eps', type=float, default=0.04)
+    parser.add_argument('--clean', action='store_true')
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm

@@ -1,4 +1,5 @@
 import pandas as pd
+import random
 import torch
 import tqdm
 import os
@@ -66,10 +67,9 @@ def process_instance(onnx, vnnlib, args):
     
     net, input_shape, objs = extract_instance(onnx, vnnlib)
     assert len(objs) == 1, f'{len(objs)=}'
-    obj = objs.pop(1)
     
     # initialize dnn solver
-    iv = DnnvBabSolver(net=net, input_shape=input_shape, objective=obj, args=args)
+    iv = DnnvBabSolver(net=net, input_shape=input_shape, objective=objs, args=args)
     # print(f'{onnx=} {vnnlib=} {iv.remaining_subproblem=}')
     if not iv.remaining_subproblem:
         with open(io_filtered_path, 'w') as f:
@@ -90,6 +90,7 @@ def process_instance(onnx, vnnlib, args):
     graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
     if not os.path.exists(graph_path):
         # save graph data
+        obj = objs.pop(1)
         edge_weight, edge_index = iv.get_edge_data(obj)
         edge_weight = edge_weight.cpu()
         edge_index = edge_index.cpu()
@@ -115,10 +116,20 @@ def prepare_io(args):
     print(f'[+] processing onnxs and vnnlibs')
     # with parallel_config(backend='threading', n_jobs=os.cpu_count()//2):
     #     Parallel()(delayed(read_instance)(onnx, vnnlib, args) for onnx, vnnlib in instance_generator(args))
-    with open(os.path.join(args.dataset_dir, args.dataset, 'instances_processed.csv'), 'w') as f:
-        for (onnx, vnnlib) in instance_generator('instances_seperated.csv', args):
-            if process_instance(onnx, vnnlib, args):
-                print(f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}', file=f)
+    all_lines = []
+    for (onnx, vnnlib) in instance_generator('instances_seperated.csv', args):
+        if process_instance(onnx, vnnlib, args):
+            all_lines.append(f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}')
+    
+    random.shuffle(all_lines)
+    train_lines = all_lines[:int(len(all_lines) * 0.8)]
+    test_lines = all_lines[int(len(all_lines) * 0.8):]
+    with open(os.path.join(args.dataset_dir, args.dataset, 'instances_train.csv'), 'w') as f:
+        for line in train_lines:
+            print(line, file=f)
+    with open(os.path.join(args.dataset_dir, args.dataset, 'instances_test.csv'), 'w') as f:
+        for line in test_lines:
+            print(line, file=f)
 
 if __name__ == '__main__':
     from arguments import get_args

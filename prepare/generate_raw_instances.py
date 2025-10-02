@@ -14,6 +14,12 @@ if __name__ == '__main__':
     args = get_args()
     assert args.dataset == 'dnnv', f'{args.dataset=}'
         
+    if args.clean:
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/io')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/graph')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib_processed')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/instances_*.csv')
+        
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
