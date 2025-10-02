@@ -2,8 +2,6 @@ from torch.utils.data import Dataset
 import pandas as pd
 import os
 
-from prepare.prepare_io import extract_instance
-
 class DnnvDataset(Dataset):
 
     def __init__(self, args):

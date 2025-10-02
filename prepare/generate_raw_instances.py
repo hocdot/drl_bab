@@ -31,7 +31,7 @@ if __name__ == '__main__':
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     onnx_dir = os.path.join(root_dir, 'onnx')
     vnnlib_dir = os.path.join(root_dir, 'vnnlib')
-    eps = 0.04
+    eps = args.vnnlib_eps
     all_onnx_names = os.listdir(onnx_dir)
     with open(os.path.join(root_dir, 'instances_raw.csv'), 'w') as f:
         for onnx_name in tqdm(all_onnx_names):
