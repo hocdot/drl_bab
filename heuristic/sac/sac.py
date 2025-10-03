@@ -82,11 +82,8 @@ class SACDecider(Base):
             elif i == 2:
                 action = select_random_action(observation)
         else:
-            # raw action
-            action = self.env.solver.get_fsb_action()
-            # convert to active neuron index
-            action = [self.env.reverse_active_neuron_index[int(a)] for a in action]
-            # active neuron index
+            # action in active neuron index format
+            action = self.env._get_fsb_action()
         return action
 
     def train_episode(self):

@@ -118,6 +118,16 @@ class Env:
         return action
     
     @beartype
+    def _get_fsb_action(self) -> list[int]:
+        assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
+        # raw action
+        action = self.solver.get_fsb_action()
+        # convert to active neuron index
+        action = [self.reverse_active_neuron_index[int(a)] for a in action]
+        return action
+        
+    
+    @beartype
     def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool]:
         self.n_step += 1
         # convert to active neuron format for dnnv
