@@ -119,6 +119,7 @@ class Env:
     
     @beartype
     def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool]:
+        self.n_step += 1
         # convert to active neuron format for dnnv
         raw_action = self._convert_action_to_raw_action(action)
         
@@ -152,5 +153,8 @@ class Env:
         
         # get info
         done = self.solver.remaining_subproblem <= 0
-        early_stop = self.solver.remaining_subproblem >= self.args.n_max_subproblem
+        early_stop = (
+            (self.solver.remaining_subproblem >= self.args.n_max_subproblem) or 
+            (self.n_step >= self.args.n_max_step)
+        )
         return remaining_next_observation, reward, done, early_stop

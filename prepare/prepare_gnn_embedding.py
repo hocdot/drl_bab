@@ -60,7 +60,7 @@ def prepare_embed(args):
     os.makedirs(embed_dir, exist_ok=True)
     # load graph
     # FIXME: handle multiple graphs
-    for onnx, _ in instance_generator('instances.csv',args):
+    for onnx, _ in instance_generator('instances_train.csv',args):
         break
     graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
     data = torch.load(graph_path)
@@ -71,10 +71,15 @@ def prepare_embed(args):
     data_list = []
     print('[+] loading preprocessed io')
     for name in tqdm.tqdm(os.listdir(io_dir)):
+        if name.endswith('.txt'):
+            continue
+        if not name.startswith(os.path.basename(onnx)):
+            continue
         path = os.path.join(io_dir, name)
         data = torch.load(path)
         data = Data(x=data['observation'], y=data['score'], name=os.path.basename(path))
         data_list.append(data)
+    assert len(data_list) > 0, f'{len(data_list)=}'
     # create dataloader from graphs dataset
     loader = DataLoader(data_list, batch_size=args.gcn_embed_batch_size, shuffle=True)
     # initialize model

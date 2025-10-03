@@ -6,7 +6,7 @@ class DnnvDataset(Dataset):
 
     def __init__(self, args):
         self.args = args
-        path = os.path.join(args.dataset_dir, args.dataset, 'instances_processed.csv')
+        path = os.path.join(args.dataset_dir, args.dataset, f'instances_{args.mode}.csv')
         df = pd.read_csv(path, header=None)
         self.instances = df.values.tolist()
 

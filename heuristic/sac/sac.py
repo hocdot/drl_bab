@@ -84,6 +84,8 @@ class SACDecider(Base):
         else:
             # raw action
             action = self.env.solver.get_fsb_action()
+            # convert to active neuron index
+            action = [self.env.reverse_active_neuron_index[int(a)] for a in action]
             # active neuron index
         return action
 

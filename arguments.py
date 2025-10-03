@@ -33,6 +33,7 @@ def get_args():
     parser.add_argument('--n_vnnlib_per_onnx', type=int, default=1)
     parser.add_argument('--vnnlib_eps', type=float, default=0.04)
     parser.add_argument('--clean', action='store_true')
+    parser.add_argument('--n_max_step', type=int, default=20)
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm
@@ -60,8 +61,8 @@ def get_args():
     
     # gcn embedding parameter
     parser.add_argument('--gcn_embed_n_hidden', type=int, default=128)
-    parser.add_argument('--gcn_embed_n_epoch', type=int, default=100)
-    parser.add_argument('--gcn_embed_batch_size', type=int, default=128)
+    parser.add_argument('--gcn_embed_n_epoch', type=int, default=10)
+    parser.add_argument('--gcn_embed_batch_size', type=int, default=8)
     parser.add_argument('--gcn_embed_lr', type=float, default=1e-3)
     
     # data directory
