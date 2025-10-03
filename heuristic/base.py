@@ -71,10 +71,10 @@ class Base:
             # update info
             epoch_info = {
                 'epoch': epoch,
-                'actor_loss': np.mean(info['actor_loss'] for info in episode_infos),
-                'critic_loss': np.mean(info['critic_loss'] for info in episode_infos),
-                'alpha_loss': np.mean(info['alpha_loss'] for info in episode_infos),
-                'train_value': np.mean(info['value'] for info in episode_infos),
+                'actor_loss': float(np.mean([info['actor_loss'] for info in episode_infos])),
+                'critic_loss': float(np.mean([info['critic_loss'] for info in episode_infos])),
+                'alpha_loss': float(np.mean([info['alpha_loss'] for info in episode_infos])),
+                'train_value': float(np.mean([info['value'] for info in episode_infos])),
             }
             print(epoch_info)
             train_infos.append(epoch_info)
