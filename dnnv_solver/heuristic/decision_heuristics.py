@@ -185,6 +185,7 @@ class DecisionHeuristic:
                                  domain_params: AbstractResults) -> list[list]:
         batch = len(domain_params.input_lowers)
         topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
+        topk = random.randint(1, topk)
         split_node_names = [_.name for _ in abstractor.net.split_nodes]
         split_node_points = {k: abstractor.net.split_activations[k][0][0].get_split_point() for k in split_node_names}
         
