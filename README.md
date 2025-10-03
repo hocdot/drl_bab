@@ -20,3 +20,14 @@ python3 train.py --dataset dnnv --n_input 4 --n_train_episode 50
 ```bash
 python3 infer.py
 ```
+
+
+
+### TODO
+
+- [ ] Graph embedding + Constrastive loss
+- [ ] Minmax scaler 
+
+- Ablation:
+- [ ] Action weight * FSB score
+- [ ] Train no embedding
