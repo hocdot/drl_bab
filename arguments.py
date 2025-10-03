@@ -22,6 +22,7 @@ def get_args():
     parser.add_argument('--n_train_epoch', type=int, default=100)
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
+    parser.add_argument('--save_csv', action='store_true')
     
     # milp parameter
     parser.add_argument('--n_var', type=int, default=10)

@@ -12,7 +12,7 @@ python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 
 ```bash
 python3 train.py
-python3 train.py --dataset dnnv --n_input 4 --n_train_episode 50 --batch_size 10000 --n_start_learning 1000
+python3 train.py --dataset dnnv --n_input 4 --n_train_episode 100 --batch_size 10000 --n_start_learning 2000
 ```
 
 ### Test

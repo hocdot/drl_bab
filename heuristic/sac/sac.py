@@ -91,7 +91,7 @@ class SACDecider(Base):
         self.args.mode = 'train'
         observation, done = self.env.reset()
         info = {
-            'episode': self.env.episode, 
+            # 'episode': self.env.episode, 
             'value': 0.0, 
             'actor_loss': 0.0, 
             'critic_loss': 0.0, 

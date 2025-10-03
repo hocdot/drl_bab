@@ -19,5 +19,5 @@ if __name__ == '__main__':
 
     # export csv
     df = pd.DataFrame(train_infos)
-    df.to_csv(os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.solver}_{args.enc_dec_type}_{args.n_enc_dec_layer}.csv'), index=False)
+    df.to_csv(os.path.join(args.csv_dir, 'train', f'{args.dataset}_{args.solver}_{args.enc_dec_type}_{args.n_enc_dec_layer}_final.csv'), index=False)
     

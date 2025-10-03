@@ -1,6 +1,8 @@
+import pandas as pd
 import numpy as np
 import torch
 import tqdm
+import os
 
 from drl.env import Env
 
@@ -77,6 +79,16 @@ class Base:
                 'train_value': float(np.mean([info['value'] for info in episode_infos])),
             }
             print(epoch_info)
+            if self.args.save_csv:
+                df = pd.DataFrame(epoch_info)
+                df.to_csv(
+                    os.path.join(
+                        self.args.csv_dir, 
+                        self.args.mode, 
+                        f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'), 
+                    index=False, 
+                    mode='a',
+                )
             train_infos.append(epoch_info)
         return train_infos
                             
