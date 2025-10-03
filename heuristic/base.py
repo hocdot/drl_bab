@@ -80,7 +80,7 @@ class Base:
             }
             print(epoch_info)
             if self.args.save_csv:
-                df = pd.DataFrame(epoch_info)
+                df = pd.DataFrame([epoch_info])
                 df.to_csv(
                     os.path.join(
                         self.args.csv_dir, 
@@ -88,6 +88,10 @@ class Base:
                         f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'), 
                     index=False, 
                     mode='a',
+                    header=False if os.path.exists(os.path.join(
+                        self.args.csv_dir, 
+                        self.args.mode, 
+                        f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv')) else True
                 )
             train_infos.append(epoch_info)
         return train_infos
