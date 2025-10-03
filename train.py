@@ -1,6 +1,3 @@
-import pandas as pd
-import os
-
 from heuristic.sac.sac import SACDecider
 from arguments import get_args
 
@@ -11,13 +8,5 @@ if __name__ == '__main__':
         solver = SACDecider(args)
     else:
         raise NotImplementedError
-    
-    try:
-        train_infos = solver.train()
-    except KeyboardInterrupt:
-        print('[+] KeyboardInterrupt')
 
-    # export csv
-    df = pd.DataFrame(train_infos)
-    df.to_csv(os.path.join(args.csv_dir, 'train', f'{args.dataset}_{args.solver}_{args.enc_dec_type}_{args.n_enc_dec_layer}_final.csv'), index=False)
-    
+    solver.train()

@@ -57,7 +57,6 @@ class Base:
         self.args.mode = 'train'
         self.load()
         # test each property
-        train_infos = []
         for epoch in range(self.args.n_train_epoch):
             # train
             episode_infos = []
@@ -93,8 +92,6 @@ class Base:
                         self.args.mode, 
                         f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv')) else True
                 )
-            train_infos.append(epoch_info)
-        return train_infos
                             
 
     def init_hook(self, observation):
