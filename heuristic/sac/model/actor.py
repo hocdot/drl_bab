@@ -44,14 +44,10 @@ class Actor(nn.Module):
         logits = self.pointer(q, ref, mask)
         return logits
 
-    def get_action(self, x, z, convert_mask=False):
+    def get_action(self, x, z):
         logits = self(x, z)
         probs  = logits.softmax(dim=1)
         m      = x[:, :, -1]
-        if convert_mask:
-            sum_m  = (m.sum(dim=1, keepdims=True) > 0).to(torch.float)
-            ones   = torch.ones_like(m)
-            m      = sum_m * (m) + (1 - sum_m) * ones
         probs  = probs * m
         probs /= probs.sum(dim=1, keepdims=True)
         policy_dist = Categorical(probs=probs)
@@ -77,4 +73,4 @@ class Actor(nn.Module):
         indices = torch.where(a != -1)[0]
         if len(indices) > 0:
             z[indices] = self.decoder.gather_z(e, a[indices])
-        return self.get_action(x, z, convert_mask=True)
+        return self.get_action(x, z)
