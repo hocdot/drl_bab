@@ -145,7 +145,6 @@ class Env:
         assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
         assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
         assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
-        assert self.solver.remaining_subproblem == len(prev_actions), f'{double_actions=} {prev_actions=}'
         
         # save for training
         self.train_action = double_actions # (n_subproblem, 2)
@@ -158,7 +157,7 @@ class Env:
         reward = - self.solver.remaining_subproblem
         
         # convert to active neuron format for dnnv
-        remaining_next_observation = self.solver.get_observation() # remaining subproblems
+        remaining_next_observation = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
         remaining_next_observation = self._concat_observation_embedding_2d(remaining_next_observation)
         
         # get info

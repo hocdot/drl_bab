@@ -19,9 +19,12 @@ python3 train.py --dataset dnnv --n_input 4 --n_train_episode 100 --batch_size 1
 
 ```bash
 python3 infer.py
+python3 infer.py --dataset dnnv --n_input 4 --n_test_episode 9 --n_max_step 200 --n_max_subproblem 1000
 ```
 
-
+```bash
+python3 -m dnnv_solver.main --net data/dataset/dnnv/onnx/mnist-net_256x2.onnx --spec data/dataset/dnnv/vnnlib/prop_1_0.03.vnnlib --disable_attack --disable_restart --disable_stabilize
+```
 
 ### TODO
 

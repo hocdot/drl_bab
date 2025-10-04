@@ -409,8 +409,10 @@ class DomainsList:
         
         
     @beartype
-    def get_all_domains(self: 'DomainsList', device: str = 'cpu') -> AbstractResults:
+    def get_all_domains(self: 'DomainsList', device: str = 'cpu', batch: int | None = None) -> AbstractResults:
         indices = torch.arange(len(self))
+        if batch is not None:
+            indices = indices[-batch:] # pop last items first
         # objective ids
         new_objective_ids = self.all_objective_ids.to(device=device, non_blocking=True)
 

@@ -85,7 +85,6 @@ class DnnvBabSolver:
 
     @beartype
     def branch_and_bound(self, action) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
         # convert DRL action format to DNNV decision format
         decisions = [list(self.neuron_index_mapping[a]) for a in action]
         # pick all subproblems
@@ -182,9 +181,9 @@ class DnnvBabSolver:
         return torch.cat(ret, dim=1)
     
     
-    def get_observation(self, return_fsb_score=False):
+    def get_observation(self, return_fsb_score=False, batch=None):
         """remaining subproblems"""
-        subproblems = self.queue.get_all_domains(device=self.device)
+        subproblems = self.queue.get_all_domains(device=self.device, batch=batch)
         if return_fsb_score:
             return self.get_node_data(subproblems), self.get_fsb_score(subproblems)
         return self.get_node_data(subproblems)
@@ -223,7 +222,7 @@ class DnnvBabSolver:
         return score
     
     def get_fsb_action(self) -> torch.Tensor:
-        subproblems = self.queue.get_all_domains(device=self.device)
+        subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
         decisions = self.fsb_heuristic(self.abstractor, subproblems)
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]

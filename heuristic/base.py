@@ -25,6 +25,7 @@ class Base:
         for _ in pbar:
             # test each property
             info = self.test_episode()
+            print(info)
             infos.append(info)
             if use_tqdm:
                 pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos), mode=self.args.mode)
