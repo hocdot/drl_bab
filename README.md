@@ -12,14 +12,14 @@ python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 
 ```bash
 python3 train.py
-python3 train.py --dataset dnnv --n_input 4 --n_train_episode 100 --batch_size 10000 --n_start_learning 2000
+python3 train.py --dataset dnnv --n_input 4 --n_train_episode 275 --batch_size 1000 --n_start_learning 2000
 ```
 
 ### Test
 
 ```bash
 python3 infer.py
-python3 infer.py --dataset dnnv --n_input 4 --n_test_episode 9 --n_max_step 200 --n_max_subproblem 1000
+python3 infer.py --dataset dnnv --n_input 4 --n_test_episode 9 --n_max_step 200 --n_max_remaining_subproblem 1000
 ```
 
 ```bash

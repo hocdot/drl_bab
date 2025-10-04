@@ -163,7 +163,7 @@ class Env:
         # get info
         done = self.solver.remaining_subproblem <= 0
         early_stop = (
-            (self.solver.remaining_subproblem >= self.args.n_max_subproblem) or 
+            (self.solver.remaining_subproblem >= self.args.n_max_remaining_subproblem) or 
             (self.n_step >= self.args.n_max_step)
         )
         return remaining_next_observation, reward, done, early_stop

@@ -105,7 +105,11 @@ class SACDecider(Base):
             # select action
             with torch.no_grad():
                 if (self.global_step <= self.args.n_start_learning) or (self.global_step % 10 == 0):
-                    action = self.select_heuristic_action(observation)
+                    try:
+                        action = self.select_heuristic_action(observation)
+                    except ValueError: # all neurons are split
+                        early_stop = True
+                        break
                 else:
                     action = self.select_action(observation)
             # store previous action
@@ -147,6 +151,7 @@ class SACDecider(Base):
         info['done'] = done
         info['global_step'] = self.global_step
         info['early_stop'] = early_stop
+        info['step'] = self.env.n_step
         # exit()
         return info
 

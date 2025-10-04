@@ -27,15 +27,15 @@ def get_args():
     # milp parameter
     parser.add_argument('--n_var', type=int, default=10)
     parser.add_argument('--n_constraint', type=int, default=10)
-    parser.add_argument('--n_max_subproblem', type=int, default=300)
-    parser.add_argument('--n_max_step', type=int, default=20)
+    parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
+    parser.add_argument('--n_max_step', type=int, default=200)
     
     # dnnv parameter
     parser.add_argument('--use_attack', action='store_true')
     parser.add_argument('--n_vnnlib_per_onnx', type=int, default=1)
     parser.add_argument('--vnnlib_eps', type=float, default=0.04)
     parser.add_argument('--clean', action='store_true')
-    parser.add_argument('--dnnv_solver_batch', type=int, default=3)
+    parser.add_argument('--dnnv_solver_batch', type=int, default=1000)
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm

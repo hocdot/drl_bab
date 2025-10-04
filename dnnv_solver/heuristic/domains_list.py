@@ -275,8 +275,7 @@ class DomainsList:
     @beartype
     def add(self: 'DomainsList', domain_params: AbstractResults, decisions: list | torch.Tensor) -> None:
         # assert decisions is not None
-        batch = len(domain_params.input_lowers)
-        assert batch > 0
+        assert len(domain_params.input_lowers) > 0
         
         # unverified indices
         remaining_index = torch.where((domain_params.output_lbs.detach().cpu() <= domain_params.rhs.detach().cpu()).all(1))[0]
@@ -285,7 +284,7 @@ class DomainsList:
         if not self.input_split:
             # using restart
             if self.all_sat_solvers is not None:
-                assert len(domain_params.sat_solvers) == batch
+                assert len(domain_params.sat_solvers) == len(domain_params.input_lowers)
                 assert decisions is not None
                 
                 extra_conflict_index = []
@@ -320,6 +319,17 @@ class DomainsList:
 
         # hidden bounds
         if self.all_lower_bounds is not None:
+            # check repeated decisions for relu
+            for i in remaining_index:
+                lname, nid, point = decisions[i % len(decisions)]
+                if point == 0.0: # relu
+                    if i >= len(decisions): # negative branch
+                        assert domain_params.upper_bounds[lname][i][nid] == point, f'{domain_params.upper_bounds[lname][i][nid]=}'
+                        assert domain_params.lower_bounds[lname][i][nid] < point, f'{domain_params.lower_bounds[lname][i][nid]=}'
+                    else: # positive branch
+                        assert domain_params.upper_bounds[lname][i][nid] > point, f'{domain_params.upper_bounds[lname][i][nid]=}'
+                        assert domain_params.lower_bounds[lname][i][nid] == point, f'{domain_params.lower_bounds[lname][i][nid]=}'
+                    
             [v.append(domain_params.lower_bounds[k][remaining_index]) for k, v in self.all_lower_bounds.items()]
             [v.append(domain_params.upper_bounds[k][remaining_index]) for k, v in self.all_upper_bounds.items()]
         

@@ -58,6 +58,8 @@ class Actor(nn.Module):
         # Action probabilities for calculating the adapted soft-Q loss
         action_probs = policy_dist.probs
         log_prob = logits.log_softmax(dim=1)
+        # check if action is not repeated
+        assert all(m[i, a] == 1 for i, a in enumerate(action))
         return action, log_prob, action_probs
 
     def decode_and_get_action(self, x, a):
