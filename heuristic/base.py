@@ -75,6 +75,9 @@ class Base:
                 'actor_loss': float(np.mean([info['actor_loss'] for info in episode_infos])),
                 'critic_loss': float(np.mean([info['critic_loss'] for info in episode_infos])),
                 'alpha_loss': float(np.mean([info['alpha_loss'] for info in episode_infos])),
+                'early_stop': sum([info['early_stop'] for info in episode_infos]),
+                'done': sum([info['done'] for info in episode_infos]),
+                'total': len(episode_infos),
                 'train_value': float(np.mean([info['value'] for info in episode_infos])),
             }
             print(epoch_info)
