@@ -56,3 +56,6 @@ class TrainingData:
         self.observation = self.observation[active_m]
         self.next_observation = self.next_observation[active_m]
         
+        if args.verbose:
+            if (active_m == 0).any():
+                print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
