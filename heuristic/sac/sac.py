@@ -111,6 +111,9 @@ class SACDecider(Base):
                         early_stop = True
                         break
                 else:
+                    if torch.any(observation[:, :, -1].sum(dim=1) == 0): # all neurons are split
+                        early_stop = True
+                        break
                     action = self.select_action(observation)
             # store previous action
             pa = self.env.prev_actions
