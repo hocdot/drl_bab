@@ -123,7 +123,7 @@ class MilpBabSolver:
         return observation
 
 
-    def get_observation(self):
+    def get_observation(self, batch=None):
         info = self.get_info()
         observation = []
         for node_info in info:
