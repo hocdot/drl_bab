@@ -25,7 +25,7 @@ def instance_generator(csv_name,args):
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     path = os.path.join(root_dir, csv_name)
     df = pd.read_csv(path, header=None)
-    print(f'[+] Generate {len(df)} instances')
+    # print(f'[+] Generate {len(df)} instances')
     #
     for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}'):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)

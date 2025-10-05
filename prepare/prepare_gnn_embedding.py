@@ -7,8 +7,7 @@ import os
 from torch_geometric.data import DataLoader, Data
 from torch_geometric.nn import GCNConv
 
-from .prepare_io import instance_generator, extract_instance
-from dnnv_solver.dnnv_bab import DnnvBabSolver
+from .prepare_io import instance_generator
 
 
 class Embedding(nn.Module):
@@ -58,55 +57,80 @@ def prepare_embed(args):
     # create result dirs if not exist
     embed_dir = os.path.join(args.dataset_dir, args.dataset, 'embed')
     os.makedirs(embed_dir, exist_ok=True)
-    # load graph
-    # FIXME: handle multiple graphs
-    for onnx, _ in instance_generator('instances_train.csv',args):
-        break
-    graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
-    data = torch.load(graph_path)
-    edge_weight = data['edge_weight']
-    edge_index = data['edge_index']
+
+    # load graphs
+    all_graphs = {}
+    for onnx, _ in instance_generator('instances_train.csv', args):
+        onnx_name = os.path.basename(onnx)
+        if onnx_name not in all_graphs:
+            graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
+            data = torch.load(graph_path)
+            edge_weight = data['edge_weight']
+            edge_index = data['edge_index']
+            all_graphs[onnx_name] = (edge_weight, edge_index)
+    print(f'    + loaded {len(all_graphs)} graphs')
+    
     # load prepared io
     io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     data_list = []
-    print('[+] loading preprocessed io')
-    for name in tqdm.tqdm(os.listdir(io_dir)):
-        if name.endswith('.txt'):
-            continue
-        if not name.startswith(os.path.basename(onnx)):
-            continue
-        path = os.path.join(io_dir, name)
-        data = torch.load(path)
-        data = Data(x=data['observation'], y=data['score'], name=os.path.basename(path))
+    for onnx, vnnlib in instance_generator('instances_train.csv', args):
+        onnx_name = os.path.basename(onnx)
+        vnnlib_name = os.path.basename(vnnlib)
+        io_path = os.path.join(io_dir, f'{onnx_name}____{vnnlib_name}.pt')
+        assert os.path.exists(io_path), f'{io_path=}'
+        data = torch.load(io_path)
+        data = Data(x=data['observation'], y=data['score'], name=os.path.basename(io_path), graph_name=onnx_name)
         data_list.append(data)
+    print(f'    + loaded {len(data_list)} io data')
     assert len(data_list) > 0, f'{len(data_list)=}'
-    # create dataloader from graphs dataset
-    loader = DataLoader(data_list, batch_size=args.gcn_embed_batch_size, shuffle=True)
+    
+    # create dataloader with batch_size=1 and use gradient accumulation for effective larger batch size
+    loader = DataLoader(data_list, batch_size=1, shuffle=True)
+    accumulation_steps = args.gcn_embed_batch_size
+
     # initialize model
     net = FsbRegression(4, args.gcn_embed_n_hidden, 2, args.device).to(args.device)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.gcn_embed_lr)
-    # training loop
+    
+    # training loop with gradient accumulation
     print('[+] training FsbRegression using GCNConv')
     for epoch in range(args.gcn_embed_n_epoch):
         total_loss = 0
+        total_batches = 0
+        accumulated_loss = 0
+        
         for i, data in enumerate(loader):
-            optimizer.zero_grad()
-            m = (1 - data.x[:, :, -1]).unsqueeze(2).repeat(1, 1, 2).to(args.device)
+            # get edge_index and edge_weight for this specific graph
+            edge_weight, edge_index = all_graphs[data.graph_name[0]]
+            # print(f'{data.graph_name[0]=} {edge_weight.shape=} {edge_index.shape=}')
+            
+            # create mask and forward
+            m = data.x[:, :, -1].unsqueeze(2).repeat(1, 1, 2).to(args.device) # 1 - not selected, 0 - selected
             y_hat = net(data, edge_index, edge_weight)
             loss = F.mse_loss(y_hat * m, data.y.to(args.device) * m)
+            
+            # normalize loss by accumulation steps for gradient accumulation
+            loss = loss / accumulation_steps
             loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-            # if i % 100 == 0:
-                # print(f'    * {epoch=}/{args.gcn_n_epoch} {i=} {loss.item()=:0.6f}')
-            # if i > 1000:
-            #     break
-        loss = total_loss / len(loader)
-        print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {i=} {loss=:0.6f}')
+            accumulated_loss += loss.item()
+            
+            # update weights every accumulation_steps
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(loader):
+                optimizer.step()
+                optimizer.zero_grad()
+                total_loss += accumulated_loss
+                accumulated_loss = 0
+                total_batches += 1
+            
+        avg_loss = total_loss / total_batches if total_batches > 0 else 0
+        print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {avg_loss=:0.6f}')
+    
     # exporting embedding
     loader = DataLoader(data_list, batch_size=1, shuffle=False)
     print(f'[+] exporting GCN embeddings for {len(loader)=} instances')
     for i, data in enumerate(tqdm.tqdm(loader)):
+        # graph
+        edge_weight, edge_index = all_graphs[data.graph_name[0]]
         # forward
         indices = torch.where(data.x[0, :, -1] == 1)[0] # 1 - not selected, 0 - selected
         e = net.embedding(data, edge_index, edge_weight)[0, indices].detach().cpu()
