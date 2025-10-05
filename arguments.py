@@ -5,6 +5,11 @@ import os
 torch.set_printoptions(4, sci_mode=False)
 
 def create_folders(args):
+    args.checkpoint_dir = os.path.join(args.data_dir, args.checkpoint_dirname)
+    args.dataset_dir = os.path.join(args.data_dir, args.dataset_dirname)
+    args.figure_dir = os.path.join(args.data_dir, args.figure_dirname)
+    args.csv_dir = os.path.join(args.data_dir, args.csv_dirname)
+    
     os.makedirs(os.path.join(args.checkpoint_dir, args.dataset), exist_ok=True)
     os.makedirs(os.path.join(args.dataset_dir, args.dataset), exist_ok=True)
     os.makedirs(args.figure_dir, exist_ok=True)
@@ -68,10 +73,11 @@ def get_args():
     parser.add_argument('--gcn_embed_lr', type=float, default=1e-3)
     
     # data directory
-    parser.add_argument('--checkpoint_dir', type=str, default='./data/checkpoint')
-    parser.add_argument('--dataset_dir', type=str, default='./data/dataset')
-    parser.add_argument('--figure_dir', type=str, default='./data/figure')
-    parser.add_argument('--csv_dir', type=str, default='./data/csv')
+    parser.add_argument('--data_dir', type=str, default='./data')
+    parser.add_argument('--checkpoint_dirname', type=str, default='checkpoint')
+    parser.add_argument('--dataset_dirname', type=str, default='dataset')
+    parser.add_argument('--figure_dirname', type=str, default='figure')
+    parser.add_argument('--csv_dirname', type=str, default='csv')
     
     # metric
     # parser.add_argument('--metric', type=str, default='value')

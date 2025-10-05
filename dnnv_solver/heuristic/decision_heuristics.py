@@ -17,12 +17,12 @@ SMALL = 1.0 / LARGE
 class DecisionHeuristic:
     
     @beartype
-    def __init__(self, input_split: bool, decision_topk: int, decision_method: str) -> None:
+    def __init__(self, input_split: bool, decision_topk: int, decision_method: str, use_random_topk: bool = False) -> None:
         self.input_split = input_split
         self.decision_topk = decision_topk
         self.decision_method = decision_method
         self.decision_reduceop = torch.max
-        
+        self.use_random_topk = use_random_topk
 
     @beartype
     @torch.no_grad()
@@ -185,7 +185,8 @@ class DecisionHeuristic:
                                  domain_params: AbstractResults) -> list[list]:
         batch = len(domain_params.input_lowers)
         topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
-        topk = random.randint(1, topk)
+        if self.use_random_topk:
+            topk = random.randint(1, topk)
         split_node_names = [_.name for _ in abstractor.net.split_nodes]
         split_node_points = {k: abstractor.net.split_activations[k][0][0].get_split_point() for k in split_node_names}
         

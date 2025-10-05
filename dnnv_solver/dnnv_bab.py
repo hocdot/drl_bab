@@ -32,7 +32,8 @@ class DnnvBabSolver:
         self.fsb_heuristic = DecisionHeuristic(
             input_split=self.input_split, 
             decision_method='smart',
-            decision_topk=30, 
+            decision_topk=30 if args.mode=='train' else 10, 
+            use_random_topk=args.mode=='train',
         )
     
     @property
