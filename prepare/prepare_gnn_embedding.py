@@ -15,7 +15,7 @@ class Embedding(nn.Module):
     def __init__(self, n_input, n_hidden, device):
         super().__init__()
         self.conv1 = GCNConv(n_input, n_hidden)
-        # self.conv2 = GCNConv(n_hidden, n_hidden)
+        self.conv2 = GCNConv(n_hidden, n_hidden)
         self.device = device
 
     def forward(self, data, edge_index, edge_weight):
@@ -24,7 +24,7 @@ class Embedding(nn.Module):
         edge_weight = edge_weight.to(self.device)
         x = self.conv1(x, edge_index, edge_weight)
         x = F.relu(x)
-        # x = self.conv2(x, edge_index, edge_weight)
+        x = self.conv2(x, edge_index, edge_weight)
         return x
 
 class Regression(nn.Module):
@@ -108,7 +108,8 @@ def prepare_embed(args):
             m = data.x[:, :, -1].unsqueeze(2).repeat(1, 1, 2).to(args.device) # 1 - not selected, 0 - selected
             y_hat = net(data, edge_index, edge_weight)
             loss = F.mse_loss(y_hat * m, data.y.to(args.device) * m)
-            
+            # TODO: add contrastive loss
+
             # normalize loss by accumulation steps for gradient accumulation
             loss = loss / accumulation_steps
             loss.backward()

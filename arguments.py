@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument('--n_var', type=int, default=10)
     parser.add_argument('--n_constraint', type=int, default=10)
     parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
-    parser.add_argument('--n_max_step', type=int, default=200)
+    parser.add_argument('--n_max_step', type=int, default=50)
     
     # dnnv parameter
     parser.add_argument('--use_attack', action='store_true')
@@ -68,9 +68,9 @@ def get_args():
     
     # gcn embedding parameter
     parser.add_argument('--gcn_embed_n_hidden', type=int, default=128)
-    parser.add_argument('--gcn_embed_n_epoch', type=int, default=10)
-    parser.add_argument('--gcn_embed_batch_size', type=int, default=8)
-    parser.add_argument('--gcn_embed_lr', type=float, default=1e-3)
+    parser.add_argument('--gcn_embed_n_epoch', type=int, default=50)
+    parser.add_argument('--gcn_embed_batch_size', type=int, default=128)
+    parser.add_argument('--gcn_embed_lr', type=float, default=3e-4)
     
     # data directory
     parser.add_argument('--data_dir', type=str, default='./data')
