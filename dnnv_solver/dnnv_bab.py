@@ -64,6 +64,7 @@ class DnnvBabSolver:
         # check verified
         if stop_criterion_batch_any(objective.rhs.to(self.device))(ret.output_lbs.to(self.device)).all():
             return []
+        # print(f'    + save: lower_bound={ret.output_lbs.item()}')
         
         # compute neuron index mapping
         self._compute_neuron_index_mapping(ret)
