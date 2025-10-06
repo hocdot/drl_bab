@@ -68,7 +68,7 @@ class MilpBabSolver:
                         prev_actions.append(i)
                         next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
-                        reward -= 1 / 125
+                        reward -= 1
                         if self.args.verbose:
                             print(f'    - appended {len(queue)=}')
                     else:

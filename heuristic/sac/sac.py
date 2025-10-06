@@ -6,6 +6,7 @@ import os
 from ..milp_baseline import select_random_action, select_cost_based_action, select_rounding_error_action
 from .replay_buffer import ReplayBuffer
 from .model import Actor, SoftQNetwork
+from .scaler import StandardScaler
 from ..base import Base
 
 class SACDecider(Base):
@@ -35,6 +36,8 @@ class SACDecider(Base):
         else:
             self.alpha = args.alpha
         self.replay_buffer = ReplayBuffer(args.n_buffer)
+        self.reward_scaler = StandardScaler()
+        
 
     @beartype
     def transform(self, x: torch.Tensor) -> torch.Tensor:
@@ -156,9 +159,6 @@ class SACDecider(Base):
         info['early_stop'] = early_stop
         info['step'] = self.env.n_step
         info['buffer'] = len(self.replay_buffer)
-        if info['alpha_loss'] == 0:
-            del info['alpha_loss']
-        # exit()
         return info
 
     @property

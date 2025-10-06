@@ -27,7 +27,7 @@ class ReplayBuffer:
 
 class TrainingData:
 
-    def __init__(self, transitions, args):
+    def __init__(self, transitions, reward_scaler, args):
         batch                 = Transition(*zip(*transitions))
 
         self.prev_action      = torch.tensor(batch.prev_action).to(device=args.device, dtype=torch.long) # (b, )
@@ -59,3 +59,8 @@ class TrainingData:
         if args.verbose:
             if (active_m == 0).any():
                 print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
+        
+        if not reward_scaler.fitted:
+            self.reward = reward_scaler.fit_transform(self.reward)
+        else:
+            self.reward = reward_scaler.transform(self.reward)

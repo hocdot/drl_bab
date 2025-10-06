@@ -34,7 +34,7 @@ class DnnvBabSolver:
             decision_method='smart',
             decision_topk=30 if args.mode=='train' else 10, 
             use_random_topk=args.mode=='train',
-        )
+        )        
     
     @property
     def remaining_subproblem(self):
@@ -104,7 +104,7 @@ class DnnvBabSolver:
         remaining_index = torch.where((abstraction_ret.output_lbs.detach().cpu() <= abstraction_ret.rhs.detach().cpu()).all(1))[0]
         double_dones = torch.ones_like(double_actions, dtype=torch.int32)
         double_dones[remaining_index] = 0
-        double_rewards = sum(torch.chunk(1 - double_dones, 2)) * (-1 / 1000) # TODO: magic number
+        double_rewards = -1 * sum(torch.chunk(1 - double_dones, 2))
         # previous actions
         prev_actions = double_actions[remaining_index]
         

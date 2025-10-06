@@ -116,7 +116,7 @@ def optimize(self):
     self.qf2.train()
     # extract batch from buffer
     transitions = self.replay_buffer.sample(self.args.batch_size)
-    data = TrainingData(transitions, self.args)
+    data = TrainingData(transitions, self.reward_scaler, self.args)
     qf_loss = 0
     # print(f'[+] training data')
     # print(f'    - {data.prev_action.shape=}')      # n_subproblem
