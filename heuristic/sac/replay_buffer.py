@@ -1,6 +1,7 @@
 from collections import namedtuple, deque
 import random
 import torch
+import os
 
 Transition = namedtuple('Transition',
                         ('prev_action', 'observation', 'action', 'next_observation', 'done', 'reward'))
@@ -64,3 +65,14 @@ class TrainingData:
             self.reward = reward_scaler.fit_transform(self.reward) / args.n_max_step
         else:
             self.reward = reward_scaler.transform(self.reward) / args.n_max_step
+
+    def export(self, path):
+        data = {
+            'prev_action': self.prev_action.detach().cpu(),
+            'action': self.action.detach().cpu(),
+            'done': self.done.detach().cpu(),
+            'reward': self.reward.detach().cpu(),
+            'observation': self.observation.detach().cpu(),
+            'next_observation': self.next_observation.detach().cpu(),
+        }
+        torch.save(data, path)

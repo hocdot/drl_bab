@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 import torch
+import os
 
 from .replay_buffer import TrainingData
 
@@ -117,6 +118,12 @@ def optimize(self):
     # extract batch from buffer
     transitions = self.replay_buffer.sample(self.args.batch_size)
     data = TrainingData(transitions, self.reward_scaler, self.args)
+    
+    if self.args.save_offline_data:
+        offline_data_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'offline_data')
+        os.makedirs(offline_data_dir, exist_ok=True)
+        data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
+        
     qf_loss = 0
     # print(f'[+] training data')
     # print(f'    - {data.prev_action.shape=}')      # n_subproblem
