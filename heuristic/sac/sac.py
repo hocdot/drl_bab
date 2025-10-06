@@ -155,6 +155,9 @@ class SACDecider(Base):
         info['global_step'] = self.global_step
         info['early_stop'] = early_stop
         info['step'] = self.env.n_step
+        info['buffer'] = len(self.replay_buffer)
+        if info['alpha_loss'] == 0:
+            del info['alpha_loss']
         # exit()
         return info
 
