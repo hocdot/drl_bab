@@ -3,7 +3,7 @@
 ### Pretrain GNN Embedding
 
 ```bash
-python3 -m prepare.generate_raw_instances --dataset dnnv --vnnlib_eps 0.08 --n_vnnlib_per_onnx 10 --clean
+python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 100 --clean
 python3 -m prepare.prepare_io --dataset dnnv --use_attack
 python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ```

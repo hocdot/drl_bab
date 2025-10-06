@@ -23,7 +23,7 @@ def instance_generator(csv_name,args):
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     path = os.path.join(root_dir, csv_name)
     df = pd.read_csv(path, header=None)
-    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}', leave=False):
+    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}'):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
         
 def seperate_vnnlib(args, input_csv_name, output_csv_name):
@@ -74,7 +74,7 @@ def process_instance(onnx, vnnlib, args):
     
     # extract observation and score
     observation, score = iv.get_observation(return_fsb_score=True)
-    # print(f'    + save: {observation.shape=} {score.shape=}')
+    print(f'    + save: {observation.shape=} {score.shape=}')
     # observation = torch.cat(observation, dim=1)
     
     # save io data

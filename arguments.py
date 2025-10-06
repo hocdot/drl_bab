@@ -39,7 +39,6 @@ def get_args():
     parser.add_argument('--use_attack', action='store_true')
     parser.add_argument('--attack_timeout', type=float, default=1.0)
     parser.add_argument('--n_vnnlib_per_onnx', type=int, default=1)
-    parser.add_argument('--vnnlib_eps', type=float, default=0.04)
     parser.add_argument('--clean', action='store_true')
     parser.add_argument('--dnnv_solver_batch', type=int, default=1000)
     parser.add_argument('--dnnv_skip_lower_bound', type=float, default=-10)

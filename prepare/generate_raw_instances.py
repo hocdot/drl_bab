@@ -1,6 +1,7 @@
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import pandas as pd
 import torchvision
 import os
 
@@ -17,6 +18,8 @@ if __name__ == '__main__':
     if args.clean:
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/io')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/graph')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/embed')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib_processed')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/instances_*.csv')
         
@@ -37,10 +40,11 @@ if __name__ == '__main__':
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     onnx_dir = os.path.join(root_dir, 'onnx')
     vnnlib_dir = os.path.join(root_dir, 'vnnlib')
-    eps = args.vnnlib_eps
-    all_onnx_names = os.listdir(onnx_dir)
+    os.makedirs(vnnlib_dir, exist_ok=True)
+    
+    all_onnx_eps_settings = pd.read_csv(os.path.join(root_dir, 'onnx_eps_setting.csv'), header=None)
     with open(os.path.join(root_dir, 'instances_raw.csv'), 'w') as f:
-        for onnx_name in tqdm(all_onnx_names):
+        for onnx_name, eps in tqdm(all_onnx_eps_settings.values):
             onnx_path = os.path.join(onnx_dir, onnx_name)
             model, input_shape, _ = parse_onnx(onnx_path)
             count = 0
