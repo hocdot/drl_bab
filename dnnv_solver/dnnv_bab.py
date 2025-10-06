@@ -44,7 +44,7 @@ class DnnvBabSolver:
     def initialize(self, objective) -> DomainsList | list:
         # check attacked
         if self.args.use_attack:
-            is_attacked, _ = self._pre_attack(copy.deepcopy(objective), timeout=1.0)
+            is_attacked, _ = self._pre_attack(copy.deepcopy(objective), timeout=self.args.attack_timeout)
             print(f'[+] {is_attacked=}')
             if is_attacked:
                 return []

@@ -37,6 +37,7 @@ def get_args():
     
     # dnnv parameter
     parser.add_argument('--use_attack', action='store_true')
+    parser.add_argument('--attack_timeout', type=float, default=1.0)
     parser.add_argument('--n_vnnlib_per_onnx', type=int, default=1)
     parser.add_argument('--vnnlib_eps', type=float, default=0.04)
     parser.add_argument('--clean', action='store_true')
