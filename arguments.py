@@ -43,11 +43,12 @@ def get_args():
     parser.add_argument('--dnnv_solver_batch', type=int, default=1000)
     parser.add_argument('--dnnv_skip_lower_bound', type=float, default=-10)
     parser.add_argument('--save_offline_data', action='store_true')
+    parser.add_argument('--n_save_offline_data', type=int, default=10)
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm
     parser.add_argument('--n_enc_dec_layer', type=int, default=1) # 3
-    parser.add_argument('--n_buffer', type=int, default=50000) # 1e6
+    parser.add_argument('--n_buffer', type=int, default=150000) # 1e6
     parser.add_argument('--n_start_learning', type=int, default=500) # 20000
     parser.add_argument('--batch_size', type=int, default=128) # 64 by CleanRL, 12000 to utilize all RTX 4080
     parser.add_argument('--actor_lr', type=float, default=1e-4) # 3e-4

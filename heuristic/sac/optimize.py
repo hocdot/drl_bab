@@ -111,11 +111,7 @@ def update_target(self):
     for param, target_param in zip(self.qf2.parameters(), self.qf2_target.parameters()):
         target_param.data.copy_(self.args.tau * param.data + (1 - self.args.tau) * target_param.data)
 
-def optimize(self):
-    self.actor.train()
-    self.qf1.train()
-    self.qf2.train()
-    # extract batch from buffer
+def sample_batch(self):
     transitions = self.replay_buffer.sample(self.args.batch_size)
     data = TrainingData(transitions, self.reward_scaler, self.args)
     
@@ -123,7 +119,14 @@ def optimize(self):
         offline_data_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'offline_data')
         os.makedirs(offline_data_dir, exist_ok=True)
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
-        
+    return data
+
+def optimize(self):
+    self.actor.train()
+    self.qf1.train()
+    self.qf2.train()
+    # extract batch from buffer
+    data = self.sample_batch()    
     qf_loss = 0
     # print(f'[+] training data')
     # print(f'    - {data.prev_action.shape=}')      # n_subproblem
