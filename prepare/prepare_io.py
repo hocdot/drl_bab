@@ -5,8 +5,6 @@ import tqdm
 import os
 import gc
 
-from joblib import Parallel, delayed, parallel_config
-
 from dnnv_solver.helper.spec.write_vnnlib import write_vnnlib_classify_single
 from dnnv_solver.helper.misc.torch_cuda_memory import gc_cuda
 from dnnv_solver.helper.network.read_onnx import parse_onnx
@@ -25,9 +23,7 @@ def instance_generator(csv_name,args):
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     path = os.path.join(root_dir, csv_name)
     df = pd.read_csv(path, header=None)
-    # print(f'[+] Generate {len(df)} instances')
-    #
-    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}'):
+    for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}', leave=False):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
         
 def seperate_vnnlib(args, input_csv_name, output_csv_name):
@@ -78,7 +74,7 @@ def process_instance(onnx, vnnlib, args):
     
     # extract observation and score
     observation, score = iv.get_observation(return_fsb_score=True)
-    print(f'{observation.shape=} {score.shape=}')
+    print(f'    + save: {observation.shape=} {score.shape=}')
     # observation = torch.cat(observation, dim=1)
     
     # save io data

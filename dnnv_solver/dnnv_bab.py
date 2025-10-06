@@ -45,8 +45,8 @@ class DnnvBabSolver:
         # check attacked
         if self.args.use_attack:
             is_attacked, _ = self._pre_attack(copy.deepcopy(objective), timeout=self.args.attack_timeout)
-            print(f'[+] {is_attacked=}')
             if is_attacked:
+                print(f'    - filtered: {is_attacked=}')
                 return []
         
         # init abstractor
@@ -54,9 +54,14 @@ class DnnvBabSolver:
         
         # init bounds
         ret = self.abstractor.initialize(objective, reference_bounds=None)
+        assert len(ret.output_lbs) == len(objective.cs)
+        
+        # too hard problems
+        if ret.output_lbs.min() < self.args.dnnv_skip_lower_bound:
+            print(f'    - filtered: {ret.output_lbs=}')
+            return []
         
         # check verified
-        assert len(ret.output_lbs) == len(objective.cs)
         if stop_criterion_batch_any(objective.rhs.to(self.device))(ret.output_lbs.to(self.device)).all():
             return []
         

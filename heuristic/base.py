@@ -61,7 +61,7 @@ class Base:
         for epoch in range(self.args.n_train_epoch):
             # train
             episode_infos = []
-            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
+            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}/{self.args.n_train_epoch}', leave=False)
             for episode in pbar:
                 info = self.train_episode()
                 pbar.set_postfix(info)
