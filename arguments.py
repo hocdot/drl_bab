@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument('--n_var', type=int, default=10)
     parser.add_argument('--n_constraint', type=int, default=10)
     parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
-    parser.add_argument('--n_max_step', type=int, default=100)
+    parser.add_argument('--n_max_step', type=int, default=50)
     
     # dnnv parameter
     parser.add_argument('--use_attack', action='store_true')

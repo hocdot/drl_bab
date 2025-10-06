@@ -61,6 +61,6 @@ class TrainingData:
                 print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
         
         if not reward_scaler.fitted:
-            self.reward = reward_scaler.fit_transform(self.reward)
+            self.reward = reward_scaler.fit_transform(self.reward) / args.n_max_step
         else:
-            self.reward = reward_scaler.transform(self.reward)
+            self.reward = reward_scaler.transform(self.reward) / args.n_max_step
