@@ -133,8 +133,7 @@ def prepare_embed(args):
         # graph
         edge_weight, edge_index = all_graphs[data.graph_name[0]]
         # forward
-        indices = torch.where(data.x[0, :, -1] == 1)[0] # 1 - not selected, 0 - selected
-        e = net.embedding(data, edge_index, edge_weight)[0, indices].detach().cpu()
+        e = net.embedding(data, edge_index, edge_weight)[0].detach().cpu()
         # save gcn embedding
         path = os.path.join(embed_dir, data.name[0])
         torch.save(e, path)

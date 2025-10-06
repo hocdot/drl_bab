@@ -28,9 +28,9 @@ python3 -m dnnv_solver.main --net data/dataset/dnnv/onnx/mnist-net_256x2.onnx --
 
 ### TODO
 
-- [x] Graph embedding multiple networks
 - [ ] Constrastive loss
-- [ ] Minmax scaler 
+- [x] Graph embedding multiple networks
+- [x] Minmax scaler 
 
 - Ablation:
 - [ ] Action weight * FSB score

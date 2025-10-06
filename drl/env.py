@@ -75,6 +75,9 @@ class Env:
         init_mask = torch.tensor(observation[..., -1])
         self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
         self.reverse_active_neuron_index = {int(v): idx for idx, v in enumerate(self.active_neuron_index)}
+        # filter the embedding
+        assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
+        self.observation_embedding = self.observation_embedding[self.active_neuron_index]
         # print(f'{self.active_neuron_index=}')
         observation = self._concat_observation_embedding_2d(observation) # (B, n_active_neuron, n_raw_feature + gnn_embedding)
         assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
