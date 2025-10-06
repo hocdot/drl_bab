@@ -65,7 +65,7 @@ class DnnvBabSolver:
         if stop_criterion_batch_any(objective.rhs.to(self.device))(ret.output_lbs.to(self.device)).all():
             print(f'    - filtered: {ret.output_lbs=}')
             return []
-        print(f'    + saved: lower_bound={ret.output_lbs.item()}')
+        # print(f'    + saved: lower_bound={ret.output_lbs.item()}')
         
         # compute neuron index mapping
         self._compute_neuron_index_mapping(ret)
