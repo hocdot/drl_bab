@@ -6,6 +6,10 @@ from .dnnv_dataset import DnnvDataset
 
 def create_dataloader(args):
     dataloader_dict = {}
+    if args.mode == 'train_offline':
+        dataloader_dict[args.mode] = iter(())
+        return dataloader_dict
+    
     if args.dataset == 'milp':
         dataset = MILPDataset(args)
         dataset.prepare()

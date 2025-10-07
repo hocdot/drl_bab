@@ -6,7 +6,7 @@ from .replay_buffer import TrainingData
 
 def print_gradients(self, network_name, networks):
     """Print gradient statistics to check for vanishing/exploding gradients."""
-    if self.global_step % 5000:
+    if self.global_step % 5000 or self.global_step == 0:
         return
     
     print(f"\n=== {network_name} Gradient Stats (Step {self.global_step}) ===")
@@ -121,12 +121,10 @@ def sample_batch(self):
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
     return data
 
-def optimize(self):
+def optimize(self, data):
     self.actor.train()
     self.qf1.train()
     self.qf2.train()
-    # extract batch from buffer
-    data = self.sample_batch()    
     qf_loss = 0
     # print(f'[+] training data')
     # print(f'    - {data.prev_action.shape=}')      # n_subproblem

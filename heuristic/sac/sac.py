@@ -136,14 +136,17 @@ class SACDecider(Base):
             assert len(pa) == len(o) == len(a) == len(no) == len(nd) == len(nr), f'{len(pa)=} {len(o)=} {len(a)=} {len(no)=} {len(nd)=} {len(nr)=}'
             for i in range(len(pa)):
                 self.replay_buffer.push(pa[i], o[i], a[i], no[i], nd[i], nr[i])
-            # print()
-            # optimize model
+
+            # save offline data
             if (self.global_step % self.args.n_save_offline_data == 0) and self.args.save_offline_data:
                 self.sample_batch()
                 
+            # optimize model
             if self.global_step > self.args.n_start_learning:
                 if self.global_step % self.args.n_optimize == 0:
-                    actor_loss, critic_loss, alpha_loss = self.optimize()
+                    # extract batch from buffer
+                    data = self.sample_batch()    
+                    actor_loss, critic_loss, alpha_loss = self.optimize(data)
                     info['actor_loss'] += actor_loss
                     info['critic_loss'] += critic_loss
                     info['alpha_loss'] += alpha_loss
@@ -202,4 +205,7 @@ class SACDecider(Base):
     def __repr__(self):
         return f'SACDecider(mode={self.args.mode}, dataset={self.args.dataset})'
     
-    from .optimize import (optimize_qf, optimize_actor, update_target, optimize, print_gradients, sample_batch)
+    from .optimize import (
+        optimize_qf, optimize_actor, update_target, optimize, 
+        print_gradients, sample_batch)
+    from .train_offline import train_offline

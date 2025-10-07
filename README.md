@@ -15,6 +15,12 @@ python3 train.py --dataset milp --n_input 3 --batch_size 10000 --actor_lr 0.001 
 python3 train.py --dataset dnnv --n_input 4 --batch_size 256 --n_train_episode 624 --n_start_learning 5000 --save_csv --save_offline_data
 ```
 
+### Train Offline
+
+```bash
+python3 train.py --mode train_offline --dataset dnnv --n_input 4
+```
+
 ### Test
 
 ```bash
