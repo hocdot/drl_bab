@@ -60,11 +60,13 @@ class TrainingData:
             if (active_m == 0).any():
                 print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
         
-        if not args.save_offline_data:
-            if not reward_scaler.fitted:
-                self.reward = reward_scaler.fit_transform(self.reward) / args.n_max_step
-            else:
-                self.reward = reward_scaler.transform(self.reward) / args.n_max_step
+        # if not args.save_offline_data:
+        #     if not reward_scaler.fitted:
+        #         self.reward = reward_scaler.fit_transform(self.reward) / args.n_max_step
+        #     else:
+        #         self.reward = reward_scaler.transform(self.reward) / args.n_max_step
+
+        assert self.prev_action.shape[0] == self.action.shape[0] == self.done.shape[0] == self.reward.shape[0] == self.observation.shape[0] == self.next_observation.shape[0]
 
     def export(self, path):
         data = {

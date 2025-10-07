@@ -25,9 +25,6 @@ class Actor(nn.Module):
 
     def forward(self, x, z):
         mask     = x[:, :, -1]
-        sum_mask = (mask.sum(dim=1, keepdims=True) > 0).to(torch.float)
-        ones     = torch.ones_like(mask)
-        mask     = sum_mask * (mask) + (1 - sum_mask) * ones
         x = x.to(self.device)
         # embed
         e = self.embedding(x)

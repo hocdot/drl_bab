@@ -1,9 +1,10 @@
 from beartype import beartype
 import torch.optim as optim
+import random
 import torch
 import os
 
-from ..milp_baseline import select_random_action, select_cost_based_action, select_rounding_error_action
+from ..milp_baseline import select_cost_based_action, select_rounding_error_action
 from .replay_buffer import ReplayBuffer
 from .model import Actor, SoftQNetwork
 from .scaler import StandardScaler
@@ -77,13 +78,10 @@ class SACDecider(Base):
     @beartype
     def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
         if self.args.dataset == 'milp':
-            i = self.global_step % 3
-            if i == 0:
+            if random.random() >= 0.5:
                 action = select_rounding_error_action(observation)
-            elif i == 1:
+            else:
                 action = select_cost_based_action(observation)
-            elif i == 2:
-                action = select_random_action(observation)
         else:
             # action in active neuron index format
             action = self.env._get_fsb_action()
@@ -107,7 +105,7 @@ class SACDecider(Base):
         while not done:
             # select action
             with torch.no_grad():
-                if (self.global_step <= self.args.n_start_learning) or (self.global_step % 10 in [0, 1, 2]):
+                if (self.global_step <= self.args.n_start_learning) or (self.global_step % 10 == 0):
                     try:
                         action = self.select_heuristic_action(observation)
                     except ValueError: # all neurons are split
