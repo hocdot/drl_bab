@@ -25,6 +25,9 @@ class Actor(nn.Module):
 
     def forward(self, x, z):
         mask     = x[:, :, -1]
+        sum_mask = (mask.sum(dim=1, keepdims=True) > 0).to(torch.float)
+        ones     = torch.ones_like(mask)
+        mask     = sum_mask * (mask) + (1 - sum_mask) * ones
         x = x.to(self.device)
         # embed
         e = self.embedding(x)
@@ -45,6 +48,9 @@ class Actor(nn.Module):
         logits = self(x, z)
         probs  = logits.softmax(dim=1)
         m      = x[:, :, -1]
+        sum_m  = (m.sum(dim=1, keepdims=True) > 0).to(torch.float)
+        ones   = torch.ones_like(m)
+        m      = sum_m * (m) + (1 - sum_m) * ones
         probs  = probs * m
         probs /= probs.sum(dim=1, keepdims=True)
         policy_dist = Categorical(probs=probs)
@@ -52,8 +58,6 @@ class Actor(nn.Module):
         # Action probabilities for calculating the adapted soft-Q loss
         action_probs = policy_dist.probs
         log_prob = logits.log_softmax(dim=1)
-        # check if action is not repeated
-        assert all(m[i, a] == 1 for i, a in enumerate(action))
         return action, log_prob, action_probs
 
     def decode_and_get_action(self, x, a):
