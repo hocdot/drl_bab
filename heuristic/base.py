@@ -83,18 +83,17 @@ class Base:
             }
             print(epoch_info)
             if self.args.save_csv:
+                path = os.path.join(
+                    self.args.csv_dir, 
+                    self.args.mode, 
+                    f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'
+                ) 
                 df = pd.DataFrame([epoch_info])
                 df.to_csv(
-                    os.path.join(
-                        self.args.csv_dir, 
-                        self.args.mode, 
-                        f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'), 
+                    path, 
                     index=False, 
                     mode='a',
-                    header=False if os.path.exists(os.path.join(
-                        self.args.csv_dir, 
-                        self.args.mode, 
-                        f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv')) else True
+                    header=False if os.path.exists(path) else True
                 )
                             
 

@@ -18,7 +18,7 @@ python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 2000 --n_t
 ### Train Offline
 
 ```bash
-python3 train.py --mode train_offline --dataset dnnv --n_input 4
+python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv
 ```
 
 ### Test

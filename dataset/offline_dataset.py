@@ -13,7 +13,7 @@ def load_single_file(file_path):
 
 class OfflineDataset(Dataset):
     
-    def __init__(self, args, max_workers=None, files_per_batch=100):
+    def __init__(self, args, max_workers=None, files_per_batch=100, use_tqdm=True):
         data_dir = os.path.join(args.dataset_dir, args.dataset, 'offline_data')
         
         pattern = os.path.join(data_dir, "*.pt")
@@ -25,6 +25,7 @@ class OfflineDataset(Dataset):
         self.max_workers = max_workers
         self.files_per_batch = files_per_batch
         self.current_file_index = 0
+        self.use_tqdm = use_tqdm
         self.data = []
         print(f"Found {len(self.all_file_paths)} files in {data_dir}")
     
@@ -44,7 +45,7 @@ class OfflineDataset(Dataset):
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_path = {executor.submit(load_single_file, path): path for path in current_batch_paths}
             
-            with tqdm(total=len(current_batch_paths), desc="Loading batch") as pbar:
+            with tqdm(total=len(current_batch_paths), desc="Loading batch", disable=not self.use_tqdm) as pbar:
                 for future in as_completed(future_to_path):
                     data = future.result()
                     self.data.append(data)
