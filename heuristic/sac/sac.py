@@ -77,8 +77,8 @@ class SACDecider(Base):
     
     @beartype
     def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
+        n = self.global_step % 3
         if self.args.dataset == 'milp':
-            n = self.global_step % 3
             if n == 0:
                 action = select_rounding_error_action(observation)
             elif n == 1:
@@ -87,7 +87,10 @@ class SACDecider(Base):
                 action = select_random_action(observation)
         else:
             # action in active neuron index format
-            action = self.env._get_fsb_action()
+            if n == 0:
+                action = select_random_action(observation)
+            else:
+                action = self.env._get_fsb_action()
         return action
 
     def train_episode(self):
