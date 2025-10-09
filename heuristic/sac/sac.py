@@ -151,7 +151,7 @@ class SACDecider(Base):
                 if self.global_step % self.args.n_optimize == 0:
                     # extract batch from buffer
                     data = self.sample_batch()    
-                    actor_loss, critic_loss, alpha_loss = self.optimize(data)
+                    actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_optimize=self.args.n_qf_optimize)
                     info['actor_loss'] += actor_loss
                     info['critic_loss'] += critic_loss
                     info['alpha_loss'] += alpha_loss

@@ -10,7 +10,7 @@ def load(args, path, metric):
     y = df[metric].to_numpy()
     return y
 
-def plot_cdf(args):
+def plot_cdf_milp(args):
     plt.cla()
     plt.clf()
     # scenarios
@@ -57,16 +57,16 @@ def plot_line(args):
     plt.clf()
 
     args.solver = 'sac'
-    args.mode = 'train'
     label = f'{args.solver}'
     fig, ax = plt.subplots(1, 2)
     for i, metric in enumerate(['actor_loss', 'critic_loss']):
         for n_enc_dec_layer in [1, 2, 3]:
             for enc_dec_type in ['gru', 'lstm']:
                 label = f'{args.solver}_{enc_dec_type}_{n_enc_dec_layer}'
-                path = os.path.join(args.csv_dir, 'train', f'{args.mode}_{args.dataset}_{args.n_var}_{args.n_constraint}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
+                path = os.path.join(args.csv_dir, args.mode, f'{args.dataset}_{args.solver}_{enc_dec_type}_{n_enc_dec_layer}.csv')
                 if not os.path.exists(path):
                     continue
+                print(f'[+] loading {path}')
                 y = load(args, path, metric)
                 ax[i].plot(y, '-', label=label)
         ax[i].set_xlabel('epoch')
@@ -74,7 +74,7 @@ def plot_line(args):
         ax[i].legend()
     plt.tight_layout()
     # save figure
-    path = os.path.join(args.figure_dir, f'train_{args.solver}_loss.jpg')
+    path = os.path.join(args.figure_dir, f'{args.mode}_{args.solver}_loss.jpg')
     plt.savefig(path)
     print(f'[+] saved {path=}')
     plt.cla()
@@ -82,5 +82,5 @@ def plot_line(args):
 
 if __name__ == '__main__':
     args = get_args()
-    plot_cdf(args)
-    # plot_line(args)
+    plot_cdf_milp(args)
+    plot_line(args)

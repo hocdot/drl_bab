@@ -29,6 +29,7 @@ def get_args():
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_train_offline_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
+    parser.add_argument('--n_qf_optimize', type=int, default=1)
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
     

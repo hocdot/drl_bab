@@ -25,7 +25,7 @@ def train_offline(self):
             else:
                 unbatched['reward'] = self.reward_scaler.transform(unbatched['reward']) / 1000
             data = Transition(**unbatched)
-            actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_times=3)
+            actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_optimize=3)
             info['actor_loss'] += actor_loss
             info['critic_loss'] += critic_loss
             info['alpha_loss'] += alpha_loss
