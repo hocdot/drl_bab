@@ -20,7 +20,7 @@ class SoftQNetwork(nn.Module):
 
     def init_weight(self):
         for p in self.parameters():
-            nn.init.uniform_(p.data, -0.0, 0.0)
+            nn.init.uniform_(p.data, -0.01, 0.01)
             # nn.init.uniform_(p.data, -0.08, 0.08)
 
     def forward(self, x, z):
