@@ -34,6 +34,9 @@ def train_offline(self):
         info['critic_loss'] /= len(dataloader)
         info['alpha_loss'] /= len(dataloader)
         print(info, self.reward_scaler)
+
+        # save checkpoint
+        self.save()
     
         if self.args.save_csv:
             path = os.path.join(
