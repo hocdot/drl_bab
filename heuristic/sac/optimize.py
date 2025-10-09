@@ -125,7 +125,7 @@ def sample_batch(self):
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
     return data
 
-def optimize(self, data):
+def optimize(self, data, n_qf_times=1):
     self.actor.train()
     self.qf1.train()
     self.qf2.train()
@@ -137,7 +137,10 @@ def optimize(self, data):
     # print(f'    - {data.done.shape=}')             # n_subproblem, 2
     # print(f'    - {data.reward.shape=}')           # n_subproblem
     with torch.autograd.set_detect_anomaly(True):
-        qf_loss = self.optimize_qf(data)
+        qf_loss = 0.0
+        for _ in range(n_qf_times):
+            qf_loss += self.optimize_qf(data)
+        qf_loss /= n_qf_times
         actor_loss, alpha_loss = self.optimize_actor(data)
     if self.global_step % self.args.n_target_update == 0:
         self.update_target()

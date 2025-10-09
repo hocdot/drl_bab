@@ -21,7 +21,7 @@ class OfflineDataset(Dataset):
         data_dir = os.path.join(args.dataset_dir, args.dataset, 'offline_data')
         
         pattern = os.path.join(data_dir, "*.pt")
-        self.all_file_paths = sorted(glob.glob(pattern))[:100] # TODO: remove [:100]
+        self.all_file_paths = sorted(glob.glob(pattern))
         random.shuffle(self.all_file_paths)
         
         if not self.all_file_paths:

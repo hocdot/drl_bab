@@ -7,7 +7,7 @@ from dataset.offline_dataset import OfflineDataset
 from .replay_buffer import Transition
 
 def train_offline(self):
-    dataset = OfflineDataset(self.args, files_per_batch=100, use_tqdm=True)
+    dataset = OfflineDataset(self.args, files_per_batch=50, use_tqdm=True)
     for i in range(self.args.n_train_offline_episode):
         dataset.reload_next_batch()
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
@@ -25,7 +25,7 @@ def train_offline(self):
             else:
                 unbatched['reward'] = self.reward_scaler.transform(unbatched['reward']) / 1000
             data = Transition(**unbatched)
-            actor_loss, critic_loss, alpha_loss = self.optimize(data)
+            actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_times=3)
             info['actor_loss'] += actor_loss
             info['critic_loss'] += critic_loss
             info['alpha_loss'] += alpha_loss
