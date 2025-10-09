@@ -8,7 +8,11 @@ from tqdm import tqdm
 
 
 def load_single_file(file_path):
-    return torch.load(file_path, map_location='cpu')
+    data = torch.load(file_path, map_location='cpu')
+    # print(f'[+] loading {file_path}')
+    # for k, v in data.items():
+    #     print(f'{k}: {v.shape}')
+    return data
 
 
 class OfflineDataset(Dataset):
@@ -17,7 +21,8 @@ class OfflineDataset(Dataset):
         data_dir = os.path.join(args.dataset_dir, args.dataset, 'offline_data')
         
         pattern = os.path.join(data_dir, "*.pt")
-        self.all_file_paths = sorted(glob.glob(pattern))
+        self.all_file_paths = sorted(glob.glob(pattern))[:100] # TODO: remove [:100]
+        random.shuffle(self.all_file_paths)
         
         if not self.all_file_paths:
             raise ValueError(f"No .pt files found in {data_dir}")

@@ -7,7 +7,7 @@ from dataset.offline_dataset import OfflineDataset
 from .replay_buffer import Transition
 
 def train_offline(self):
-    dataset = OfflineDataset(self.args, files_per_batch=100, use_tqdm=False)
+    dataset = OfflineDataset(self.args, files_per_batch=100, use_tqdm=True)
     for i in range(self.args.n_train_offline_episode):
         dataset.reload_next_batch()
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
@@ -19,16 +19,21 @@ def train_offline(self):
         }
         for batch in tqdm.tqdm(dataloader, desc=f'[train_offline] {i=}/{self.args.n_train_offline_episode}'):
             unbatched = {k: v[0].to(self.args.device) for k, v in batch.items()}
-            unbatched['reward'] = unbatched['reward'] / self.args.n_max_step
+            # unbatched['reward'] = unbatched['reward'] / self.args.n_max_step
+            if not self.reward_scaler.fitted:
+                unbatched['reward'] = self.reward_scaler.fit_transform(unbatched['reward']) / 1000
+            else:
+                unbatched['reward'] = self.reward_scaler.transform(unbatched['reward']) / 1000
             data = Transition(**unbatched)
             actor_loss, critic_loss, alpha_loss = self.optimize(data)
             info['actor_loss'] += actor_loss
             info['critic_loss'] += critic_loss
             info['alpha_loss'] += alpha_loss
+            self.global_step += 1
         info['actor_loss'] /= len(dataloader)
         info['critic_loss'] /= len(dataloader)
         info['alpha_loss'] /= len(dataloader)
-        print(info)
+        print(info, self.reward_scaler)
     
         if self.args.save_csv:
             path = os.path.join(

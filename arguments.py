@@ -57,11 +57,11 @@ def get_args():
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('--q_lr', type=float, default=1e-4) # 3e-4
     parser.add_argument('--n_optimize', type=int, default=5)
-    parser.add_argument('--n_target_update', type=int, default=1) # 8000
-    parser.add_argument('--tau', type=float, default=0.001) # 1.0
+    parser.add_argument('--n_target_update', type=int, default=10) # 8000
+    parser.add_argument('--tau', type=float, default=1e-4) # 1.0
     parser.add_argument('--autotune_entropy', action='store_true')
     parser.add_argument('--target_entropy_scale', type=float, default=0.89)
-    parser.add_argument('--alpha', type=float, default=0.2) # fixed entropy
+    parser.add_argument('--alpha', type=float, default=0.0) # fixed entropy
     
     # pointernet model parameter
     parser.add_argument('--n_input', type=int, default=3)

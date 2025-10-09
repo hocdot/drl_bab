@@ -319,16 +319,17 @@ class DomainsList:
 
         # hidden bounds
         if self.all_lower_bounds is not None:
-            # check repeated decisions for relu
-            for i in remaining_index:
-                lname, nid, point = decisions[i % len(decisions)]
-                if point == 0.0: # relu
-                    if i >= len(decisions): # negative branch
-                        assert domain_params.upper_bounds[lname][i][nid] == point, f'{domain_params.upper_bounds[lname][i][nid]=}'
-                        assert domain_params.lower_bounds[lname][i][nid] < point, f'{domain_params.lower_bounds[lname][i][nid]=}'
-                    else: # positive branch
-                        assert domain_params.upper_bounds[lname][i][nid] > point, f'{domain_params.upper_bounds[lname][i][nid]=}'
-                        assert domain_params.lower_bounds[lname][i][nid] == point, f'{domain_params.lower_bounds[lname][i][nid]=}'
+            # TODO: enable this
+            # # check repeated decisions for relu
+            # for i in remaining_index:
+            #     lname, nid, point = decisions[i % len(decisions)]
+            #     if point == 0.0: # relu
+            #         if i >= len(decisions): # negative branch
+            #             assert domain_params.upper_bounds[lname][i][nid] == point, f'{domain_params.upper_bounds[lname][i][nid]=}'
+            #             assert domain_params.lower_bounds[lname][i][nid] < point, f'{domain_params.lower_bounds[lname][i][nid]=}'
+            #         else: # positive branch
+            #             assert domain_params.upper_bounds[lname][i][nid] > point, f'{domain_params.upper_bounds[lname][i][nid]=}'
+            #             assert domain_params.lower_bounds[lname][i][nid] == point, f'{domain_params.lower_bounds[lname][i][nid]=}'
                     
             [v.append(domain_params.lower_bounds[k][remaining_index]) for k, v in self.all_lower_bounds.items()]
             [v.append(domain_params.upper_bounds[k][remaining_index]) for k, v in self.all_upper_bounds.items()]

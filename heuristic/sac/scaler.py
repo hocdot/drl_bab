@@ -34,3 +34,6 @@ class StandardScaler:
         _data = data.detach().cpu().numpy()
         self.fit(_data)
         return self.transform(data)
+    
+    def __repr__(self):
+        return f'StandardScaler(mean={self.mean}, std={self.std}'
