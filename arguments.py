@@ -29,7 +29,6 @@ def get_args():
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_train_offline_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
-    parser.add_argument('--n_qf_optimize', type=int, default=1)
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
     
@@ -53,17 +52,20 @@ def get_args():
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm
     parser.add_argument('--n_enc_dec_layer', type=int, default=1) # 3
     parser.add_argument('--n_buffer', type=int, default=100000) # 1e6
-    parser.add_argument('--n_start_learning', type=int, default=5000) # 20000
+    parser.add_argument('--n_target_update', type=int, default=1) # 8000
+    
     parser.add_argument('--batch_size', type=int, default=128) # 64 by CleanRL, 12000 to utilize all RTX 4080
     parser.add_argument('--actor_lr', type=float, default=1e-4) # 3e-4
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('--q_lr', type=float, default=1e-4) # 3e-4
-    parser.add_argument('--n_optimize', type=int, default=5)
-    parser.add_argument('--n_target_update', type=int, default=1) # 8000
     parser.add_argument('--tau', type=float, default=1e-4) # 1.0
     parser.add_argument('--autotune_entropy', action='store_true')
     parser.add_argument('--target_entropy_scale', type=float, default=0.89)
     parser.add_argument('--alpha', type=float, default=0.0) # fixed entropy
+    
+    parser.add_argument('--n_start_learning', type=int, default=5000) # 20000
+    parser.add_argument('--n_optimize', type=int, default=5)
+    parser.add_argument('--n_qf_optimize', type=int, default=1)
     
     # pointernet model parameter
     parser.add_argument('--n_input', type=int, default=3)
