@@ -44,19 +44,20 @@ class Env:
         return instance['onnx'][0], instance['vnnlib'][0]
         
     def reset_solver(self):
+        self.observation_embedding = None
         if self.args.dataset == 'milp':
             c, A, b, input_bounds = self.load_milp_instance()
             solver = MilpBabSolver(c, A, b, input_bounds, self.args)
-            self.observation_embedding = None
         else:
             onnx, vnnlib = self.load_dnnv_instance()
             net, input_shape, objs = extract_instance(onnx, vnnlib)
             assert len(objs) == 1, f'{len(objs)=}'
             solver = DnnvBabSolver(net, input_shape, objs, self.args)
-            # load observation embedding
-            embed_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'embed')
-            embed_path = os.path.join(embed_dir, f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
-            self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
+            if self.args.use_embedding:
+                # load observation embedding
+                embed_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'embed')
+                embed_path = os.path.join(embed_dir, f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
+                self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
         return solver
     
     @beartype
@@ -76,9 +77,10 @@ class Env:
         self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
         self.reverse_active_neuron_index = {int(v): idx for idx, v in enumerate(self.active_neuron_index)}
         # filter the embedding
-        assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
-        self.observation_embedding = self.observation_embedding[self.active_neuron_index]
-        # print(f'{self.active_neuron_index=}')
+        if self.observation_embedding is not None:
+            assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
+            self.observation_embedding = self.observation_embedding[self.active_neuron_index]
+            # print(f'{self.active_neuron_index=}')
         observation = self._concat_observation_embedding_2d(observation) # (B, n_active_neuron, n_raw_feature + gnn_embedding)
         assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
         return observation, done
@@ -89,8 +91,9 @@ class Env:
         if self.args.dataset == 'milp':
             return observation
         new_observation = observation[:, self.active_neuron_index] # (B, n_active_neuron, n_raw_feature)
-        obs_emb = self.observation_embedding.unsqueeze(0).expand(new_observation.shape[0], -1, -1)  # (B, n_active_neuron, gnn_embedding)
-        new_observation = torch.cat([obs_emb, new_observation], dim=-1)
+        if self.observation_embedding is not None:
+            obs_emb = self.observation_embedding.unsqueeze(0).expand(new_observation.shape[0], -1, -1)  # (B, n_active_neuron, gnn_embedding)
+            new_observation = torch.cat([obs_emb, new_observation], dim=-1)
         assert ((new_observation[..., -1] == 0) | (new_observation[..., -1] == 1)).all(), f'{new_observation[..., -1]=}'
         return new_observation
 
@@ -100,8 +103,9 @@ class Env:
             return observation
         new_observation = observation[:, :, self.active_neuron_index] # (B, 2, n_active_neuron, n_raw_feature)
         assert new_observation.shape[1] == 2, f'{new_observation.shape=}'
-        obs_emb = self.observation_embedding.unsqueeze(0).unsqueeze(0).expand(new_observation.shape[0], 2, -1, -1)  # (B, 2, n_active_neuron, gnn_embedding)
-        new_observation = torch.cat([obs_emb, new_observation], dim=-1)
+        if self.observation_embedding is not None:
+            obs_emb = self.observation_embedding.unsqueeze(0).unsqueeze(0).expand(new_observation.shape[0], 2, -1, -1)  # (B, 2, n_active_neuron, gnn_embedding)
+            new_observation = torch.cat([obs_emb, new_observation], dim=-1)
         assert ((new_observation[..., -1] == 0) | (new_observation[..., -1] == 1)).all(), f'{new_observation[..., -1]=}'
         return new_observation
     
