@@ -5,11 +5,20 @@ class Embedding(nn.Module):
 
     def __init__(self, args):
         super().__init__()
-        if args.use_embedding:
-            self.embedding = nn.Linear(args.n_input + args.gcn_embed_n_hidden, args.n_embed, bias=False, device=args.device)
+        self.args = args
+        if self.args.use_embedding:
+            self.embedding = nn.Linear(2 * args.gcn_embed_n_hidden, args.n_embed, bias=False, device=args.device)
+            self.projection = nn.Linear(args.n_input, args.gcn_embed_n_hidden-1, bias=False, device=args.device)
         else:
             self.embedding = nn.Linear(args.n_input, args.n_embed, bias=False, device=args.device)
+            self.projection = None
 
     def forward(self, x):
+        if self.args.use_embedding:
+            x_emb = x[..., :-self.args.n_input]
+            mask = x[..., -1:]
+            x_proj = x[..., -self.args.n_input:]
+            x_proj = self.projection(x_proj)
+            x = torch.cat([x_emb, x_proj, mask], dim=-1)
         z = self.embedding(x)
         return z
