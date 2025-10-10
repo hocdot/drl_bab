@@ -13,7 +13,7 @@ python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ```bash
 python3 train.py --mode train --dataset milp --n_input 3 --batch_size 10000 --actor_lr 0.001 --q_lr 0.001 --n_start_learning 100 --save_csv
 python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 500 --save_csv --n_train_epoch 10 --n_qf_optimize 5
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_train_episode 10 --n_start_learning 1 --save_csv --n_train_epoch 1 --n_qf_optimize 1 --checkpoint_dirname cac
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_train_episode 10 --n_start_learning 1 --save_csv --n_train_epoch 1 --n_qf_optimize 1 --checkpoint_dirname cac --use_embedding
 
 ```
 
@@ -22,7 +22,7 @@ python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_tra
 python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 5000 --save_csv --save_offline_data --n_train_epoch 2
 ```
 ```bash
-python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv
+python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv --use_embedding
 ```
 
 ### Test
