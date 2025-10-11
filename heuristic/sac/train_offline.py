@@ -7,9 +7,9 @@ from dataset.offline_dataset import OfflineDataset
 from .replay_buffer import Transition
 
 def train_offline(self):
-    self.load()
+    # self.load()
     dataset = OfflineDataset(self.args, files_per_batch=50, use_tqdm=True)
-    for i in range(self.args.n_train_offline_episode):
+    for i in range(self.args.n_train_offline_epoch):
         dataset.reload_next_batch()
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
         info = {
@@ -18,15 +18,15 @@ def train_offline(self):
             'critic_loss': 0.0,
             'alpha_loss': 0.0,
         }
-        for batch in tqdm.tqdm(dataloader, desc=f'[train_offline] {i=}/{self.args.n_train_offline_episode}'):
+        for batch in tqdm.tqdm(dataloader, desc=f'[train_offline] {i=}/{self.args.n_train_offline_epoch}'):
             unbatched = {k: v[0].to(self.args.device) for k, v in batch.items()}
-            unbatched['reward'] = unbatched['reward'] / self.args.n_max_visited_subproblem
-            # if not self.reward_scaler.fitted:
-                # unbatched['reward'] = self.reward_scaler.fit_transform(unbatched['reward']) / 1000
-            # else:
-                # u/nbatched['reward'] = self.reward_scaler.transform(unbatched['reward']) / 1000
+            # unbatched['reward'] = unbatched['reward'] / self.args.n_max_visited_subproblem
+            if not self.reward_scaler.fitted:
+                unbatched['reward'] = self.reward_scaler.fit_transform(unbatched['reward']) / self.args.n_max_visited_subproblem
+            else:
+                unbatched['reward'] = self.reward_scaler.transform(unbatched['reward']) / self.args.n_max_visited_subproblem
             data = Transition(**unbatched)
-            actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_optimize=3)
+            actor_loss, critic_loss, alpha_loss = self.optimize(data, n_qf_optimize=5)
             info['actor_loss'] += actor_loss
             info['critic_loss'] += critic_loss
             info['alpha_loss'] += alpha_loss

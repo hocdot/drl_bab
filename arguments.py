@@ -27,7 +27,7 @@ def get_args():
     # train
     parser.add_argument('--n_train_epoch', type=int, default=100)
     parser.add_argument('--n_train_episode', type=int, default=100)
-    parser.add_argument('--n_train_offline_episode', type=int, default=100)
+    parser.add_argument('--n_train_offline_epoch', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
     
     parser.add_argument('--use_embedding', action='store_true')
