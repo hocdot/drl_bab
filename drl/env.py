@@ -65,6 +65,7 @@ class Env:
         # load new instance
         self.episode += 1
         self.n_step = 1
+        self.n_visited_subproblem = 0
         self.solver = self.reset_solver()
         self.prev_actions = [-1] if self.solver.remaining_subproblem else []
         done = self.solver.remaining_subproblem <= 0
@@ -169,8 +170,10 @@ class Env:
         
         # get info
         done = self.solver.remaining_subproblem <= 0
+        self.n_visited_subproblem += self.solver.remaining_subproblem
         early_stop = (
             (self.solver.remaining_subproblem >= self.args.n_max_remaining_subproblem) or 
+            (self.n_visited_subproblem >= self.args.n_max_visited_subproblem) or
             (self.n_step >= self.args.n_max_step)
         )
         return remaining_next_observation, reward, done, early_stop

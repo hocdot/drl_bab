@@ -29,13 +29,17 @@ def get_args():
     parser.add_argument('--n_train_episode', type=int, default=100)
     parser.add_argument('--n_train_offline_episode', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
+    
+    parser.add_argument('--use_embedding', action='store_true')
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
+    
+    parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
+    parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
     
     # milp parameter
     parser.add_argument('--n_var', type=int, default=10)
     parser.add_argument('--n_constraint', type=int, default=10)
-    parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
     parser.add_argument('--n_max_step', type=int, default=50)
     
     # dnnv parameter
@@ -46,7 +50,6 @@ def get_args():
     parser.add_argument('--dnnv_skip_lower_bound', type=float, default=-10)
     parser.add_argument('--save_offline_data', action='store_true')
     parser.add_argument('--n_save_offline_data', type=int, default=1000)
-    parser.add_argument('--use_embedding', action='store_true')
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm

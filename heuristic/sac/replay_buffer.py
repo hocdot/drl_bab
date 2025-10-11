@@ -62,10 +62,11 @@ class TrainingData:
         #         print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
         
         if not args.save_offline_data and args.dataset == 'dnnv':
-            if not reward_scaler.fitted:
-                self.reward = reward_scaler.fit_transform(self.reward) / 1000
-            else:
-                self.reward = reward_scaler.transform(self.reward) / 1000
+            self.reward = self.reward / args.n_max_visited_subproblem
+            # if not reward_scaler.fitted:
+            #     self.reward = reward_scaler.fit_transform(self.reward) / 1000
+            # else:
+            #     self.reward = reward_scaler.transform(self.reward) / 1000
 
         assert self.prev_action.shape[0] == self.action.shape[0] == self.done.shape[0] == self.reward.shape[0] == self.observation.shape[0] == self.next_observation.shape[0]
 
