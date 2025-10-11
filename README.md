@@ -11,7 +11,7 @@ python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ### Create offline data
 
 ```bash
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 5000 --n_start_save_offline_data 500 --save_offline_data --n_train_epoch 2 --use_embedding
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 10000 --n_start_save_offline_data 2000 --save_offline_data --n_train_epoch 2 --use_embedding
 ```
 
 ### Train Offline
