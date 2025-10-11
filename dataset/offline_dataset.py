@@ -8,7 +8,12 @@ from tqdm import tqdm
 
 
 def load_single_file(file_path):
-    data = torch.load(file_path, map_location='cpu')
+    try:
+        data = torch.load(file_path, map_location='cpu')
+    except Exception as e:
+        print(f'[-] error loading {file_path}: {e}')
+        os.remove(file_path)
+        return None
     # print(f'[+] loading {file_path}')
     # for k, v in data.items():
     #     print(f'{k}: {v.shape}')
@@ -53,7 +58,8 @@ class OfflineDataset(Dataset):
             with tqdm(total=len(current_batch_paths), desc="Loading batch", disable=not self.use_tqdm) as pbar:
                 for future in as_completed(future_to_path):
                     data = future.result()
-                    self.data.append(data)
+                    if data is not None:
+                        self.data.append(data)
                     pbar.update(1)
         
         self.current_file_index = end_idx

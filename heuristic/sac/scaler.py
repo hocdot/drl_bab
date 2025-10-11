@@ -36,4 +36,4 @@ class StandardScaler:
         return self.transform(data)
     
     def __repr__(self):
-        return f'StandardScaler(mean={self.mean}, std={self.std}'
+        return f'StandardScaler(mean={self.mean:.02f}, std={self.std:.02f})'
