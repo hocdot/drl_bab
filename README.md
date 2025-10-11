@@ -23,7 +23,7 @@ python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv --us
 ### Train
 
 ```bash
-python3 train.py --mode train --dataset milp --n_input 3 --batch_size 10000 --actor_lr 0.001 --q_lr 0.001 --n_start_learning 100 --save_csv
+python3 train.py --mode train --dataset milp --n_input 3 --batch_size 10000 --actor_lr 0.001 --q_lr 0.001 --n_start_learning 100 --save_csv --device cuda:1
 python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 500 --save_csv --n_train_epoch 10 --n_qf_optimize 2 --use_embedding
 
 ```
