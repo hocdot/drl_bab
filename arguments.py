@@ -49,7 +49,7 @@ def get_args():
     parser.add_argument('--dnnv_solver_batch', type=int, default=1000)
     parser.add_argument('--dnnv_skip_lower_bound', type=float, default=-10)
     parser.add_argument('--save_offline_data', action='store_true')
-    parser.add_argument('--n_save_offline_data', type=int, default=1000)
+    parser.add_argument('--n_start_save_offline_data', type=int, default=1000)
     
     # sac parameter
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm

@@ -8,6 +8,18 @@ python3 -m prepare.prepare_io --dataset dnnv --use_attack
 python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ```
 
+### Create offline data
+
+```bash
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 5000 --n_start_save_offline_data 500 --save_offline_data --n_train_epoch 2  --use_embedding
+```
+
+### Train Offline
+
+```bash
+python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv --use_embedding
+```
+
 ### Train
 
 ```bash
@@ -19,14 +31,6 @@ python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_t
 python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_train_episode 10 --n_start_learning 1 --save_csv --n_train_epoch 1 --n_qf_optimize 1 --checkpoint_dirname cac --use_embedding
 ```
 
-### Train Offline
-
-```bash
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 5000 --save_csv --save_offline_data --n_train_epoch 2
-```
-```bash
-python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv --use_embedding
-```
 
 ### Test
 

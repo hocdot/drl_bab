@@ -143,7 +143,7 @@ class SACDecider(Base):
                 self.replay_buffer.push(pa[i], o[i], a[i], no[i], nd[i], nr[i])
 
             # save offline data
-            if (self.global_step > self.args.n_save_offline_data) and self.args.save_offline_data:
+            if (self.global_step > self.args.n_start_save_offline_data) and self.args.save_offline_data:
                 if self.global_step % 10 == 0:
                     self.sample_batch()
                 
