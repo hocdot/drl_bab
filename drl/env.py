@@ -67,23 +67,24 @@ class Env:
         self.n_step = 1
         self.n_visited_subproblem = 0
         self.solver = self.reset_solver()
-        self.prev_actions = [-1] if self.solver.remaining_subproblem else []
         done = self.solver.remaining_subproblem <= 0
         observation = self.solver.get_observation() if not done else None
         assert len(observation) == 1, f'{len(observation)=}'
-        if self.args.dataset == 'milp':
-            return observation, done
-        # dnnv
-        init_mask = torch.tensor(observation[..., -1])
-        self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
-        self.reverse_active_neuron_index = {int(v): idx for idx, v in enumerate(self.active_neuron_index)}
-        # filter the embedding
-        if self.observation_embedding is not None:
-            assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
-            self.observation_embedding = self.observation_embedding[self.active_neuron_index]
-            # print(f'{self.active_neuron_index=}')
-        observation = self._concat_observation_embedding_2d(observation) # (B, n_active_neuron, n_raw_feature + gnn_embedding)
-        assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
+        if self.args.dataset == 'dnnv':
+            # dnnv
+            init_mask = torch.tensor(observation[..., -1])
+            self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
+            self.reverse_active_neuron_index = {int(v): idx for idx, v in enumerate(self.active_neuron_index)}
+            # filter the embedding
+            if self.observation_embedding is not None:
+                assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
+                self.observation_embedding = self.observation_embedding[self.active_neuron_index]
+                # print(f'{self.active_neuron_index=}')
+            observation = self._concat_observation_embedding_2d(observation) # (B, n_active_neuron, n_raw_feature + gnn_embedding)
+            assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
+        # save for training
+        self.prev_actions = [-1] if self.solver.remaining_subproblem else []
+        self.prev_observations = observation
         return observation, done
 
 
@@ -136,7 +137,7 @@ class Env:
         
     
     @beartype
-    def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool]:
+    def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool, list[dict]]:
         self.n_step += 1
         # convert to active neuron format for dnnv
         raw_action = self._convert_action_to_raw_action(action)
@@ -148,25 +149,35 @@ class Env:
         double_next_observations = self._concat_observation_embedding_3d(double_next_observations)
         double_actions = self._convert_raw_action_to_action(double_raw_actions)
         prev_actions = self._convert_raw_action_to_action(prev_raw_actions)
-        
-        # print(f'{np.array(double_actions).shape=} {np.array(double_next_observations).shape=} {np.array(prev_actions).shape=} {np.array(double_dones).shape=} {np.array(double_rewards).shape=}')
         assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
         assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
         assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
+        assert len(double_actions) == len(self.prev_actions), f'{len(double_actions)=} {len(self.prev_actions)=}'
+        assert len(double_actions) == len(self.prev_observations), f'{len(double_actions)=} {len(self.prev_observations)=}'
         
-        # save for training
-        self.train_action = double_actions # (n_subproblem, 2)
-        self.train_next_observation = double_next_observations # (n_subproblem, 2, n_var, n_feature)
-        self.train_done = double_dones # (n_subproblem, 2)
-        self.train_reward = double_rewards # (n_subproblem,)
-        # last actions
-        self.prev_actions = prev_actions # (n_subproblem,)
+        # create training data
+        train_data = []
+        if self.args.mode == 'train':
+            for i in range(len(self.prev_actions)):
+                train_data.append({
+                    'prev_action': self.prev_actions[i], # (n_subproblem,)
+                    'observation': self.prev_observations[i], # (n_subproblem, n_var, n_feature)
+                    'action': double_actions[i], # (n_subproblem, 2)
+                    'next_observation': double_next_observations[i], # (n_subproblem, 2, n_var, n_feature)
+                    'done': double_dones[i], # (n_subproblem, 2)
+                    'reward': double_rewards[i], # (n_subproblem,)
+                })
+        
         # get reward
         reward = - self.solver.remaining_subproblem
         
         # convert to active neuron format for dnnv
         remaining_next_observation = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
         remaining_next_observation = self._concat_observation_embedding_2d(remaining_next_observation)
+        
+        # last info
+        self.prev_actions = prev_actions # (n_subproblem,)
+        self.prev_observations = remaining_next_observation # (n_subproblem, n_var, n_feature)
         
         # get info
         done = self.solver.remaining_subproblem <= 0
@@ -176,4 +187,4 @@ class Env:
             (self.n_visited_subproblem >= self.args.n_max_visited_subproblem) or
             (self.n_step >= self.args.n_max_step)
         )
-        return remaining_next_observation, reward, done, early_stop
+        return remaining_next_observation, reward, done, early_stop, train_data

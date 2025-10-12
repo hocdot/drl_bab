@@ -43,7 +43,7 @@ class Base:
         while not done:
             with torch.no_grad():
                 action = self.select_action(observation)
-            remaining_next_observation, reward, done, early_stop = self.env.step(action)
+            remaining_next_observation, reward, done, early_stop, _ = self.env.step(action)
             if early_stop:
                 break
             self.step_hook(remaining_next_observation)

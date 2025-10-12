@@ -98,7 +98,6 @@ class SACDecider(Base):
         self.args.mode = 'train'
         observation, done = self.env.reset()
         info = {
-            # 'episode': self.env.episode, 
             'value': 0.0, 
             'actor_loss': 0.0, 
             'critic_loss': 0.0, 
@@ -122,44 +121,35 @@ class SACDecider(Base):
                     #     early_stop = True
                     #     break
                     action = self.select_action(observation)
-            # store previous action
-            pa = self.env.prev_actions
+
             # send to environment
-            remaining_next_observation, reward, done, early_stop = self.env.step(action)
-            if early_stop:
-                break
+            remaining_next_observation, reward, done, early_stop, train_data = self.env.step(action)
+            self.step_hook(remaining_next_observation)
+            observation = remaining_next_observation
+            
             # extract training data
-            o = observation
-            a = self.env.train_action
-            no = self.env.train_next_observation
-            nd = self.env.train_done
-            nr = self.env.train_reward
-            # push data to replay buffer
-            # print('[+] push to replay_buffer')
-            # print(f'    - {pa.shape=} {o.shape=} {a.shape=} {no.shape=} {nd.shape=} {nr.shape=}')
-            assert len(pa) == len(o) == len(a) == len(no) == len(nd) == len(nr), f'{len(pa)=} {len(o)=} {len(a)=} {len(no)=} {len(nd)=} {len(nr)=}'
-            for i in range(len(pa)):
-                self.replay_buffer.push(pa[i], o[i], a[i], no[i], nd[i], nr[i])
+            for data in train_data:
+                self.replay_buffer.push(data)
 
             # save offline data
-            if (self.global_step > self.args.n_start_save_offline_data) and self.args.save_offline_data:
-                if self.global_step % 10 == 0:
+            if self.args.save_offline_data:
+                if (self.global_step > self.args.n_start_save_offline_data) and (self.global_step % 10 == 0):
                     self.sample_batch()
                 
             # optimize model
-            if self.global_step > self.args.n_start_learning:
-                if self.global_step % self.args.n_optimize == 0:
-                    # extract batch from buffer
-                    actor_loss, critic_loss, alpha_loss = self.optimize(data=None,n_qf_optimize=self.args.n_qf_optimize)
-                    info['actor_loss'] += actor_loss
-                    info['critic_loss'] += critic_loss
-                    info['alpha_loss'] += alpha_loss
-                    episode_step += 1
+            if (self.global_step > self.args.n_start_learning) and (self.global_step % self.args.n_optimize == 0):
+                actor_loss, critic_loss, alpha_loss = self.optimize(data=None,n_qf_optimize=self.args.n_qf_optimize)
+                info['actor_loss'] += actor_loss
+                info['critic_loss'] += critic_loss
+                info['alpha_loss'] += alpha_loss
+                episode_step += 1
+                
             # update
-            self.step_hook(remaining_next_observation)
             info['value'] += reward
-            observation = remaining_next_observation
             self.global_step += 1
+            if early_stop:
+                break
+            
         if episode_step > 0:
             info['actor_loss'] /= episode_step
             info['critic_loss'] /= episode_step

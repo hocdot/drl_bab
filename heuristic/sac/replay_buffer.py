@@ -14,8 +14,8 @@ class ReplayBuffer:
     def reset(self):
         self.memory = deque([], maxlen=self.capacity)
 
-    def push(self, *args):
-        self.memory.append(Transition(*args))
+    def push(self, data):
+        self.memory.append(Transition(**data))
 
     def sample(self, batch_size):
         batch_size = min(batch_size, len(self))
