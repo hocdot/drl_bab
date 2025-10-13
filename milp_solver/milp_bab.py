@@ -99,21 +99,6 @@ class MilpBabSolver:
                 torch.tensor(double_rewards, dtype=torch.float32))
 
 
-    def get_info(self):
-        info = []
-        for node in self.queue:
-            node_info = {
-                'primal_estimate': node.primal_estimate,
-                'dual_estimate': node.dual_estimate,
-                'active': node.active,
-                'c': self.c,
-                'fraction_score': node.fraction_score,
-                # TODO: may be adding c A b would help
-            }
-            info.append(node_info)
-        return info
-
-
     def get_node_observation(self, node):
         observation = np.stack([
             node.fraction_score,
@@ -124,15 +109,9 @@ class MilpBabSolver:
 
 
     def get_observation(self, batch=None):
-        info = self.get_info()
         observation = []
-        for node_info in info:
-            node_observation = np.stack([
-                # TODO: add embedding
-                node_info['fraction_score'],
-                node_info['c'] / 1000 * node_info['active'],
-                node_info['active'],
-            ]).T
+        for node in self.queue:
+            node_observation = self.get_node_observation(node)
             observation.append(node_observation)
         observation = torch.from_numpy(np.array(observation)).to(torch.float32) # n_subproblem, n_var, n_feature
         return observation
