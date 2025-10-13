@@ -197,9 +197,6 @@ class DnnvBabSolver:
         return self.get_node_data(subproblems)
         
         
-    def get_info(self):
-        return None
-    
     def get_fsb_score(self, domain_params: AbstractResults) -> torch.Tensor:
     
         masks = compute_masks(
@@ -249,6 +246,11 @@ class DnnvBabSolver:
             count += n_hiddens
         
         self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}
+        
+    def get_heuristic_score(self) -> torch.Tensor:
+        subproblems = self.queue.get_all_domains(device=self.device)
+        assert len(subproblems.input_lowers) == 1, f'{len(subproblems.input_lowers)=}'
+        return self.get_fsb_score(subproblems)
 
     from .verifier.utils import _setup_restart, _init_abstractor, _pre_attack
     from .graph.onnx2networkx import get_edge_data
