@@ -8,6 +8,7 @@ gurobipy
 beartype
 joblib
 pandas
+pyyaml
 numpy
 scipy
 torch

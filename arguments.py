@@ -1,5 +1,6 @@
 import argparse
 import torch
+import yaml
 import os
 
 torch.set_printoptions(4, sci_mode=False)
@@ -17,18 +18,33 @@ def create_folders(args):
     os.makedirs(os.path.join(args.csv_dir, 'train'), exist_ok=True)
     os.makedirs(os.path.join(args.csv_dir, 'test'), exist_ok=True)
 
+def load_yaml_config(config_path):
+    assert os.path.exists(config_path), f"Config file not found: {config_path}"
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
+
+def update_args_from_yaml(args, config):
+    for key, value in config.items():
+        assert hasattr(args, key), f'{key} is invalid'
+        setattr(args, key, value)
+    return args
+
 def get_args():
     # create args parser
     parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True, help='Path to YAML config file')
     parser.add_argument('--mode', type=str, default='test')
     parser.add_argument('--dataset', type=str, default='milp')
     parser.add_argument('--solver', type=str, default='sac')
+    parser.add_argument('--device', type=str, default='cuda')
     
     # train
     parser.add_argument('--n_train_epoch', type=int, default=100)
     parser.add_argument('--n_train_instance', type=int, default=100)
     parser.add_argument('--n_test_instance', type=int, default=1000)
     
+    parser.add_argument('--load_checkpoint', action='store_true')
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
     
@@ -94,21 +110,20 @@ def get_args():
     parser.add_argument('--figure_dirname', type=str, default='figure')
     parser.add_argument('--csv_dirname', type=str, default='csv')
     
-    # metric
-    # parser.add_argument('--metric', type=str, default='value')
-    # parser.add_argument('--n_smooth', type=int, default=1)
-    
-    # device
-    if torch.cuda.is_available():
-        parser.add_argument('--device', type=str, default='cuda')
-    else:
-        parser.add_argument('--device', type=str, default='cpu')
     # other flags
-    parser.add_argument('--load_checkpoint', action='store_true')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--seed', type=int, default=36)
     # parse args
     args = parser.parse_args()
+    
+    # load and apply YAML config if provided
+    if args.config is not None:
+        config = load_yaml_config(args.config)
+        args = update_args_from_yaml(args, config)
+
+    if not torch.cuda.is_available():
+        args.device = 'cpu'
+
     # create folders
     create_folders(args)
     return args

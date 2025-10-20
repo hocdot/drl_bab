@@ -60,7 +60,7 @@ class Base:
         if self.args.load_checkpoint:
             self.load()
             
-        meter_metrics = ['actor_loss', 'critic_loss', 'alpha_loss', 'value', 'done', 'early_stop']
+        meter_metrics = ['done', 'early_stop', 'alpha_loss', 'actor_loss', 'critic_loss', 'value']
         for epoch in range(self.args.n_train_epoch):
             # initialize meters
             meters = {k: AvgMeter(k) for k in meter_metrics}
@@ -70,9 +70,9 @@ class Base:
                 # update meters
                 [meters[k].update(info[k], count=1) for k in meter_metrics]
                 pbar.set_postfix({
-                    **{k: v.avg for k, v in meters.items()},
                     'global_step': self.global_step,
                     'buffer': len(self.replay_buffer),
+                    **{k: v.avg for k, v in meters.items()},
                 })
             
             # save checkpoint
@@ -80,9 +80,9 @@ class Base:
             
             # update info
             epoch_info = {
-                **{k: v.avg for k, v in meters.items()},
                 'epoch': epoch,
                 'total': len(pbar),
+                **{k: v.avg for k, v in meters.items()},
             }
             print(epoch_info)
             if self.args.save_csv:

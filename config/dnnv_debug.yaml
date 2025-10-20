@@ -1,0 +1,31 @@
+dataset: dnnv
+
+batch_size: 10
+actor_lr: 0.001
+q_lr: 0.001
+device: cuda:0
+
+n_input: 4
+n_max_step: 500
+
+use_attack: false
+dnnv_solver_batch: 100
+dnnv_skip_lower_bound: -10
+n_max_remaining_subproblem: 1000
+n_max_visited_subproblem: 2000
+
+n_train_epoch: 1
+n_train_instance: 10
+n_test_instance: 10
+n_start_learning: 1
+
+enc_dec_type: lstm
+n_enc_dec_layer: 1
+n_buffer: 100000
+
+n_qf_optimize: 1
+
+use_embedding: true
+use_scale_action: true
+
+checkpoint_dirname: checkpoint_debug
