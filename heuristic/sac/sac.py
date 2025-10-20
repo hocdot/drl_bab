@@ -67,9 +67,10 @@ class SACDecider(Base):
         z = self.decoder_state
         if self.args.use_scale_action:
             _, _, action_probs = self.actor.get_action(x, z)
-            new_observation = x.clone()
-            new_observation[:, :, 1] *= action_probs
-            action = select_cost_based_action(new_observation.cpu().numpy())
+            if self.args.dataset == 'milp':
+                action = select_cost_based_action(observation, scale=action_probs)
+            else:
+                action = self.env._get_fsb_action(scale=action_probs)
             return action
         else:
             if self.args.mode == 'train':

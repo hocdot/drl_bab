@@ -226,9 +226,12 @@ class DnnvBabSolver:
         score = torch.stack([score_1, score_2], dim=-1)
         return score
     
-    def get_fsb_action(self) -> torch.Tensor:
+    def get_fsb_action(self, scale=None) -> torch.Tensor:
         subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
-        decisions = self.fsb_heuristic(self.abstractor, subproblems)
+        if scale is None:
+            decisions = self.fsb_heuristic(self.abstractor, subproblems)
+        else:
+            raise NotImplementedError
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]
         return action
