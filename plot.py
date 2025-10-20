@@ -16,21 +16,36 @@ def plot_cdf_milp(args):
     plt.cla()
     plt.clf()
     # scenarios
-    plt.figure(figsize=(8, 10))
+    # plt.figure(figsize=(8, 10))
+    
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
     
     args.dataset = 'milp'
     args.mode = 'test'
     solver_classes = [CostBasedDecider, RandomDecider, RoundingErrorDecider, SACDecider]
     base_path = os.path.join(args.csv_dir, args.mode, f'{args.mode}_{args.dataset}_{args.n_var}_{args.n_constraint}')
+    labels = []
+    values = []
     for solver_class in solver_classes:
         path = f'{base_path}_{solver_class.__name__}.csv'
         y = load(args, path, 'value')
         y = np.sort(y)
-        plt.plot(y, label=solver_class.__name__)
+        label = solver_class.__name__.replace('Decider', '')
+        ax[0].plot(y, label=label)
+        
+        labels.append(label)
+        values.append(-np.mean(y))
+    
+    ax[1].bar(labels, values)
     
     # decorate
-    plt.ylabel(f'value')
-    plt.legend()
+    ax[0].set_ylabel(f'reward')
+    ax[0].legend()
+    
+    y_min = np.min(values)
+    y_max = np.max(values)
+    ax[1].set_ylim(y_min-10, y_max+10)
+    ax[1].set_ylabel(f'value')
     plt.tight_layout()
     # save figure
     path = os.path.join(args.figure_dir, f'cdf.jpg')
