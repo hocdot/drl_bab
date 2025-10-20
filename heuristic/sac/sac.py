@@ -1,12 +1,11 @@
 from beartype import beartype
 import torch.optim as optim
-import random
 import torch
 import os
 
 from ..milp_baseline import select_cost_based_action, select_rounding_error_action, select_random_action
 from .replay_buffer import ReplayBuffer
-from .model import Actor, SoftQNetwork
+from model import Actor, SoftQNetwork
 from .scaler import StandardScaler
 from ..base import Base
 
