@@ -5,6 +5,7 @@ import tqdm
 import os
 
 from drl.env import Env
+from .meter import AvgMeter
 
 class Base:
 
@@ -56,16 +57,32 @@ class Base:
 
     def train(self):
         self.args.mode = 'train'
-        self.load()
-        # test each property
+        if self.args.load_checkpoint:
+            self.load()
+            
         for epoch in range(self.args.n_train_epoch):
-            # train
+            actor_loss_meter = AvgMeter('actor_loss')
+            critic_loss_meter = AvgMeter('critic_loss')
+            alpha_loss_meter = AvgMeter('alpha_loss')
+            value_meter = AvgMeter('value')
             episode_infos = []
             pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
             for episode in pbar:
                 info = self.train_episode()
-                pbar.set_postfix(info)
                 episode_infos.append(info)
+                
+                actor_loss_meter.update(info['actor_loss'])
+                critic_loss_meter.update(info['critic_loss'])
+                alpha_loss_meter.update(info['alpha_loss'])
+                value_meter.update(info['value'])
+                pbar.set_postfix({
+                    'actor_loss': actor_loss_meter.avg,
+                    'critic_loss': critic_loss_meter.avg,
+                    'alpha_loss': alpha_loss_meter.avg,
+                    'value': value_meter.avg,
+                    'global_step': self.global_step,
+                    'buffer': len(self.replay_buffer),
+                })
             
             # save checkpoint
             self.save()
@@ -73,13 +90,13 @@ class Base:
             # update info
             epoch_info = {
                 'epoch': epoch,
-                'actor_loss': float(np.mean([info['actor_loss'] for info in episode_infos])),
-                'critic_loss': float(np.mean([info['critic_loss'] for info in episode_infos])),
-                'alpha_loss': float(np.mean([info['alpha_loss'] for info in episode_infos])),
+                'actor_loss': actor_loss_meter.avg,
+                'critic_loss': critic_loss_meter.avg,
+                'alpha_loss': alpha_loss_meter.avg,
                 'early_stop': sum([info['early_stop'] for info in episode_infos]),
                 'done': sum([info['done'] for info in episode_infos]),
-                'total': len(episode_infos),
-                'train_value': float(np.mean([info['value'] for info in episode_infos])),
+                'total': len(pbar),
+                'train_value': value_meter.avg,
             }
             print(epoch_info)
             if self.args.save_csv:
@@ -92,8 +109,8 @@ class Base:
                 df.to_csv(
                     path, 
                     index=False, 
-                    mode='a',
-                    header=False if os.path.exists(path) else True
+                    mode='w' if epoch == 0 else 'a',
+                    header=epoch == 0
                 )
                             
 

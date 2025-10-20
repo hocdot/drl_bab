@@ -66,14 +66,21 @@ class SACDecider(Base):
     def select_action(self, observation: torch.Tensor) -> list[int]:
         x = self.transform(observation)
         z = self.decoder_state
-        if self.args.mode == 'train':
-            action, _, _ = self.actor.get_action(x, z)
-        elif self.args.mode == 'test':
-            logits = self.actor(x, z)
-            action = torch.argmax(logits, dim=1)
+        if self.args.use_scale_action:
+            _, _, action_probs = self.actor.get_action(x, z)
+            new_observation = x.clone()
+            new_observation[:, :, 1] *= action_probs
+            action = select_cost_based_action(new_observation.cpu().numpy())
+            return action
         else:
-            raise NotImplementedError
-        return action.tolist()
+            if self.args.mode == 'train':
+                action, _, _ = self.actor.get_action(x, z)
+            elif self.args.mode == 'test':
+                logits = self.actor(x, z)
+                action = torch.argmax(logits, dim=1)
+            else:
+                raise NotImplementedError
+            return action.tolist()
     
     @beartype
     def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
@@ -155,10 +162,7 @@ class SACDecider(Base):
             info['critic_loss'] /= episode_step
             info['alpha_loss'] /= episode_step
         info['done'] = done
-        info['global_step'] = self.global_step
         info['early_stop'] = early_stop
-        info['step'] = self.env.n_step
-        info['buffer'] = len(self.replay_buffer)
         return info
 
     @property

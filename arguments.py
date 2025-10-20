@@ -30,10 +30,12 @@ def get_args():
     parser.add_argument('--n_train_offline_epoch', type=int, default=100)
     parser.add_argument('--n_test_episode', type=int, default=1000)
     
-    parser.add_argument('--use_embedding', action='store_true')
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
     
+    # SAC
+    parser.add_argument('--use_scale_action', action='store_true')
+    parser.add_argument('--use_embedding', action='store_true')
     parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
     parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
     
@@ -101,6 +103,7 @@ def get_args():
     else:
         parser.add_argument('--device', type=str, default='cpu')
     # other flags
+    parser.add_argument('--load_checkpoint', action='store_true')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--seed', type=int, default=36)
     # parse args
