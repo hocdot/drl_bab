@@ -50,6 +50,6 @@ def train_offline(self):
             df.to_csv(
                 path, 
                 index=False, 
-                mode='a',
-                header=False if os.path.exists(path) else True
+                mode='w' if i == 0 else 'a',
+                header=i == 0
             )

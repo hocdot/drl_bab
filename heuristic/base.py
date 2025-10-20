@@ -60,26 +60,17 @@ class Base:
         if self.args.load_checkpoint:
             self.load()
             
+        meter_metrics = ['actor_loss', 'critic_loss', 'alpha_loss', 'value', 'done', 'early_stop']
         for epoch in range(self.args.n_train_epoch):
-            actor_loss_meter = AvgMeter('actor_loss')
-            critic_loss_meter = AvgMeter('critic_loss')
-            alpha_loss_meter = AvgMeter('alpha_loss')
-            value_meter = AvgMeter('value')
-            episode_infos = []
+            # initialize meters
+            meters = {k: AvgMeter(k) for k in meter_metrics}
             pbar = tqdm.tqdm(range(self.args.n_train_instance), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
-            for episode in pbar:
+            for _ in pbar:
                 info = self.train_instance()
-                episode_infos.append(info)
-                
-                actor_loss_meter.update(info['actor_loss'])
-                critic_loss_meter.update(info['critic_loss'])
-                alpha_loss_meter.update(info['alpha_loss'])
-                value_meter.update(info['value'])
+                # update meters
+                [meters[k].update(info[k], count=1) for k in meter_metrics]
                 pbar.set_postfix({
-                    'actor_loss': actor_loss_meter.avg,
-                    'critic_loss': critic_loss_meter.avg,
-                    'alpha_loss': alpha_loss_meter.avg,
-                    'value': value_meter.avg,
+                    **{k: v.avg for k, v in meters.items()},
                     'global_step': self.global_step,
                     'buffer': len(self.replay_buffer),
                 })
@@ -89,14 +80,9 @@ class Base:
             
             # update info
             epoch_info = {
+                **{k: v.avg for k, v in meters.items()},
                 'epoch': epoch,
-                'actor_loss': actor_loss_meter.avg,
-                'critic_loss': critic_loss_meter.avg,
-                'alpha_loss': alpha_loss_meter.avg,
-                'early_stop': sum([info['early_stop'] for info in episode_infos]),
-                'done': sum([info['done'] for info in episode_infos]),
                 'total': len(pbar),
-                'train_value': value_meter.avg,
             }
             print(epoch_info)
             if self.args.save_csv:
