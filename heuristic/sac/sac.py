@@ -99,7 +99,7 @@ class SACDecider(Base):
                 action = self.env._get_fsb_action()
         return action
 
-    def train_episode(self):
+    def train_instance(self):
         # reset environment
         self.args.mode = 'train'
         observation, done = self.env.reset()

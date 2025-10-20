@@ -25,14 +25,14 @@ class Base:
         pbar = tqdm.tqdm(range(self.args.n_test_instance), desc=f'[test]') if use_tqdm else range(self.args.n_test_instance)
         for _ in pbar:
             # test each property
-            info = self.test_episode()
+            info = self.test_instance()
             # print(info)
             infos.append(info)
             if use_tqdm:
                 pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos), mode=self.args.mode)
         return infos
 
-    def test_episode(self):
+    def test_instance(self):
         # reset environment
         observation, done = self.env.reset()
         info = {'episode': self.env.episode, 'value': 0, 'done': done}
@@ -68,7 +68,7 @@ class Base:
             episode_infos = []
             pbar = tqdm.tqdm(range(self.args.n_train_instance), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
             for episode in pbar:
-                info = self.train_episode()
+                info = self.train_instance()
                 episode_infos.append(info)
                 
                 actor_loss_meter.update(info['actor_loss'])
