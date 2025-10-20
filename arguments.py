@@ -26,18 +26,14 @@ def get_args():
     
     # train
     parser.add_argument('--n_train_epoch', type=int, default=100)
-    parser.add_argument('--n_train_episode', type=int, default=100)
-    parser.add_argument('--n_train_offline_epoch', type=int, default=100)
-    parser.add_argument('--n_test_episode', type=int, default=1000)
+    parser.add_argument('--n_train_instance', type=int, default=100)
+    parser.add_argument('--n_test_instance', type=int, default=1000)
     
     parser.add_argument('--save_csv', action='store_true')
     parser.add_argument('--clean', action='store_true')
     
-    # SAC
-    parser.add_argument('--use_scale_action', action='store_true')
-    parser.add_argument('--use_embedding', action='store_true')
-    parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
-    parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
+    # train offline
+    parser.add_argument('--n_train_offline_epoch', type=int, default=100)
     
     # milp parameter
     parser.add_argument('--n_var', type=int, default=10)
@@ -54,6 +50,11 @@ def get_args():
     parser.add_argument('--n_start_save_offline_data', type=int, default=1000)
     
     # sac parameter
+    parser.add_argument('--use_scale_action', action='store_true')
+    parser.add_argument('--use_embedding', action='store_true')
+    parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
+    parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
+    
     parser.add_argument('--enc_dec_type', type=str, default='lstm') # lstm
     parser.add_argument('--n_enc_dec_layer', type=int, default=1) # 3
     parser.add_argument('--n_buffer', type=int, default=100000) # 1e6

@@ -22,7 +22,7 @@ class Base:
         self.args.mode = 'test'
         self.load()
         infos = []
-        pbar = tqdm.tqdm(range(self.args.n_test_episode), desc=f'[test]') if use_tqdm else range(self.args.n_test_episode)
+        pbar = tqdm.tqdm(range(self.args.n_test_instance), desc=f'[test]') if use_tqdm else range(self.args.n_test_instance)
         for _ in pbar:
             # test each property
             info = self.test_episode()
@@ -66,7 +66,7 @@ class Base:
             alpha_loss_meter = AvgMeter('alpha_loss')
             value_meter = AvgMeter('value')
             episode_infos = []
-            pbar = tqdm.tqdm(range(self.args.n_train_episode), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
+            pbar = tqdm.tqdm(range(self.args.n_train_instance), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
             for episode in pbar:
                 info = self.train_episode()
                 episode_infos.append(info)

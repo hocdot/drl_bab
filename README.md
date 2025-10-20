@@ -11,7 +11,7 @@ python3 -m prepare.prepare_gnn_embedding --dataset dnnv
 ### Create offline data
 
 ```bash
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 8000 --n_start_save_offline_data 2000 --save_offline_data --n_train_epoch 3 --use_embedding
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_instance 624 --n_start_learning 8000 --n_start_save_offline_data 2000 --save_offline_data --n_train_epoch 3 --use_embedding
 ```
 
 ### Train Offline
@@ -24,11 +24,11 @@ python3 train.py --mode train_offline --dataset dnnv --n_input 4 --save_csv --us
 
 ```bash
 python3 train.py --mode train --dataset milp --n_input 3 --batch_size 10000 --actor_lr 0.001 --q_lr 0.001 --n_start_learning 100 --save_csv --device cuda:1
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_episode 624 --n_start_learning 500 --save_csv --n_train_epoch 10 --n_qf_optimize 2 --use_embedding
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 1000 --n_train_instance 624 --n_start_learning 500 --save_csv --n_train_epoch 10 --n_qf_optimize 2 --use_embedding
 
 ```
 ```bash
-python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_train_episode 10 --n_start_learning 1 --save_csv --n_train_epoch 1 --n_qf_optimize 1 --checkpoint_dirname ckpt2 --use_embedding
+python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_train_instance 10 --n_start_learning 1 --save_csv --n_train_epoch 1 --n_qf_optimize 1 --checkpoint_dirname ckpt2 --use_embedding
 ```
 
 
@@ -36,8 +36,8 @@ python3 train.py --mode train --dataset dnnv --n_input 4 --batch_size 10 --n_tra
 
 ```bash
 python3 infer.py
-python3 infer.py --dataset dnnv --n_input 4 --n_test_episode 9 --n_max_step 200 --n_max_remaining_subproblem 1000
-python3 infer.py --dataset dnnv --n_input 4 --n_test_episode 50 --use_embedding
+python3 infer.py --dataset dnnv --n_input 4 --n_test_instance 9 --n_max_step 200 --n_max_remaining_subproblem 1000
+python3 infer.py --dataset dnnv --n_input 4 --n_test_instance 50 --use_embedding
 ```
 
 ```bash
