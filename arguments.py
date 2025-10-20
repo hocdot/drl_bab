@@ -33,7 +33,7 @@ def update_args_from_yaml(args, config):
 def get_args():
     # create args parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True, help='Path to YAML config file')
+    parser.add_argument('--config', type=str, default=None, help='Path to YAML config file')
     parser.add_argument('--mode', type=str, default='test')
     parser.add_argument('--dataset', type=str, default='milp')
     parser.add_argument('--solver', type=str, default='sac')
