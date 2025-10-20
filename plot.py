@@ -18,7 +18,7 @@ def plot_cdf_milp(args):
     # scenarios
     # plt.figure(figsize=(8, 10))
     
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    fig, ax = plt.subplots(1, 2, figsize=(15, 6))
     
     args.dataset = 'milp'
     args.mode = 'test'
