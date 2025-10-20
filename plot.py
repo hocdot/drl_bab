@@ -26,16 +26,31 @@ def plot_cdf_milp(args):
     base_path = os.path.join(args.csv_dir, args.mode, f'{args.mode}_{args.dataset}_{args.n_var}_{args.n_constraint}')
     labels = []
     values = []
+    args.use_scale_action = False
     for solver_class in solver_classes:
-        path = f'{base_path}_{solver_class.__name__}.csv'
+        if solver_class == SACDecider:
+            path = f'{base_path}_{solver_class.__name__}_no_scale.csv'
+            label = solver_class.__name__.replace('Decider', '') + f' (no scale)'
+        else:
+            path = f'{base_path}_{solver_class.__name__}.csv'
+            label = solver_class.__name__.replace('Decider', '')
         y = load(args, path, 'value')
         y = np.sort(y)
-        label = solver_class.__name__.replace('Decider', '')
         ax[0].plot(y, label=label)
         
         labels.append(label)
         values.append(-np.mean(y))
-    
+        
+    # additional plot
+    args.use_scale_action = True
+    path = f'{base_path}_{solver_class.__name__}.csv'
+    label = solver_class.__name__.replace('Decider', '') + f' (scale)'
+    y = load(args, path, 'value')
+    y = np.sort(y)
+    labels.append(label)
+    values.append(-np.mean(y))
+
+    ax[0].plot(y, label=label)
     ax[1].bar(labels, values)
     
     # decorate

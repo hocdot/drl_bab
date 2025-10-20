@@ -17,7 +17,11 @@ def infer(args):
         
     solver_classes += [SACDecider]
     for solver_class in solver_classes:
-        path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}.csv')
+        if solver_class == SACDecider:
+            path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}' + ('.csv' if args.use_scale_action else '_no_scale.csv'))
+        else:
+            path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}.csv')
+            
         if not os.path.exists(path) or solver_class == SACDecider:
             solver = solver_class(args)
             infos = solver.test()
