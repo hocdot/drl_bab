@@ -241,6 +241,7 @@ class DnnvBabSolver:
         self.neuron_index_mapping = {}
         ordered_names = [_.name for _ in self.abstractor.net.split_nodes]
         count = np.prod(self.input_shape)
+        self.n_hiddens = 0
         for name in ordered_names:
             assert domain_params.lower_bounds[name].shape[0] == 1
             n_hiddens = domain_params.lower_bounds[name].numel()
@@ -248,7 +249,7 @@ class DnnvBabSolver:
                 {int(count + i): (name, i, 0.0) for i in range(n_hiddens)}
             )
             count += n_hiddens
-        
+            self.n_hiddens += n_hiddens
         self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}
         
     def get_heuristic_score(self) -> torch.Tensor:
