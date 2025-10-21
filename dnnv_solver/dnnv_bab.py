@@ -93,7 +93,7 @@ class DnnvBabSolver:
         )
 
     @beartype
-    def branch_and_bound(self, action) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def branch_and_bound(self, action) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # convert DRL action format to DNNV decision format
         decisions = [list(self.neuron_index_mapping[a]) for a in action]
         # pick all subproblems
@@ -113,14 +113,12 @@ class DnnvBabSolver:
         double_dones = torch.ones_like(double_actions, dtype=torch.int32)
         double_dones[remaining_index] = 0
         double_rewards = -1 * sum(torch.chunk(1 - double_dones, 2))
-        # previous actions
-        prev_actions = double_actions[remaining_index]
         
         # NOTE: correct order used in training
-        return self._reorder_tensors(double_actions, double_next_observations, prev_actions, double_dones, double_rewards)
+        return self._reorder_tensors(double_actions, double_next_observations, double_dones, double_rewards)
     
     @beartype
-    def _reorder_tensors(self, actions: torch.Tensor, next_observations: torch.Tensor, prev_actions: torch.Tensor, dones: torch.Tensor, rewards: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _reorder_tensors(self, actions: torch.Tensor, next_observations: torch.Tensor, dones: torch.Tensor, rewards: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         '''
             Convert [a1, b1, c1, a2, b2, c2] to [[a1, a2], [b1, b2], [c1, c2]]
         '''
@@ -129,8 +127,7 @@ class DnnvBabSolver:
         new_dones = torch.stack(torch.chunk(dones, 2), dim=1).cpu()
         # aligned with remaining subproblems, no need to reorder
         new_rewards = rewards.cpu()
-        new_prev_actions = prev_actions.cpu()
-        return new_actions, new_next_observations, new_prev_actions, new_dones, new_rewards
+        return new_actions, new_next_observations, new_dones, new_rewards
         
         
     @beartype

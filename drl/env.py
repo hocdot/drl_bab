@@ -165,12 +165,12 @@ class Env:
         raw_action = self._convert_action_to_raw_action(action)
         
         # bound
-        double_raw_actions, double_next_observations, prev_raw_actions, double_dones, double_rewards = self.solver.branch_and_bound(raw_action) # 2 x subproblems
+        double_raw_actions, double_raw_next_observations, double_dones, double_rewards = self.solver.branch_and_bound(raw_action) # 2 x subproblems
         
         # convert to active neuron format for dnnv
-        double_next_observations = self._concat_observation_embedding_3d(double_next_observations)
+        double_next_observations = self._concat_observation_embedding_3d(double_raw_next_observations)
         double_actions = self._convert_raw_action_to_action(double_raw_actions)
-        prev_actions = self._convert_raw_action_to_action(prev_raw_actions)
+
         assert len(double_actions) == len(double_next_observations), f'{len(double_actions)=} {len(double_next_observations)=}'
         assert len(double_actions) == len(double_dones), f'{len(double_actions)=} {len(double_dones)=}'
         assert len(double_actions) == len(double_rewards), f'{len(double_actions)=} {len(double_rewards)=}'
@@ -194,17 +194,16 @@ class Env:
         reward = - self.solver.remaining_subproblem
         
         # get remaining subproblems
-        raw_remaining_next_observation, raw_remaining_prev_actions = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
+        remaining_raw_next_observation, remaining_raw_prev_actions = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
         
         # convert to active neuron format for dnnv
-        remaining_prev_actions = self._convert_raw_action_to_action(raw_remaining_prev_actions)
-        remaining_next_observation = self._concat_observation_embedding_2d(raw_remaining_next_observation)
+        remaining_next_observation = self._concat_observation_embedding_2d(remaining_raw_next_observation)
+        remaining_prev_actions = self._convert_raw_action_to_action(remaining_raw_prev_actions)
         
         # last info
-        self.prev_actions = prev_actions # (n_subproblem,)
+        self.prev_actions = remaining_prev_actions # (n_subproblem,) 
         self.prev_observations = remaining_next_observation # (n_subproblem, n_var, n_feature)
-        assert torch.equal(remaining_prev_actions, self.prev_actions), f'{remaining_prev_actions=} {self.prev_actions=}'
-        print('Passed')
+        
         # get info
         done = self.solver.remaining_subproblem <= 0
         self.n_visited_subproblem += self.solver.remaining_subproblem

@@ -30,10 +30,9 @@ class MilpBabSolver:
         return len(self.queue)
     
     @beartype
-    def branch_and_bound(self, action: list[int]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    def branch_and_bound(self, action: list[int]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # branch and bound
         queue = []
-        prev_actions = [] # list<n_next_subproblem><int> list of action leading to new subproblem, for testing
         double_actions = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_next_observations = [] # list<n_subproblem><ndarray:2, n_var, n_input>: for training
         double_dones = [] # list<n_subproblem><ndarray:2>: for training
@@ -67,7 +66,6 @@ class MilpBabSolver:
                         # add information about new branch
                         queue.append(child)
                         child.prev_action = ai
-                        prev_actions.append(ai)
                         next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125.0
@@ -96,7 +94,6 @@ class MilpBabSolver:
         # expanded information for training/inference
         return (torch.tensor(double_actions, dtype=torch.long), 
                 torch.tensor(double_next_observations, dtype=torch.float32), 
-                torch.tensor(prev_actions, dtype=torch.long), 
                 torch.tensor(double_dones, dtype=torch.int8), 
                 torch.tensor(double_rewards, dtype=torch.float32))
 
