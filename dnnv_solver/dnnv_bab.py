@@ -89,6 +89,7 @@ class DnnvBabSolver:
             rhs=ret.rhs,
             input_split=self.input_split,
             preconditions={},
+            prev_actions=[-1],
         )
 
     @beartype
@@ -188,13 +189,16 @@ class DnnvBabSolver:
         ret.append(x)
         return torch.cat(ret, dim=1)
     
-    
-    def get_observation(self, return_fsb_score=False, batch=None):
+    @beartype
+    def get_observation(self, return_fsb_score=False, batch=None) -> tuple[torch.Tensor, torch.Tensor]:
         """remaining subproblems"""
         subproblems = self.queue.get_all_domains(device=self.device, batch=batch)
         if return_fsb_score:
             return self.get_node_data(subproblems), self.get_fsb_score(subproblems)
-        return self.get_node_data(subproblems)
+        # convert DNNV decision format to DRL action format
+        prev_actions = [self.reverse_neuron_index_mapping[*d] for d in subproblems.prev_actions]
+        prev_actions = torch.tensor(prev_actions, dtype=torch.long)
+        return self.get_node_data(subproblems), prev_actions
         
         
     def get_fsb_score(self, domain_params: AbstractResults) -> torch.Tensor:
@@ -234,7 +238,7 @@ class DnnvBabSolver:
             print(f'{scale.shape=}')
             raise NotImplementedError
         # convert DNNV decision format to DRL action format
-        action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]
+        action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action
     
     def _compute_neuron_index_mapping(self, domain_params: AbstractResults) -> None:
@@ -251,6 +255,8 @@ class DnnvBabSolver:
             count += n_hiddens
             self.n_hiddens += n_hiddens
         self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}
+        # special case for initial action
+        self.reverse_neuron_index_mapping[(-1,)] = -1
         
     def get_heuristic_score(self) -> torch.Tensor:
         subproblems = self.queue.get_all_domains(device=self.device)

@@ -69,7 +69,7 @@ class Env:
         self.n_visited_subproblem = 0
         self.solver = self.reset_solver()
         done = self.solver.remaining_subproblem <= 0
-        observation = self.solver.get_observation() if not done else None
+        observation, prev_actions = self.solver.get_observation() if not done else (None, None)
         assert len(observation) == 1, f'{len(observation)=}'
         if self.args.dataset == 'dnnv':
             # dnnv
@@ -85,7 +85,7 @@ class Env:
             observation = self._concat_observation_embedding_2d(observation) # (B, n_active_neuron, n_raw_feature + gnn_embedding)
             assert (observation[..., -1] == 1).all(), f'{observation[..., -1]=}'
         # save for training
-        self.prev_actions = [-1] if self.solver.remaining_subproblem else []
+        self.prev_actions = prev_actions
         self.prev_observations = observation
         return observation, done
 
@@ -193,14 +193,18 @@ class Env:
         # get reward
         reward = - self.solver.remaining_subproblem
         
+        # get remaining subproblems
+        raw_remaining_next_observation, raw_remaining_prev_actions = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
+        
         # convert to active neuron format for dnnv
-        remaining_next_observation = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
-        remaining_next_observation = self._concat_observation_embedding_2d(remaining_next_observation)
+        remaining_prev_actions = self._convert_raw_action_to_action(raw_remaining_prev_actions)
+        remaining_next_observation = self._concat_observation_embedding_2d(raw_remaining_next_observation)
         
         # last info
         self.prev_actions = prev_actions # (n_subproblem,)
         self.prev_observations = remaining_next_observation # (n_subproblem, n_var, n_feature)
-        
+        assert torch.equal(remaining_prev_actions, self.prev_actions), f'{remaining_prev_actions=} {self.prev_actions=}'
+        print('Passed')
         # get info
         done = self.solver.remaining_subproblem <= 0
         self.n_visited_subproblem += self.solver.remaining_subproblem

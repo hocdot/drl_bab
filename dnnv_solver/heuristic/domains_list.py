@@ -4,6 +4,7 @@ from beartype import beartype
 import typing
 import torch
 import time
+import copy
 import os
 
 from ..helper.proof.reasoning_domains import ReasoningDomains
@@ -34,6 +35,7 @@ class DomainsList:
                  slopes: dict, 
                  cs: torch.Tensor, 
                  rhs: torch.Tensor, 
+                 prev_actions: list | None,
                  input_split: bool = False, 
                  preconditions: dict = {}) -> None:
 
@@ -51,6 +53,7 @@ class DomainsList:
         # decisions
         all_histories = [_copy_history(histories) for _ in range(len(cs))] if not input_split else None
         all_betas = [None for i in range(len(cs))] if not input_split else None
+        all_prev_actions = [copy.deepcopy(prev_actions) for _ in range(len(cs))] if prev_actions is not None else None
         
         # sat solvers
         self.all_sat_solvers = None
@@ -94,7 +97,7 @@ class DomainsList:
         self.all_lAs = {k: TensorStorage(v[remain_idx].cpu()) for k, v in lAs.items()} if len(lAs) else None
         
         if self.input_split:
-            self.all_lower_bounds = self.all_upper_bounds = self.all_histories = self.all_betas = None
+            self.all_lower_bounds = self.all_upper_bounds = self.all_histories = self.all_betas = self.all_prev_actions = None
             if Settings.use_save_reasoning_step:
                 # hidden bounds
                 self.all_lower_bounds = {k: TensorStorage(v[remain_idx].cpu()) for k, v in lower_bounds.items() if k != self.final_name}
@@ -106,6 +109,8 @@ class DomainsList:
             # decisions
             self.all_histories = [all_histories[_] for _ in remain_idx]
             self.all_betas = [all_betas[_] for _ in remain_idx]
+            # prev actions
+            self.all_prev_actions = [all_prev_actions[_] for _ in remain_idx]
             
         # proof
         if Settings.use_save_reasoning_step:
@@ -180,7 +185,7 @@ class DomainsList:
             assert all([len(_) == len(self) for _ in self.all_upper_bounds.values()])
             
         if not self.input_split:
-            assert len(self.all_betas) == len(self.all_histories) == len(self)
+            assert len(self.all_betas) == len(self.all_histories) == len(self) == len(self.all_prev_actions)
             if self.all_sat_solvers is not None:
                 assert len(self.all_sat_solvers) == len(self), print(f'len(self.all_sat_solvers)={len(self.all_sat_solvers)}, len(self)={len(self)}')
 
@@ -222,16 +227,18 @@ class DomainsList:
         
         if self.input_split:
             # input splitting
-            new_masks = new_betas = new_histories = None
+            new_masks = new_betas = new_histories = new_prev_actions = None
             new_sat_solvers = None
         else: 
             # pop batch
             new_betas = self.all_betas[-batch:]
             new_histories = self.all_histories[-batch:]
+            new_prev_actions = self.all_prev_actions[-batch:]
 
             # remove batch
             self.all_betas = self.all_betas[:-batch]
             self.all_histories = self.all_histories[:-batch]
+            self.all_prev_actions = self.all_prev_actions[:-batch]
             
             if self.all_sat_solvers is not None:
                 new_sat_solvers = self.all_sat_solvers[-batch:]
@@ -269,6 +276,7 @@ class DomainsList:
             'cs': new_cs,
             'rhs': new_rhs,
             'sat_solvers': new_sat_solvers,
+            'prev_actions': new_prev_actions,
         })
 
 
@@ -310,6 +318,7 @@ class DomainsList:
             # decision histories
             self.all_histories.extend([domain_params.histories[i] for i in remaining_index])
             self.all_betas.extend([domain_params.betas[i] for i in remaining_index])
+            self.all_prev_actions.extend([decisions[i % len(decisions)] for i in remaining_index])
             
             # conflict clauses
             self.save_conflict_clauses(
@@ -457,6 +466,9 @@ class DomainsList:
             device=device,
         )
         
+        # prev actions
+        new_prev_actions = [self.all_prev_actions[_] for _ in indices]
+        
         self._check_consistent()
         
         return AbstractResults(**{
@@ -471,6 +483,7 @@ class DomainsList:
             'lAs': new_lAs,
             'cs': new_cs,
             'rhs': new_rhs,
+            'prev_actions': new_prev_actions,
         })
         
         

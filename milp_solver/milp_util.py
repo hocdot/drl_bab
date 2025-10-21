@@ -31,6 +31,7 @@ class Node:
     def __init__(self, lp_model):
         self.lp_model = lp_model
         self.X = [x for x in lp_model.getVars()]
+        self.prev_action = None
 
     @property
     def primal_estimate(self):

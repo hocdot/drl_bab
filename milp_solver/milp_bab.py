@@ -21,6 +21,7 @@ class MilpBabSolver:
         # init solver
         lp_model = create_model(c, A, b, input_bounds)
         root = Node(lp_model)
+        root.prev_action = -1
         status = root.bound()
         self.queue = [root] if status == 'optimal' else []
         
@@ -38,17 +39,17 @@ class MilpBabSolver:
         double_dones = [] # list<n_subproblem><ndarray:2>: for training
         double_rewards = [] # list<n_subproblem>: for training
         assert self.remaining_subproblem == len(action), f'{self.remaining_subproblem=} {len(action)=}'
-        for node, i in zip(self.queue, action):
+        for node, ai in zip(self.queue, action):
             # branch
-            assert node.active[i] == 1, f'{i=} {node.active[i]=}'
+            assert node.active[ai] == 1, f'{ai=} {node.active[ai]=}'
             if self.args.verbose:
-                print(f'    * branching {i=} {node.x_opt[i]=}')
+                print(f'    * branching {ai=} {node.x_opt[ai]=}')
             # init
-            train_i = np.full([2], i, dtype=np.int64)
+            train_i = np.full([2], ai, dtype=np.int64)
             next_observation = np.zeros([2, self.n_var, self.args.n_input], dtype=np.float32)
             done = np.ones([2], dtype=np.int32)
             reward = 0
-            for j, child in enumerate(node.branch(i)):
+            for j, child in enumerate(node.branch(ai)):
                 # bound
                 status = child.bound()
                 # only process feasible region
@@ -65,7 +66,8 @@ class MilpBabSolver:
                     if child.dual_estimate > self.best_y and child.active.sum() > 0:
                         # add information about new branch
                         queue.append(child)
-                        prev_actions.append(i)
+                        child.prev_action = ai
+                        prev_actions.append(ai)
                         next_observation[j] = self.get_node_observation(child)
                         done[j] = 0
                         reward -= 1 / 125.0
@@ -98,8 +100,8 @@ class MilpBabSolver:
                 torch.tensor(double_dones, dtype=torch.int8), 
                 torch.tensor(double_rewards, dtype=torch.float32))
 
-
-    def get_node_observation(self, node):
+    @beartype
+    def get_node_observation(self, node: Node) -> np.ndarray:
         observation = np.stack([
             node.fraction_score,
             self.c / 1000 * node.active,
@@ -108,10 +110,14 @@ class MilpBabSolver:
         return observation
 
 
-    def get_observation(self, batch=None):
+    @beartype
+    def get_observation(self, batch=None) -> tuple[torch.Tensor, torch.Tensor]:
         observation = []
+        prev_actions = []
         for node in self.queue:
             node_observation = self.get_node_observation(node)
             observation.append(node_observation)
+            prev_actions.append(node.prev_action)
         observation = torch.from_numpy(np.array(observation)).to(torch.float32) # n_subproblem, n_var, n_feature
-        return observation
+        prev_actions = torch.tensor(prev_actions, dtype=torch.long) # n_subproblem,
+        return observation, prev_actions
