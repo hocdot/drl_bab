@@ -231,6 +231,7 @@ class DnnvBabSolver:
         if scale is None:
             decisions = self.fsb_heuristic(self.abstractor, subproblems)
         else:
+            print(f'{scale.shape=}')
             raise NotImplementedError
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[(d[0], d[1], d[2])] for d in decisions]

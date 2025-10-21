@@ -21,6 +21,8 @@ n_buffer: 100000
 
 use_embedding: false
 use_scale_action: true
+alpha: 0.0
+autotune_entropy: false
 
 save_csv: true
 checkpoint_dirname: checkpoint_scale
