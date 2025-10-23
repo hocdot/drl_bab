@@ -133,11 +133,6 @@ class Env:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
         # raw action
         if scale is not None:
-            # print(self.scale_index.shape)
-            # print(self.scale_index)
-            # # print(self.reverse_active_neuron_index)
-            # print(scale.shape)
-            # print(self.solver.n_hiddens)
             # # method 1: slow
             # raw_scale = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
             # for b in range(scale.shape[0]):
@@ -149,7 +144,6 @@ class Env:
             batched_scale_index = self.scale_index.unsqueeze(0).expand(scale.shape[0], -1).to(scale.device)
             raw_scale_quick = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
             raw_scale_quick.scatter_(1, batched_scale_index, scale)
-            
             # assert torch.equal(raw_scale, raw_scale_quick), f'{torch.norm(raw_scale - raw_scale_quick)=}'
             action = self.solver.get_fsb_action(scale=raw_scale_quick)
         else:
