@@ -182,7 +182,7 @@ class DecisionHeuristic:
     # hidden branching
     @beartype
     def smart_hidden_branching(self: 'DecisionHeuristic', abstractor, 
-                                 domain_params: AbstractResults) -> list[list]:
+                                 domain_params: AbstractResults, scale: torch.Tensor | None = None) -> list[list]:
         batch = len(domain_params.input_lowers)
         topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
         if self.use_random_topk:
@@ -202,6 +202,13 @@ class DecisionHeuristic:
             number_bounds=domain_params.cs.shape[1]
         )
         
+        if scale is not None:
+            count = 0
+            for si in range(len(scores)):
+                scores[si] = scores[si] * scale[:, count:count + scores[si].shape[1]]
+                count += scores[si].shape[1]
+            assert count == scale.shape[1], f'{count=} {scale.shape[1]=}'
+                
         # convert an index to its layer and offset
         score_length = np.insert(np.cumsum([len(scores[i][0]) for i in range(len(scores))]), 0, 0)
         # top-k candidates

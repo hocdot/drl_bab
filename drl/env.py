@@ -132,27 +132,28 @@ class Env:
     def _get_fsb_action(self, scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
         # raw action
-        # if scale is not None:
-        #     print(self.scale_index.shape)
-        #     print(self.scale_index)
-        #     # print(self.reverse_active_neuron_index)
-        #     print(scale.shape)
-        #     print(self.solver.n_hiddens)
-        #     # method 1: slow
-        #     raw_scale = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
-        #     for b in range(scale.shape[0]):
-        #         for i, nidx in enumerate(self.scale_index):
-        #             raw_scale[b, nidx] = scale[b, i]
-        #             print(f'set raw_scale[{b}, {nidx}] = scale[{b}, {i}] = {scale[b, i]}')
+        if scale is not None:
+            # print(self.scale_index.shape)
+            # print(self.scale_index)
+            # # print(self.reverse_active_neuron_index)
+            # print(scale.shape)
+            # print(self.solver.n_hiddens)
+            # # method 1: slow
+            # raw_scale = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
+            # for b in range(scale.shape[0]):
+            #     for i, nidx in enumerate(self.scale_index):
+            #         raw_scale[b, nidx] = scale[b, i]
+            #         print(f'set raw_scale[{b}, {nidx}] = scale[{b}, {i}] = {scale[b, i]}')
             
-        #     # method 2: fast
-        #     batched_scale_index = self.scale_index.unsqueeze(0).expand(scale.shape[0], -1).to(scale.device)
-        #     raw_scale_quick = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
-        #     raw_scale_quick.scatter_(1, batched_scale_index, scale)
+            # # method 2: fast
+            batched_scale_index = self.scale_index.unsqueeze(0).expand(scale.shape[0], -1).to(scale.device)
+            raw_scale_quick = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
+            raw_scale_quick.scatter_(1, batched_scale_index, scale)
             
-        #     assert torch.equal(raw_scale, raw_scale_quick), f'{torch.norm(raw_scale - raw_scale_quick)=}'
-        
-        action = self.solver.get_fsb_action(scale=scale)
+            # assert torch.equal(raw_scale, raw_scale_quick), f'{torch.norm(raw_scale - raw_scale_quick)=}'
+            action = self.solver.get_fsb_action(scale=raw_scale_quick)
+        else:
+            action = self.solver.get_fsb_action(scale=None)
         # convert to active neuron index
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action

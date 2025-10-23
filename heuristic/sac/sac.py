@@ -70,7 +70,7 @@ class SACDecider(Base):
             if self.args.dataset == 'milp':
                 action = select_cost_based_action(observation, scale=action_probs)
             else:
-                action = self.env._get_fsb_action(scale=None)
+                action = self.env._get_fsb_action(scale=action_probs)
             return action
         else:
             if self.args.mode == 'train':
@@ -120,13 +120,13 @@ class SACDecider(Base):
                 if (self.global_step <= self.args.n_start_learning) or ((self.global_step % 10) < 3):
                     try:
                         action = self.select_heuristic_action(observation)
-                    except ValueError: # all neurons are split
+                    except (ValueError, AssertionError): # all neurons are split
                         early_stop = True
                         break
                 else:
-                    # if torch.any(observation[:, :, -1].sum(dim=1) == 0): # all neurons are split
-                    #     early_stop = True
-                    #     break
+                    if torch.any(observation[:, :, -1].sum(dim=1) == 0): # all neurons are split
+                        early_stop = True
+                        break
                     action = self.select_action(observation)
 
             # send to environment
