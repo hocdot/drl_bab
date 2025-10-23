@@ -51,29 +51,12 @@ class FsbRegression(nn.Module):
         x = self.embedding(data, edge_index, edge_weight)
         y_hat = self.regression(x)
         return y_hat
-
-def prepare_embed(args):
-    assert args.dataset == 'dnnv', f'{args.dataset=}'
-    # create result dirs if not exist
-    embed_dir = os.path.join(args.dataset_dir, args.dataset, 'embed')
-    os.makedirs(embed_dir, exist_ok=True)
-
-    # load graphs
-    all_graphs = {}
-    for onnx, _ in instance_generator('instances_processed.csv', args):
-        onnx_name = os.path.basename(onnx)
-        if onnx_name not in all_graphs:
-            graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
-            data = torch.load(graph_path)
-            edge_weight = data['edge_weight']
-            edge_index = data['edge_index']
-            all_graphs[onnx_name] = (edge_weight, edge_index)
-    print(f'    + loaded {len(all_graphs)} graphs')
     
+def get_train_data(csv_name):
     # load prepared io
     io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     data_list = []
-    for onnx, vnnlib in instance_generator('instances_processed.csv', args):
+    for onnx, vnnlib in instance_generator(csv_name, args):
         onnx_name = os.path.basename(onnx)
         vnnlib_name = os.path.basename(vnnlib)
         io_path = os.path.join(io_dir, f'{onnx_name}____{vnnlib_name}.pt')
@@ -83,8 +66,32 @@ def prepare_embed(args):
         data_list.append(data)
     print(f'    + loaded {len(data_list)} io data')
     assert len(data_list) > 0, f'{len(data_list)=}'
+    return data_list
+
+def get_graph_data(csv_name):
+    all_graphs = {}
+    for onnx, _ in instance_generator(csv_name, args):
+        onnx_name = os.path.basename(onnx)
+        if onnx_name not in all_graphs:
+            graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
+            data = torch.load(graph_path)
+            edge_weight = data['edge_weight']
+            edge_index = data['edge_index']
+            all_graphs[onnx_name] = (edge_weight, edge_index)
+    print(f'    + loaded {len(all_graphs)} graphs')
+    return all_graphs
+    
+def prepare_embed(args):
+    assert args.dataset == 'dnnv', f'{args.dataset=}'
+    # create result dirs if not exist
+    embed_dir = os.path.join(args.dataset_dir, args.dataset, 'embed')
+    os.makedirs(embed_dir, exist_ok=True)
+
+    # load graphs
+    all_graphs = get_graph_data('instances_processed.csv')
     
     # create dataloader with batch_size=1 and use gradient accumulation for effective larger batch size
+    data_list = get_train_data('instances_processed.csv')
     loader = DataLoader(data_list, batch_size=1, shuffle=True)
     accumulation_steps = args.gcn_embed_batch_size
 
@@ -99,7 +106,8 @@ def prepare_embed(args):
         total_batches = 0
         accumulated_loss = 0
         
-        for i, data in enumerate(loader):
+        pbar = tqdm.tqdm(loader)
+        for i, data in enumerate(pbar):
             # get edge_index and edge_weight for this specific graph
             edge_weight, edge_index = all_graphs[data.graph_name[0]]
             # print(f'{data.graph_name[0]=} {edge_weight.shape=} {edge_index.shape=}')
@@ -120,6 +128,7 @@ def prepare_embed(args):
                 optimizer.step()
                 optimizer.zero_grad()
                 total_loss += accumulated_loss
+                pbar.set_postfix({'accumulated_loss': accumulated_loss})
                 accumulated_loss = 0
                 total_batches += 1
             
@@ -127,6 +136,7 @@ def prepare_embed(args):
         print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {avg_loss=:0.6f}')
     
     # exporting embedding
+    data_list = get_train_data('instances_hard.csv')
     loader = DataLoader(data_list, batch_size=1, shuffle=False)
     print(f'[+] exporting GCN embeddings for {len(loader)=} instances')
     for i, data in enumerate(tqdm.tqdm(loader)):

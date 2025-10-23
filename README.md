@@ -7,18 +7,19 @@ python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 500
 python3 -m prepare.prepare_io --dataset dnnv --use_attack
 python3 -m prepare.prepare_hard_instances --dataset dnnv
 python3 -m prepare.prepare_gnn_embedding --dataset dnnv
+python3 -m prepare.split_train_test --dataset dnnv
 ```
 
 ### Create offline data
 
 ```bash
-python3 train.py --mode train --config condig/dnnv_create_offline_data
+python3 train.py --mode train --config config/dnnv_create_offline_data
 ```
 
 ### Train Offline
 
 ```bash
-python3 train.py --mode train_offline --config condig/dnnv.yaml
+python3 train.py --mode train_offline --config config/dnnv.yaml
 ```
 
 ### Train
@@ -29,8 +30,8 @@ python3 train.py --mode train --config config/milp_10_10_scale.yaml
 ```
 
 ```bash
-python3 train.py --mode train --config condig/dnnv.yaml
-python3 train.py --mode train --config condig/dnnv_debug.yaml
+python3 train.py --mode train --config config/dnnv.yaml
+python3 train.py --mode train --config config/dnnv_debug.yaml
 ```
 
 
@@ -39,7 +40,7 @@ python3 train.py --mode train --config condig/dnnv_debug.yaml
 ```bash
 python3 infer.py --config config/milp_10_10.yaml
 python3 infer.py --config config/milp_10_10_scale.yaml
-python3 infer.py --config condig/dnnv.yaml
+python3 infer.py --config config/dnnv.yaml
 ```
 
 ```bash
