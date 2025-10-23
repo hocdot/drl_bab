@@ -17,6 +17,7 @@ if __name__ == '__main__':
         
     if args.clean:
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/io')
+        os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/log')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/graph')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/embed')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib')

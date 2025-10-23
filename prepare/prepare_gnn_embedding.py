@@ -60,7 +60,7 @@ def prepare_embed(args):
 
     # load graphs
     all_graphs = {}
-    for onnx, _ in instance_generator('instances_train.csv', args):
+    for onnx, _ in instance_generator('instances_processed.csv', args):
         onnx_name = os.path.basename(onnx)
         if onnx_name not in all_graphs:
             graph_path = os.path.join(args.dataset_dir, args.dataset, 'graph', f'{os.path.basename(onnx)}.pt')
@@ -73,7 +73,7 @@ def prepare_embed(args):
     # load prepared io
     io_dir = os.path.join(args.dataset_dir, args.dataset, 'io')
     data_list = []
-    for onnx, vnnlib in instance_generator('instances_train.csv', args):
+    for onnx, vnnlib in instance_generator('instances_processed.csv', args):
         onnx_name = os.path.basename(onnx)
         vnnlib_name = os.path.basename(vnnlib)
         io_path = os.path.join(io_dir, f'{onnx_name}____{vnnlib_name}.pt')

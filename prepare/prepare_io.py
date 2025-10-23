@@ -110,16 +110,18 @@ def prepare_io(args):
     seperate_vnnlib(args, input_csv_name='instances_raw.csv', output_csv_name='instances_seperated.csv')
     
     print(f'[+] processing onnxs and vnnlibs')
-    # with parallel_config(backend='threading', n_jobs=os.cpu_count()//2):
-    #     Parallel()(delayed(read_instance)(onnx, vnnlib, args) for onnx, vnnlib in instance_generator(args))
-    all_lines = []
+    output_path = os.path.join(args.dataset_dir, args.dataset, 'instances_processed.csv')
+    os.system(f'rm -rf {output_path}')
     for (onnx, vnnlib) in instance_generator('instances_seperated.csv', args):
         if process_instance(onnx, vnnlib, args):
-            all_lines.append(f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}')
-    
+            line = f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}'
+            with open(output_path, 'a') as f:
+                print(line, file=f)
+            
+def split_train_test(all_lines, args, train_ratio=0.8):
     random.shuffle(all_lines)
-    train_lines = all_lines[:int(len(all_lines) * 0.8)]
-    test_lines = all_lines[int(len(all_lines) * 0.8):]
+    train_lines = all_lines[:int(len(all_lines) * train_ratio)]
+    test_lines = all_lines[int(len(all_lines) * train_ratio):]
     with open(os.path.join(args.dataset_dir, args.dataset, 'instances_train.csv'), 'w') as f:
         for line in train_lines:
             print(line, file=f)

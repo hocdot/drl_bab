@@ -1,6 +1,5 @@
 from ..base import Base
 
-
 class FsbDecider(Base):
 
     def __init__(self, args):
@@ -15,3 +14,8 @@ class FsbDecider(Base):
 
     def __repr__(self):
         return f'FsbDecider(mode={self.args.mode}, dataset={self.args.dataset})'
+    
+    def solve_one_instance(self, onnx, vnnlib):
+        self.env.loader = iter([{'onnx': [onnx], 'vnnlib': [vnnlib]}])
+        info = self.test_instance()
+        return info

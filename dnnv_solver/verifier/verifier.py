@@ -263,6 +263,7 @@ class Verifier:
             rhs=ret.rhs,
             input_split=self.input_split,
             preconditions=preconditions,
+            prev_actions=[-1],
         )
         
         

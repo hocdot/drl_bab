@@ -7,9 +7,12 @@ class DnnvDataset(Dataset):
     def __init__(self, args):
         self.args = args
         path = os.path.join(args.dataset_dir, args.dataset, f'instances_{args.mode}.csv')
-        print(f'[+] loading dataset {path=}')
-        df = pd.read_csv(path, header=None)
-        self.instances = df.values.tolist()
+        if os.path.exists(path):
+            print(f'[+] loading {args.mode} dataset {path=}')
+            df = pd.read_csv(path, header=None)
+            self.instances = df.values.tolist()
+        else:
+            self.instances = []
 
     def __len__(self):
         return len(self.instances)
