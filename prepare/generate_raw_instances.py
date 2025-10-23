@@ -36,7 +36,7 @@ if __name__ == '__main__':
         download=True,
     )
     
-    loader = DataLoader(dataset, batch_size=1, shuffle=True)
+    loader = DataLoader(dataset, batch_size=1, shuffle=False)
     
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     onnx_dir = os.path.join(root_dir, 'onnx')
@@ -56,14 +56,15 @@ if __name__ == '__main__':
                 
                 vnnlib_name = f'prop_{os.path.splitext(onnx_name)[0]}_{count}_{eps:.2f}.vnnlib'
                 vnnlib_path = os.path.join(vnnlib_dir, vnnlib_name)
-                write_vnnlib_classify(
-                    spec_path=vnnlib_path,
-                    data_lb=x - eps / 2.0,
-                    data_ub=x + eps / 2.0,
-                    prediction=pred,
-                    negate_spec=True,
-                    single_output=False,
-                )
+                if not os.path.exists(vnnlib_path):
+                    write_vnnlib_classify(
+                        spec_path=vnnlib_path,
+                        data_lb=x - eps / 2.0,
+                        data_ub=x + eps / 2.0,
+                        prediction=pred,
+                        negate_spec=True,
+                        single_output=False,
+                    )
                 print(f'onnx/{onnx_name},vnnlib/{vnnlib_name}', file=f)
                 count += 1
                 if count >= args.n_vnnlib_per_onnx:

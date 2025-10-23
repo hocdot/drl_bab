@@ -1,4 +1,5 @@
 import argparse
+import random
 import torch
 import yaml
 import os
@@ -126,4 +127,5 @@ def get_args():
 
     # create folders
     create_folders(args)
+    random.seed(args.seed)
     return args
