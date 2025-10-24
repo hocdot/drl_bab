@@ -3,7 +3,7 @@ dataset: dnnv
 batch_size: 1000
 actor_lr: 0.001
 q_lr: 0.001
-device: cuda:0
+device: cuda:1
 
 n_input: 4
 n_max_step: 500
@@ -15,15 +15,15 @@ n_max_remaining_subproblem: 1000
 n_max_visited_subproblem: 2000
 
 n_train_epoch: 10
-n_train_instance: 624
+n_train_instance: 708
 n_test_instance: 100
-n_start_learning: 500
+n_start_learning: 2000
 
 enc_dec_type: lstm
 n_enc_dec_layer: 1
 n_buffer: 100000
 
-n_qf_optimize: 2
+n_qf_optimize: 5
 
 use_embedding: true
 use_scale_action: true

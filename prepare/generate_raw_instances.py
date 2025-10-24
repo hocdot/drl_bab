@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import pandas as pd
 import torchvision
+import torch
 import os
 
 from dnnv_solver.helper.spec.write_vnnlib import write_vnnlib_classify
@@ -36,8 +37,6 @@ if __name__ == '__main__':
         download=True,
     )
     
-    loader = DataLoader(dataset, batch_size=1, shuffle=False)
-    
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     onnx_dir = os.path.join(root_dir, 'onnx')
     vnnlib_dir = os.path.join(root_dir, 'vnnlib')
@@ -45,16 +44,18 @@ if __name__ == '__main__':
     
     all_onnx_eps_settings = pd.read_csv(os.path.join(root_dir, 'onnx_eps_setting.csv'), header=None)
     with open(os.path.join(root_dir, 'instances_raw.csv'), 'w') as f:
-        for onnx_name, eps in tqdm(all_onnx_eps_settings.values):
+        for seed, (onnx_name, eps) in enumerate(tqdm(all_onnx_eps_settings.values)):
             onnx_path = os.path.join(onnx_dir, onnx_name)
             model, input_shape, _ = parse_onnx(onnx_path)
             count = 0
+            torch.manual_seed(seed)
+            loader = DataLoader(dataset, batch_size=1, shuffle=False)
             for i, (x, label) in enumerate(loader):
                 pred = model(x.view(input_shape))
                 if pred.argmax(-1).item() != label:
                     continue
                 
-                vnnlib_name = f'prop_{os.path.splitext(onnx_name)[0]}_{count}_{eps:.2f}.vnnlib'
+                vnnlib_name = f'prop_{os.path.splitext(onnx_name)[0]}_{count}_{eps:.2f}_seed_{seed}.vnnlib'
                 vnnlib_path = os.path.join(vnnlib_dir, vnnlib_name)
                 if not os.path.exists(vnnlib_path):
                     write_vnnlib_classify(

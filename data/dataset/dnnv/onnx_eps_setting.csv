@@ -1,5 +1,12 @@
+mnist-net_256x2.onnx,0.02
+mnist-net_256x4.onnx,0.02
+mnist-net_256x6.onnx,0.02
+mnist-net_256x2.onnx,0.04
+mnist-net_256x4.onnx,0.04
+mnist-net_256x6.onnx,0.04
 mnist-net_256x2.onnx,0.06
-mnist-net_256x2.onnx,0.07
-mnist-net_256x4.onnx,0.08
+mnist-net_256x4.onnx,0.06
 mnist-net_256x6.onnx,0.06
+mnist-net_256x2.onnx,0.08
+mnist-net_256x4.onnx,0.08
 mnist-net_256x6.onnx,0.08
