@@ -49,7 +49,7 @@ if __name__ == '__main__':
             model, input_shape, _ = parse_onnx(onnx_path)
             count = 0
             torch.manual_seed(seed)
-            loader = DataLoader(dataset, batch_size=1, shuffle=False)
+            loader = DataLoader(dataset, batch_size=1, shuffle=True)
             for i, (x, label) in enumerate(loader):
                 pred = model(x.view(input_shape))
                 if pred.argmax(-1).item() != label:
