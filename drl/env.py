@@ -62,7 +62,7 @@ class Env:
         return solver
     
     @beartype
-    def reset(self) -> tuple[torch.Tensor, bool]:
+    def reset(self) -> tuple[torch.Tensor | None, bool]:
         # load new instance
         self.episode += 1
         self.n_step = 1
@@ -70,6 +70,8 @@ class Env:
         self.solver = self.reset_solver()
         done = self.solver.remaining_subproblem <= 0
         observation, prev_actions = self.solver.get_observation() if not done else (None, None)
+        if done:
+            return observation, done
         assert len(observation) == 1, f'{len(observation)=}'
         if self.args.dataset == 'dnnv':
             # dnnv
