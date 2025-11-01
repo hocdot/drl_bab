@@ -121,10 +121,12 @@ class SACDecider(Base):
                     try:
                         action = self.select_heuristic_action(observation)
                     except (ValueError, AssertionError): # all neurons are split
+                        print(f'[-] error when selecting heuristic action')
                         early_stop = True
                         break
                 else:
                     if torch.any(observation[:, :, -1].sum(dim=1) == 0): # all neurons are split
+                        print(f'[!] all neurons are split')
                         early_stop = True
                         break
                     action = self.select_action(observation)
