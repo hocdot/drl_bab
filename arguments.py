@@ -101,7 +101,7 @@ def get_args():
     # gcn embedding parameter
     parser.add_argument('--gcn_embed_n_hidden', type=int, default=128)
     parser.add_argument('--gcn_embed_n_epoch', type=int, default=10)
-    parser.add_argument('--gcn_embed_batch_size', type=int, default=128)
+    parser.add_argument('--gcn_embed_batch_size', type=int, default=512)
     parser.add_argument('--gcn_embed_lr', type=float, default=3e-4)
     
     # data directory
