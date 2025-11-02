@@ -71,6 +71,7 @@ class Base:
                 [meters[k].update(info[k], count=1) for k in meter_metrics]
                 pbar.set_postfix({
                     'global_step': self.global_step,
+                    'current_value': info['value'],
                     'buffer': len(self.replay_buffer),
                     **{k: v.avg for k, v in meters.items()},
                 })
