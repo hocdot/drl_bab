@@ -99,42 +99,50 @@ def prepare_embed(args):
     net = FsbRegression(4, args.gcn_embed_n_hidden, 2, args.device).to(args.device)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.gcn_embed_lr)
     
-    # training loop with gradient accumulation
-    print('[+] training FsbRegression using GCNConv')
-    for epoch in range(args.gcn_embed_n_epoch):
-        total_loss = 0
-        total_batches = 0
-        accumulated_loss = 0
-        
-        pbar = tqdm.tqdm(loader)
-        for i, data in enumerate(pbar):
-            # get edge_index and edge_weight for this specific graph
-            edge_weight, edge_index = all_graphs[data.graph_name[0]]
-            # print(f'{data.graph_name[0]=} {edge_weight.shape=} {edge_index.shape=}')
+    checkpoint_path = os.path.join(args.checkpoint_dir, args.dataset, f'embed.pt')
+    if os.path.exists(checkpoint_path):
+        net.load_state_dict(torch.load(checkpoint_path))
+        print(f'[+] loaded checkpoint from {checkpoint_path}')
+    else:
+        # training loop with gradient accumulation
+        print('[+] training FsbRegression using GCNConv')
+        for epoch in range(args.gcn_embed_n_epoch):
+            total_loss = 0
+            total_batches = 0
+            accumulated_loss = 0
             
-            # create mask and forward
-            m = data.x[:, :, -1].unsqueeze(2).repeat(1, 1, 2).to(args.device) # 1 - not selected, 0 - selected
-            y_hat = net(data, edge_index, edge_weight)
-            loss = F.mse_loss(y_hat * m, data.y.to(args.device) * m)
-            # TODO: add contrastive loss
+            pbar = tqdm.tqdm(loader)
+            for i, data in enumerate(pbar):
+                # get edge_index and edge_weight for this specific graph
+                edge_weight, edge_index = all_graphs[data.graph_name[0]]
+                # print(f'{data.graph_name[0]=} {edge_weight.shape=} {edge_index.shape=}')
+                
+                # create mask and forward
+                m = data.x[:, :, -1].unsqueeze(2).repeat(1, 1, 2).to(args.device) # 1 - not selected, 0 - selected
+                y_hat = net(data, edge_index, edge_weight)
+                loss = F.mse_loss(y_hat * m, data.y.to(args.device) * m)
+                # TODO: add contrastive loss
 
-            # normalize loss by accumulation steps for gradient accumulation
-            loss = loss / accumulation_steps
-            loss.backward()
-            accumulated_loss += loss.item()
+                # normalize loss by accumulation steps for gradient accumulation
+                loss = loss / accumulation_steps
+                loss.backward()
+                accumulated_loss += loss.item()
+                
+                # update weights every accumulation_steps
+                if (i + 1) % accumulation_steps == 0 or (i + 1) == len(loader):
+                    optimizer.step()
+                    optimizer.zero_grad()
+                    total_loss += accumulated_loss
+                    pbar.set_postfix({'accumulated_loss': accumulated_loss})
+                    accumulated_loss = 0
+                    total_batches += 1
+                
+            avg_loss = total_loss / total_batches if total_batches > 0 else 0
+            print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {avg_loss=:0.6f}')
+            # save
+            torch.save(net.state_dict(), checkpoint_path)
+            print(f'[+] saved checkpoint to {checkpoint_path}')
             
-            # update weights every accumulation_steps
-            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(loader):
-                optimizer.step()
-                optimizer.zero_grad()
-                total_loss += accumulated_loss
-                pbar.set_postfix({'accumulated_loss': accumulated_loss})
-                accumulated_loss = 0
-                total_batches += 1
-            
-        avg_loss = total_loss / total_batches if total_batches > 0 else 0
-        print(f'    * {epoch=}/{args.gcn_embed_n_epoch} {avg_loss=:0.6f}')
-    
     # exporting embedding
     data_list = get_train_data('instances_hard.csv')
     loader = DataLoader(data_list, batch_size=1, shuffle=False)
