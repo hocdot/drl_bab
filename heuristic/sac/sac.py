@@ -146,7 +146,7 @@ class SACDecider(Base):
                     self.sample_batch()
                 
             # optimize model
-            if (self.global_step > self.args.n_start_learning):
+            if (self.global_step > self.args.n_start_learning) or (len(self.replay_buffer) > 0.5 * self.args.n_buffer):
                 actor_loss, critic_loss, alpha_loss = 0.0, 0.0, 0.0
                 for _ in range(self.args.n_optimize):
                     actor_loss_, critic_loss_, alpha_loss_ = self.optimize(data=None, n_qf_optimize=self.args.n_qf_optimize)
@@ -161,6 +161,11 @@ class SACDecider(Base):
             # update
             info['value'] += reward
             self.global_step += 1
+            
+            # save checkpoint
+            if self.global_step % self.args.n_save_checkpoint == 0:
+                self.save()
+                
             if early_stop:
                 break
             
