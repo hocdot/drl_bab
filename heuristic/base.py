@@ -75,6 +75,9 @@ class Base:
                     'buffer': len(self.replay_buffer),
                     **{k: v.avg for k, v in meters.items()},
                 })
+                
+                if self.global_step % self.args.n_save_checkpoint == 0:
+                    self.save()
             
             # save checkpoint
             self.save()

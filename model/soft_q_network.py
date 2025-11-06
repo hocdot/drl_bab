@@ -35,7 +35,7 @@ class SoftQNetwork(nn.Module):
         # q = h.squeeze(0)    
         q = h[-1] # or mean?
         # glimpse
-        for i in range(self.args.n_glimpse):
+        for i in range(self.args.n_glimpse * 3):
             q = self.glimpse(q, ref, mask)
         # pointer
         logits = self.pointer(q, ref, mask)

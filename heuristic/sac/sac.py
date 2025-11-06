@@ -146,11 +146,16 @@ class SACDecider(Base):
                     self.sample_batch()
                 
             # optimize model
-            if (self.global_step > self.args.n_start_learning) and (self.global_step % self.args.n_optimize == 0):
-                actor_loss, critic_loss, alpha_loss = self.optimize(data=None,n_qf_optimize=self.args.n_qf_optimize)
-                info['actor_loss'] += actor_loss
-                info['critic_loss'] += critic_loss
-                info['alpha_loss'] += alpha_loss
+            if (self.global_step > self.args.n_start_learning):
+                actor_loss, critic_loss, alpha_loss = 0.0, 0.0, 0.0
+                for _ in range(self.args.n_optimize):
+                    actor_loss_, critic_loss_, alpha_loss_ = self.optimize(data=None, n_qf_optimize=self.args.n_qf_optimize)
+                    actor_loss += actor_loss_
+                    critic_loss += critic_loss_
+                    alpha_loss += alpha_loss_
+                info['actor_loss'] += actor_loss / self.args.n_optimize
+                info['critic_loss'] += critic_loss / self.args.n_optimize
+                info['alpha_loss'] += alpha_loss / self.args.n_optimize
                 episode_step += 1
                 
             # update

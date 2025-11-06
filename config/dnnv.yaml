@@ -1,9 +1,10 @@
 dataset: dnnv
 
 batch_size: 1000
-actor_lr: 0.001
-q_lr: 0.001
+actor_lr: 0.0004
+q_lr: 0.0004
 device: cuda:1
+n_save_checkpoint: 10000
 
 n_input: 4
 n_max_step: 500
@@ -15,15 +16,16 @@ n_max_remaining_subproblem: 2000
 n_max_visited_subproblem: 5000
 
 n_train_epoch: 10
-n_train_instance: 2061
-n_test_instance: 516
+n_train_instance: 14452
+n_test_instance: 1606
 n_start_learning: 2000
 
 enc_dec_type: lstm
-n_enc_dec_layer: 1
+n_enc_dec_layer: 2
 n_buffer: 100000
 
 n_qf_optimize: 5
+n_optimize: 10
 
 use_embedding: true
 use_scale_action: true
