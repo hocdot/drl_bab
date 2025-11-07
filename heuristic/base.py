@@ -65,7 +65,7 @@ class Base:
             # initialize meters
             meters = {k: AvgMeter(k) for k in meter_metrics}
             pbar = tqdm.tqdm(range(self.args.n_train_instance), desc=f'[train] {epoch=}/{self.args.n_train_epoch}')
-            for _ in pbar:
+            for episode in pbar:
                 info = self.train_instance()
                 # update meters
                 [meters[k].update(info[k], count=1) for k in meter_metrics]
@@ -75,6 +75,15 @@ class Base:
                     'buffer': len(self.replay_buffer),
                     **{k: v.avg for k, v in meters.items()},
                 })
+                
+                if episode > 0 and episode % self.args.n_export_csv == 0:
+                    epoch_info = {
+                        'epoch': epoch,
+                        'total': len(pbar),
+                        'step': self.global_step,
+                        **{k: v.avg for k, v in meters.items()},
+                    }
+                    self.export_csv(epoch_info)
             
             # save checkpoint
             self.save()
@@ -83,22 +92,26 @@ class Base:
             epoch_info = {
                 'epoch': epoch,
                 'total': len(pbar),
+                'step': self.global_step,
                 **{k: v.avg for k, v in meters.items()},
             }
             print(epoch_info)
-            if self.args.save_csv:
-                path = os.path.join(
-                    self.args.csv_dir, 
-                    self.args.mode, 
-                    f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'
-                ) 
-                df = pd.DataFrame([epoch_info])
-                df.to_csv(
-                    path, 
-                    index=False, 
-                    mode='w' if epoch == 0 else 'a',
-                    header=epoch == 0
-                )
+            self.export_csv(epoch_info)
+            
+    def export_csv(self, epoch_info):
+        if self.args.save_csv:
+            path = os.path.join(
+                self.args.csv_dir, 
+                self.args.mode, 
+                f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'
+            ) 
+            df = pd.DataFrame([epoch_info])
+            df.to_csv(
+                path, 
+                index=False, 
+                mode='w' if not os.path.exists(path) else 'a',
+                header=not os.path.exists(path)
+            )
                             
 
     def init_hook(self, observation):

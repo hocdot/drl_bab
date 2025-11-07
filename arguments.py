@@ -45,6 +45,7 @@ def get_args():
     parser.add_argument('--n_train_instance', type=int, default=100)
     parser.add_argument('--n_test_instance', type=int, default=1000)
     parser.add_argument('--n_save_checkpoint', type=int, default=10000)
+    parser.add_argument('--n_export_csv', type=int, default=50)
     
     parser.add_argument('--load_checkpoint', action='store_true')
     parser.add_argument('--save_csv', action='store_true')
