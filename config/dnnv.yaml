@@ -1,6 +1,8 @@
 dataset: dnnv
 
-batch_size: 1000
+seed: 3636
+
+batch_size: 512
 actor_lr: 0.0004
 q_lr: 0.0004
 device: cuda:1
@@ -21,7 +23,8 @@ n_test_instance: 1606
 n_start_learning: 1000
 
 enc_dec_type: lstm
-n_enc_dec_layer: 2
+n_enc_dec_layer: 1
+n_hidden: 512
 n_buffer: 100000
 
 n_qf_optimize: 2

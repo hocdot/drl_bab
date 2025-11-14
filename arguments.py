@@ -95,7 +95,7 @@ def get_args():
     # pointernet model parameter
     parser.add_argument('--n_input', type=int, default=3)
     parser.add_argument('--softmax_temperature', type=float, default=1.0)
-    parser.add_argument('--clip_logit', type=float, default=10.0)
+    parser.add_argument('--clip_logit', type=float, default=5.0)
     parser.add_argument('--n_glimpse', type=int, default=1)
     parser.add_argument('--n_hidden', type=int, default=128)
     parser.add_argument('--n_embed', type=int, default=128)
