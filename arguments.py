@@ -80,6 +80,7 @@ def get_args():
     parser.add_argument('--n_target_update', type=int, default=1) # 8000
     
     parser.add_argument('--batch_size', type=int, default=128) # 64 by CleanRL, 12000 to utilize all RTX 4080
+    parser.add_argument('--n_grad_accum', type=int, default=1)
     parser.add_argument('--actor_lr', type=float, default=1e-4) # 3e-4
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('--q_lr', type=float, default=1e-4) # 3e-4

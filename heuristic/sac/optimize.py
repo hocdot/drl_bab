@@ -37,7 +37,7 @@ def print_gradients(self, network_name, networks):
             print(f"  Summary - Mean: {mean_grad:.6f}, Max: {max_grad:.6f}, Min: {min_grad:.6f}")
         print()
         
-def optimize_qf(self, data):
+def optimize_qf(self, data, n_grad_accum=1, accum_step=0):
     # train
     with torch.no_grad():
         # 1st branch
@@ -66,16 +66,21 @@ def optimize_qf(self, data):
     # compute loss
     qf1_loss = F.mse_loss(qv1_a, next_qv)
     qf2_loss = F.mse_loss(qv2_a, next_qv)
-    qf_loss = qf1_loss + qf2_loss
-    self.q_optimizer.zero_grad()
-    qf_loss.backward()
-    # print grad to check gradient vanishing/exploding
-    self.print_gradients("Q-Networks", [self.qf1, self.qf2])
+    qf_loss = (qf1_loss + qf2_loss) / n_grad_accum
     
-    self.q_optimizer.step()
-    return qf_loss.item()
+    if accum_step == 0:
+        self.q_optimizer.zero_grad()
+    
+    qf_loss.backward()
+    
+    if accum_step == n_grad_accum - 1:
+        # print grad to check gradient vanishing/exploding
+        self.print_gradients("Q-Networks", [self.qf1, self.qf2])
+        self.q_optimizer.step()
+    
+    return qf_loss.item() * n_grad_accum
 
-def optimize_actor(self, data):
+def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
     alpha_loss = 0.0
     # train
     _, log_prob, action_probs = self.actor.decode_and_get_action(data.observation, data.prev_action)
@@ -83,18 +88,22 @@ def optimize_actor(self, data):
         qv1 = self.qf1.decode_and_forward(data.observation, data.prev_action)
         qv2 = self.qf2.decode_and_forward(data.observation, data.prev_action)
         min_qv = torch.min(qv1, qv2)
-    actor_loss = (action_probs * ((self.alpha * log_prob) - min_qv)).mean()
+    actor_loss = (action_probs * ((self.alpha * log_prob) - min_qv)).mean() / n_grad_accum
     # print(f'{action_probs.shape=} {min_qv.shape=}')
     # actor_loss = (action_probs * (- min_qv)).mean()
-    self.actor_optimizer.zero_grad()
-    self.actor_scaler.scale(actor_loss).backward()
-    self.actor_scaler.step(self.actor_optimizer)
-    self.actor_scaler.update()
     
-    # print grad to check gradient vanishing/exploding
-    self.print_gradients("Actor", [self.actor])
+    if accum_step == 0:
+        self.actor_optimizer.zero_grad()
+    
+    self.actor_scaler.scale(actor_loss).backward()
+    
+    if accum_step == n_grad_accum - 1:
+        self.actor_scaler.step(self.actor_optimizer)
+        self.actor_scaler.update()
+        # print grad to check gradient vanishing/exploding
+        self.print_gradients("Actor", [self.actor])
         
-    actor_loss = actor_loss.item()
+    actor_loss = actor_loss.item() * n_grad_accum
     # train
     if self.args.autotune_entropy:
         # reuse action probabilities for temperature loss
@@ -125,7 +134,7 @@ def sample_batch(self):
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
     return data
 
-def optimize(self, data=None, n_qf_optimize=1):
+def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
     self.actor.train()
     self.qf1.train()
     self.qf2.train()
@@ -140,11 +149,25 @@ def optimize(self, data=None, n_qf_optimize=1):
     with torch.autograd.set_detect_anomaly(True):
         qf_loss = 0.0
         for _ in range(n_qf_optimize):
+            qf_batch_loss = 0.0
+            for accum_step in range(n_grad_accum):
+                if flag:
+                    data = self.sample_batch()
+                qf_batch_loss += self.optimize_qf(data, n_grad_accum, accum_step)
+            qf_loss += qf_batch_loss / n_grad_accum
+        qf_loss /= n_qf_optimize
+        
+        actor_batch_loss = 0.0
+        alpha_batch_loss = 0.0
+        for accum_step in range(n_grad_accum):
             if flag:
                 data = self.sample_batch()
-            qf_loss += self.optimize_qf(data)
-        qf_loss /= n_qf_optimize
-        actor_loss, alpha_loss = self.optimize_actor(data)
+            actor_step_loss, alpha_step_loss = self.optimize_actor(data, n_grad_accum, accum_step)
+            actor_batch_loss += actor_step_loss
+            alpha_batch_loss += alpha_step_loss
+        actor_loss = actor_batch_loss / n_grad_accum
+        alpha_loss = alpha_batch_loss / n_grad_accum
+        
     if self.global_step % self.args.n_target_update == 0:
         self.update_target()
     return actor_loss, qf_loss, alpha_loss
