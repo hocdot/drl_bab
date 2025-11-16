@@ -78,7 +78,7 @@ def optimize_qf(self, data, n_grad_accum=1, accum_step=0):
         self.print_gradients("Q-Networks", [self.qf1, self.qf2])
         self.q_optimizer.step()
     
-    return qf_loss.item() * n_grad_accum
+    return qf_loss.item()
 
 def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
     alpha_loss = 0.0
@@ -103,8 +103,6 @@ def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
         # print grad to check gradient vanishing/exploding
         self.print_gradients("Actor", [self.actor])
         
-    actor_loss = actor_loss.item() * n_grad_accum
-    # train
     if self.args.autotune_entropy:
         # reuse action probabilities for temperature loss
         alpha_loss = (action_probs.detach() * (-self.log_alpha.exp() * (log_prob + self.target_entropy).detach())).mean()
@@ -112,8 +110,7 @@ def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
         alpha_loss.backward()
         self.alpha_optimizer.step()
         self.alpha = self.log_alpha.exp().item()
-        alpha_loss = alpha_loss.item()
-    return actor_loss, alpha_loss
+    return actor_loss.item(), alpha_loss.item()
 
 def update_target(self):
     # update
@@ -147,6 +144,7 @@ def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
     # print(f'    - {data.reward.shape=}')           # n_subproblem
     flag = data is None
     with torch.autograd.set_detect_anomaly(True):
+        # train Critic
         qf_loss = 0.0
         for _ in range(n_qf_optimize):
             qf_batch_loss = 0.0
@@ -154,9 +152,10 @@ def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
                 if flag:
                     data = self.sample_batch()
                 qf_batch_loss += self.optimize_qf(data, n_grad_accum, accum_step)
-            qf_loss += qf_batch_loss / n_grad_accum
+            qf_loss += qf_batch_loss
         qf_loss /= n_qf_optimize
         
+        # train Actor
         actor_batch_loss = 0.0
         alpha_batch_loss = 0.0
         for accum_step in range(n_grad_accum):
@@ -165,8 +164,8 @@ def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
             actor_step_loss, alpha_step_loss = self.optimize_actor(data, n_grad_accum, accum_step)
             actor_batch_loss += actor_step_loss
             alpha_batch_loss += alpha_step_loss
-        actor_loss = actor_batch_loss / n_grad_accum
-        alpha_loss = alpha_batch_loss / n_grad_accum
+        actor_loss = actor_batch_loss
+        alpha_loss = alpha_batch_loss
         
     if self.global_step % self.args.n_target_update == 0:
         self.update_target()
