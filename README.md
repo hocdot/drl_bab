@@ -6,7 +6,7 @@
 python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 5000 --clean
 python3 -m prepare.prepare_io --dataset dnnv --use_attack
 python3 -m prepare.prepare_hard_instances --dataset dnnv
-python3 -m prepare.prepare_gnn_embedding --dataset dnnv
+python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32
 python3 -m prepare.split_train_test --dataset dnnv
 ```
 

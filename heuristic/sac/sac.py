@@ -84,14 +84,14 @@ class SACDecider(Base):
     
     @beartype
     def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
-        n = self.global_step % 3
+        n = self.global_step % 5
         if self.args.dataset == 'milp':
             if n == 0:
-                action = select_rounding_error_action(observation)
+                action = select_random_action(observation)
             elif n == 1:
                 action = select_cost_based_action(observation)
-            elif n == 2:
-                action = select_random_action(observation)
+            else:
+                action = select_rounding_error_action(observation)
         else:
             # action in active neuron index format
             if n == 0:
@@ -117,7 +117,7 @@ class SACDecider(Base):
         while not done:
             # select action
             with torch.no_grad():
-                if (self.global_step <= self.args.n_start_learning) or ((self.global_step % 10) < 3):
+                if (self.global_step <= self.args.n_start_learning) or ((self.global_step % 10) < 5):
                     try:
                         action = self.select_heuristic_action(observation)
                     except (ValueError, AssertionError): # all neurons are split
@@ -147,15 +147,10 @@ class SACDecider(Base):
                 
             # optimize model
             if (self.global_step > self.args.n_start_learning) or (len(self.replay_buffer) > 0.5 * self.args.n_buffer):
-                actor_loss, critic_loss, alpha_loss = 0.0, 0.0, 0.0
-                for _ in range(self.args.n_optimize):
-                    actor_loss_, critic_loss_, alpha_loss_ = self.optimize(data=None, n_qf_optimize=self.args.n_qf_optimize)
-                    actor_loss += actor_loss_
-                    critic_loss += critic_loss_
-                    alpha_loss += alpha_loss_
-                info['actor_loss'] += actor_loss / self.args.n_optimize
-                info['critic_loss'] += critic_loss / self.args.n_optimize
-                info['alpha_loss'] += alpha_loss / self.args.n_optimize
+                actor_loss, critic_loss, alpha_loss = self.optimize(data=None, n_qf_optimize=self.args.n_qf_optimize)
+                info['actor_loss'] += actor_loss
+                info['critic_loss'] += critic_loss
+                info['alpha_loss'] += alpha_loss
                 episode_step += 1
                 
             # update

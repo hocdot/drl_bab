@@ -91,7 +91,8 @@ def prepare_embed(args):
     all_graphs = get_graph_data('instances_processed.csv')
     
     # create dataloader with batch_size=1 and use gradient accumulation for effective larger batch size
-    data_list = get_train_data('instances_processed.csv')
+    # data_list = get_train_data('instances_processed.csv')
+    data_list = get_train_data('instances_hard.csv')
     loader = DataLoader(data_list, batch_size=1, shuffle=True)
     accumulation_steps = args.gcn_embed_batch_size
 
