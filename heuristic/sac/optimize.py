@@ -110,7 +110,8 @@ def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
         alpha_loss.backward()
         self.alpha_optimizer.step()
         self.alpha = self.log_alpha.exp().item()
-    return actor_loss.item(), alpha_loss.item()
+        alpha_loss = alpha_loss.item()
+    return actor_loss.item(), alpha_loss
 
 def update_target(self):
     # update

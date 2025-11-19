@@ -2,12 +2,12 @@ dataset: dnnv
 
 seed: 3636
 
-batch_size: 512
+batch_size: 1024
 actor_lr: 0.0004
 q_lr: 0.0004
 device: cuda:1
 n_save_checkpoint: 10000
-n_grad_accum: 4
+n_grad_accum: 1
 
 n_input: 4
 n_max_step: 500
@@ -19,8 +19,8 @@ n_max_remaining_subproblem: 2000
 n_max_visited_subproblem: 5000
 
 n_train_epoch: 10
-n_train_instance: 14452
-n_test_instance: 1606
+n_train_instance: 791
+n_test_instance: 88
 n_start_learning: 1000
 
 enc_dec_type: lstm
@@ -28,7 +28,7 @@ n_enc_dec_layer: 1
 n_hidden: 128
 n_buffer: 100000
 
-n_qf_optimize: 2
+n_qf_optimize: 1
 n_optimize: 1
 
 use_embedding: true

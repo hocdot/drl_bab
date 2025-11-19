@@ -31,7 +31,7 @@ if __name__ == '__main__':
             with open(path, 'w') as f:
                 json.dump(info, f)
 
-        if info['value'] < -100:
+        if info['value'] < -500 and info['done']:
             line = f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}'
             with open(output_path, 'a') as f:
                 print(line, file=f)
