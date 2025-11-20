@@ -7,7 +7,7 @@ actor_lr: 0.0004
 q_lr: 0.0004
 device: cuda:1
 n_save_checkpoint: 10000
-n_grad_accum: 1
+n_grad_accum: 4
 
 n_input: 4
 n_max_step: 500
@@ -29,7 +29,6 @@ n_hidden: 128
 n_buffer: 100000
 
 n_qf_optimize: 1
-n_optimize: 1
 
 use_embedding: true
 use_scale_action: true

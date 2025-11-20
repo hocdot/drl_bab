@@ -90,7 +90,6 @@ def get_args():
     parser.add_argument('--alpha', type=float, default=0.0) # fixed entropy
     
     parser.add_argument('--n_start_learning', type=int, default=5000) # 20000
-    parser.add_argument('--n_optimize', type=int, default=5)
     parser.add_argument('--n_qf_optimize', type=int, default=1)
     
     # pointernet model parameter
