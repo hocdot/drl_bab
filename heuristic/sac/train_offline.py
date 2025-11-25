@@ -8,6 +8,7 @@ from .replay_buffer import Transition
 
 def train_offline(self):
     # self.load()
+    raise NotImplementedError
     dataset = OfflineDataset(self.args, files_per_batch=50, use_tqdm=True)
     for i in range(self.args.n_train_offline_epoch):
         dataset.reload_next_batch()

@@ -132,7 +132,7 @@ def sample_batch(self):
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
     return data
 
-def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
+def optimize(self, n_qf_optimize=1, n_grad_accum=1):
     self.actor.train()
     self.qf1.train()
     self.qf2.train()
@@ -143,15 +143,13 @@ def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
     # print(f'    - {data.next_observation.shape=}') # n_subproblem, 2, n_node, n_feature
     # print(f'    - {data.done.shape=}')             # n_subproblem, 2
     # print(f'    - {data.reward.shape=}')           # n_subproblem
-    flag = data is None
     with torch.autograd.set_detect_anomaly(True):
         # train Critic
         qf_loss = 0.0
         for _ in range(n_qf_optimize):
             qf_batch_loss = 0.0
             for accum_step in range(n_grad_accum):
-                if flag:
-                    data = self.sample_batch()
+                data = self.sample_batch()
                 qf_batch_loss += self.optimize_qf(data, n_grad_accum, accum_step)
             qf_loss += qf_batch_loss
         qf_loss /= n_qf_optimize
@@ -160,8 +158,7 @@ def optimize(self, data=None, n_qf_optimize=1, n_grad_accum=1):
         actor_batch_loss = 0.0
         alpha_batch_loss = 0.0
         for accum_step in range(n_grad_accum):
-            if flag:
-                data = self.sample_batch()
+            data = self.sample_batch()
             actor_step_loss, alpha_step_loss = self.optimize_actor(data, n_grad_accum, accum_step)
             actor_batch_loss += actor_step_loss
             alpha_batch_loss += alpha_step_loss

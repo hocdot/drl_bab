@@ -147,7 +147,7 @@ class SACDecider(Base):
                 
             # optimize model
             if (self.global_step > self.args.n_start_learning) or (len(self.replay_buffer) > 0.5 * self.args.n_buffer):
-                actor_loss, critic_loss, alpha_loss = self.optimize(data=None, n_qf_optimize=self.args.n_qf_optimize)
+                actor_loss, critic_loss, alpha_loss = self.optimize(n_qf_optimize=self.args.n_qf_optimize)
                 info['actor_loss'] += actor_loss
                 info['critic_loss'] += critic_loss
                 info['alpha_loss'] += alpha_loss
