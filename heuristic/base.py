@@ -18,11 +18,12 @@ class Base:
     def select_action(self, observation):
         raise NotImplementedError
 
-    def test(self, use_tqdm=True):
+    def test(self, use_tqdm=True, output_path=None):
         self.args.mode = 'test'
         self.load()
         infos = []
         pbar = tqdm.tqdm(range(self.args.n_test_instance), desc=f'[test]') if use_tqdm else range(self.args.n_test_instance)
+        print(f'{output_path=}')
         for _ in pbar:
             # test each property
             info = self.test_instance()
@@ -30,6 +31,7 @@ class Base:
             infos.append(info)
             if use_tqdm:
                 pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos), mode=self.args.mode)
+            self.export_csv(info, path=output_path)
         return infos
 
     def test_instance(self):
@@ -42,9 +44,13 @@ class Base:
         self.init_hook(observation)
         # step loop
         while not done:
-            with torch.no_grad():
-                action = self.select_action(observation)
-            remaining_next_observation, reward, done, early_stop, _ = self.env.step(action)
+            try:
+                with torch.no_grad():
+                    action = self.select_action(observation)
+                remaining_next_observation, reward, done, early_stop, _ = self.env.step(action)
+            except:
+                early_stop = True
+                
             if early_stop:
                 break
             self.step_hook(remaining_next_observation)
@@ -98,13 +104,14 @@ class Base:
             print(epoch_info)
             self.export_csv(epoch_info)
             
-    def export_csv(self, epoch_info):
+    def export_csv(self, epoch_info, path=None):
         if self.args.save_csv:
-            path = os.path.join(
-                self.args.csv_dir, 
-                self.args.mode, 
-                f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'
-            ) 
+            if path is None:
+                path = os.path.join(
+                    self.args.csv_dir, 
+                    self.args.mode, 
+                    f'{self.args.dataset}_{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.csv'
+                ) 
             df = pd.DataFrame([epoch_info])
             df.to_csv(
                 path, 

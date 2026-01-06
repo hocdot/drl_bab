@@ -16,16 +16,15 @@ def create_dataloader(args):
         dataloader_dict[args.mode] = DataLoader(
             dataset,
             batch_size=1,
-            shuffle=False,
+            shuffle=args.mode == 'train',
             num_workers=os.cpu_count(),
         )
     else:
         dataset = DnnvDataset(args)
-        # FIXME: split train and test
         dataloader_dict[args.mode] = DataLoader(
             dataset,
             batch_size=1,
-            shuffle=False,
+            shuffle=args.mode == 'train',
             num_workers=os.cpu_count(),
         )
     return dataloader_dict

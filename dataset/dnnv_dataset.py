@@ -10,6 +10,8 @@ class DnnvDataset(Dataset):
         if os.path.exists(path):
             print(f'[+] loading {args.mode} dataset {path=}')
             df = pd.read_csv(path, header=None)
+            if args.mode == 'train':
+                df = df.sample(frac=1).reset_index(drop=True)
             self.instances = df.values.tolist()
         else:
             self.instances = []
