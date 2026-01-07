@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 from heuristic.milp_baseline import CostBasedDecider, RandomDecider, RoundingErrorDecider
-from heuristic.dnnv_baseline.fsb import FsbDecider
+from heuristic.dnnv_baseline import FsbDecider, BabsrDecider
 from heuristic.sac.sac import SACDecider
 from arguments import get_args
 
@@ -13,7 +13,7 @@ def infer(args):
         solver_classes = [CostBasedDecider, RandomDecider, RoundingErrorDecider]
     else:
         base_label = f'{args.dataset}'
-        solver_classes = [FsbDecider]
+        solver_classes = [FsbDecider, BabsrDecider, RandomDecider]
         
     solver_classes += [SACDecider]
     for solver_class in solver_classes:

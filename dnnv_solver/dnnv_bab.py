@@ -234,6 +234,13 @@ class DnnvBabSolver:
         action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action
     
+    def get_babsr_action(self) -> torch.Tensor:
+        subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
+        decisions = self.fsb_heuristic.babsr_hidden_branching(self.abstractor, subproblems)
+        # convert DNNV decision format to DRL action format
+        action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
+        return action
+    
     def _compute_neuron_index_mapping(self, domain_params: AbstractResults) -> None:
         self.neuron_index_mapping = {}
         ordered_names = [_.name for _ in self.abstractor.net.split_nodes]

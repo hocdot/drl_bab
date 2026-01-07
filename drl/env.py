@@ -153,6 +153,14 @@ class Env:
         # convert to active neuron index
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
+    
+    @beartype
+    def _get_babsr_action(self) -> list[int]:
+        assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
+        action = self.solver.get_babsr_action()
+        # convert to active neuron index
+        action = [self.reverse_active_neuron_index[int(a)] for a in action]
+        return action
         
     
     @beartype
