@@ -1,6 +1,6 @@
 import pandas as pd
-import numpy as np
 import torch
+import time
 import tqdm
 import os
 
@@ -27,7 +27,6 @@ class Base:
         for _ in pbar:
             # test each property
             info = self.test_instance()
-            # print(info)
             infos.append(info)
             if use_tqdm:
                 pbar.set_postfix(name=self, total=sum(info['value'] for info in infos), done=sum(info['done'] for info in infos), mode=self.args.mode)
@@ -36,17 +35,35 @@ class Base:
 
     def test_instance(self):
         # reset environment
+        start_time = time.time()
+        
         observation, done = self.env.reset()
-        info = {'episode': self.env.episode, 'value': 0, 'done': done}
+        
+        info = {
+            'episode': self.env.episode, 
+            'value': 0, 
+            'done': done, 
+            'decision_time': 0.0, 
+            'iteration': 0,
+            'total_time': 0.0, 
+            'active_neuron': observation.shape[1] if observation is not None else 0,
+        }
+
         if done:
             return info
         
+        # initialize
         self.init_hook(observation)
+        
         # step loop
         while not done:
             try:
                 with torch.no_grad():
+                    decision_start_time = time.time()
                     action = self.select_action(observation)
+                    decision_time = time.time() - decision_start_time
+                    info['decision_time'] += decision_time
+                    info['iteration'] += 1
                 remaining_next_observation, reward, done, early_stop, _ = self.env.step(action)
             except:
                 early_stop = True
@@ -58,7 +75,9 @@ class Base:
             # update info
             info['value'] += reward
         info['done'] = done
-        info['early_stop'] = early_stop
+        # info['early_stop'] = early_stop
+        info['total_time'] = time.time() - start_time
+
         return info
 
     def train(self):
