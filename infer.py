@@ -13,11 +13,14 @@ def infer(args):
         solver_classes = [CostBasedDecider, RandomDecider, RoundingErrorDecider]
     else:
         base_label = f'{args.dataset}'
-        solver_classes = [FsbDecider, BabsrDecider, RandomDecider]
+        solver_classes = [FsbDecider, RandomDecider]
         
     solver_classes += [SACDecider]
     for solver_class in solver_classes:
-        path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}.csv')
+        if solver_class == RandomDecider:
+            path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}.csv')
+        else:
+            path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}_top{args.decision_topk_test}.csv')
             
         if not os.path.exists(path) or solver_class == SACDecider:
             solver = solver_class(args)

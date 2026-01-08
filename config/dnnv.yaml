@@ -33,7 +33,4 @@ n_qf_optimize: 2
 use_embedding: true
 use_scale_action: true
 
-decision_topk_train: 30
-decision_topk_test: 10
-
 save_csv: true
