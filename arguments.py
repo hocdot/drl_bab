@@ -70,6 +70,7 @@ def get_args():
     
     parser.add_argument('--decision_topk_test', type=int, default=10)
     parser.add_argument('--decision_topk_train', type=int, default=30)
+    parser.add_argument('--checkpoint_postfix', type=str, default='')
     
     # sac parameter
     parser.add_argument('--use_scale_action', action='store_true')

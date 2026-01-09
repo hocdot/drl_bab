@@ -174,7 +174,11 @@ class SACDecider(Base):
 
     @property
     def checkpoint_path(self):
-        return os.path.join(self.args.checkpoint_dir, self.args.dataset, f'{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}.pt')
+        if self.args.checkpoint_postfix:
+            postfix = f'_{self.args.checkpoint_postfix}'
+        else:
+            postfix = ''
+        return os.path.join(self.args.checkpoint_dir, self.args.dataset, f'{self.args.solver}_{self.args.enc_dec_type}_{self.args.n_enc_dec_layer}{postfix}.pt')
 
     def save(self):
         # save model

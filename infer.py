@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 from heuristic.milp_baseline import CostBasedDecider, RandomDecider, RoundingErrorDecider
-from heuristic.dnnv_baseline import FsbDecider, BabsrDecider
+from heuristic.dnnv_baseline import FsbDecider, BabsrDecider, PolarityDecider
 from heuristic.sac.sac import SACDecider
 from arguments import get_args
 
@@ -13,11 +13,11 @@ def infer(args):
         solver_classes = [CostBasedDecider, RandomDecider, RoundingErrorDecider]
     else:
         base_label = f'{args.dataset}'
-        solver_classes = [FsbDecider, RandomDecider]
+        solver_classes = [FsbDecider, PolarityDecider, RandomDecider]
         
     solver_classes += [SACDecider]
     for solver_class in solver_classes:
-        if solver_class == RandomDecider:
+        if solver_class in [RandomDecider, PolarityDecider]:
             path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}.csv')
         else:
             path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}_top{args.decision_topk_test}.csv')

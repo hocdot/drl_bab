@@ -66,6 +66,7 @@ class Base:
                     info['iteration'] += 1
                 remaining_next_observation, reward, done, early_stop, _ = self.env.step(action)
             except:
+                import traceback; traceback.print_exc()
                 early_stop = True
                 
             if early_stop:
