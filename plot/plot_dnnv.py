@@ -164,7 +164,10 @@ def plot_box(args, metric='value', filter_invalid=False, showfliers=False):
     df = extract_data(args, metric, filter_invalid=filter_invalid)
     
     # Reshape data for seaborn: convert from wide to long format
-    df_long = df.reset_index().melt(id_vars='episode', var_name='solver', value_name=metric)
+    df_long = df.reset_index().melt(id_vars='network', var_name='solver', value_name=metric)
+    
+    # Remove rows where solver is 'episode' (from the index column)
+    df_long = df_long[df_long['solver'] != 'episode']
     
     # Filter out unsolved instances (value = 0)
     df_long = df_long[df_long[metric] > 0]
@@ -184,11 +187,11 @@ def plot_box(args, metric='value', filter_invalid=False, showfliers=False):
     
 if __name__ == '__main__':
     args = get_args()
-    plot_cactus(args, metric='total_time')
-    plot_cactus(args, metric='value')
-    plot_cactus(args, metric='active_neuron')
+    # plot_cactus(args, metric='total_time')
+    # plot_cactus(args, metric='value')
+    # plot_cactus(args, metric='active_neuron')
     
-    plot_bar_improvement(args, metric='iteration')
+    # plot_bar_improvement(args, metric='iteration')
     # plot_bar_improvement(args, metric='value')
     plot_box(args, metric='value', showfliers=False)
     plot_box(args, metric='active_neuron', filter_invalid=True, showfliers=True)
