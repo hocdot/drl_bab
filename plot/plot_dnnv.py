@@ -68,7 +68,7 @@ def extract_data(args, metric='total_time', filter_invalid=True):
 def plot_cactus(args, metric='total_time'):
     df = extract_data(args, metric)
     
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(5, 3))
     
     # Set color palette
     colors = sns.color_palette("muted", n_colors=len(df.columns))
@@ -90,7 +90,7 @@ def plot_cactus(args, metric='total_time'):
     
     plt.xlabel('Solved Instances')
     plt.ylabel(f'{metric.replace("_", " ").title()}')
-    plt.legend()
+    plt.legend(fancybox=True, loc='upper center')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
