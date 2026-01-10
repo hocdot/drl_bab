@@ -29,7 +29,7 @@ def filter_invalid_instances(df, metric='value'):
     
     return df[~df['episode'].isin(exclude_episodes)]
 
-def extract_data(args, metric='total_time', filter_invalid=True):
+def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=True):
     
     base_label = f'{args.dataset}'
     solver_classes = [RandomDecider, PolarityDecider, FsbDecider, SACDecider]
@@ -62,12 +62,16 @@ def extract_data(args, metric='total_time', filter_invalid=True):
     
     # Concatenate and filter to keep only episodes solved by at least one solver
     df_combined = pd.concat(dfs)
-    df_filtered = filter_invalid_instances(df_combined, 'value')
+    if filter_unknown:
+        df_filtered = filter_invalid_instances(df_combined, 'value')
+    else:
+        df_filtered = df_combined
     if filter_invalid:
         # Set metric to 0 for unsolved episodes
         df_filtered.loc[df_filtered['done'] == False, metric] = 0
 
     df_filtered['value'] = df_filtered['value'] * - 1
+    df_filtered['decision_time'] = df_filtered['decision_time'] / df_filtered['iteration']
     
     # Create episode to network mapping before pivot
     episode_to_network = df_filtered[['episode', 'network']].drop_duplicates().set_index('episode')['network']
@@ -160,8 +164,8 @@ def plot_bar_improvement(args, metric='value'):
     negative = len(common_solved[common_solved['improvement'] < 0])
     print(f'Improvement: {positive}, Degradation: {negative}')
     
-def plot_box(args, metric='value', filter_invalid=False, showfliers=False):
-    df = extract_data(args, metric, filter_invalid=filter_invalid)
+def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, showfliers=False):
+    df = extract_data(args, metric, filter_invalid=filter_invalid, filter_unknown=filter_unknown)
     
     # Reshape data for seaborn: convert from wide to long format
     df_long = df.reset_index().melt(id_vars='network', var_name='solver', value_name=metric)
@@ -187,13 +191,16 @@ def plot_box(args, metric='value', filter_invalid=False, showfliers=False):
     
 if __name__ == '__main__':
     args = get_args()
-    # plot_cactus(args, metric='total_time')
-    # plot_cactus(args, metric='value')
-    # plot_cactus(args, metric='active_neuron')
+    plot_cactus(args, metric='total_time')
+    plot_cactus(args, metric='value')
+    plot_cactus(args, metric='active_neuron')
     
-    # plot_bar_improvement(args, metric='iteration')
+    plot_bar_improvement(args, metric='iteration')
     # plot_bar_improvement(args, metric='value')
     plot_box(args, metric='value', showfliers=False)
     plot_box(args, metric='active_neuron', filter_invalid=True, showfliers=True)
     # plot_box(args, metric='total_time')
     # plot_box(args, metric='iteration')
+    
+    plot_box(args, metric='decision_time', showfliers=False, filter_unknown=False)
+    
