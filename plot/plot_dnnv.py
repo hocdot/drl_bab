@@ -137,17 +137,17 @@ def plot_bar_improvement(args, metric='value'):
     negative = len(common_solved[common_solved['improvement'] < 0])
     print(f'Improvement: {positive}, Degradation: {negative}')
     
-def plot_box(args, metric='value'):
-    df = extract_data(args, metric, filter_invalid=False)
+def plot_box(args, metric='value', filter_invalid=False, showfliers=False):
+    df = extract_data(args, metric, filter_invalid=filter_invalid)
     
     # Reshape data for seaborn: convert from wide to long format
     df_long = df.reset_index().melt(id_vars='episode', var_name='solver', value_name=metric)
     
     # Filter out unsolved instances (value = 0)
-    # df_long = df_long[df_long[metric] > 0]
+    df_long = df_long[df_long[metric] > 0]
     
-    plt.figure(figsize=(6, 4))
-    sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=False)
+    plt.figure(figsize=(6, 3))
+    sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=showfliers, width=0.5)
     
     plt.xlabel('')
     plt.ylabel(f'{metric.replace("_", " ").title()}')
@@ -165,6 +165,7 @@ if __name__ == '__main__':
     plot_cactus(args, metric='value')
     plot_bar_improvement(args, metric='iteration')
     # plot_bar_improvement(args, metric='value')
-    plot_box(args, metric='value')
+    plot_box(args, metric='value', showfliers=False)
+    plot_box(args, metric='active_neuron', filter_invalid=True, showfliers=True)
     # plot_box(args, metric='total_time')
     # plot_box(args, metric='iteration')
