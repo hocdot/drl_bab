@@ -34,6 +34,15 @@ def extract_data(args, metric='total_time', filter_invalid=True):
     base_label = f'{args.dataset}'
     solver_classes = [RandomDecider, PolarityDecider, FsbDecider, SACDecider]
     # solver_classes = [RandomDecider, FsbDecider, SACDecider]
+    
+    # Load test dataset to get network names
+    test_dataset_path = os.path.join(args.dataset_dir, args.dataset, f'instances_{args.mode}.csv')
+    test_df = pd.read_csv(test_dataset_path, header=None)
+    test_df.columns = ['onnx', 'vnnlib']
+    
+    # Create a mapping from episode index to network name
+    network_names = test_df['onnx'].tolist()
+    
     dfs = []
     for solver_class in solver_classes:
         if solver_class in [RandomDecider, PolarityDecider]:
@@ -43,6 +52,10 @@ def extract_data(args, metric='total_time', filter_invalid=True):
             
         df = pd.read_csv(path)
         df['solver'] = solver_class.__name__
+        
+        # Add network name for the first len(df) rows from test dataset
+        df['network'] = df['episode'].apply(lambda ep: network_names[ep].split('_')[-1].split('.')[0]) #  if ep < len(network_names) else 'unknown'
+        
         dfs.append(df)
         # solved = len(df[df['done'] == True])
         # print(f'{solver_class.__name__}: {solved}')
@@ -56,8 +69,16 @@ def extract_data(args, metric='total_time', filter_invalid=True):
 
     df_filtered['value'] = df_filtered['value'] * - 1
     
+    # Create episode to network mapping before pivot
+    episode_to_network = df_filtered[['episode', 'network']].drop_duplicates().set_index('episode')['network']
+    
     df = df_filtered.pivot(index='episode', columns='solver', values=metric)
+    
+    # Add network column back after pivot
+    df['network'] = df.index.map(episode_to_network)
+    
     print(df.head(), len(df))
+    # exit()
     for solver in solver_classes:
         solved = len(df[df[solver.__name__] > 0])
         print(f'{solver.__name__}: {solved}')
@@ -72,8 +93,10 @@ def plot_cactus(args, metric='total_time'):
     
     # Set color palette
     colors = sns.color_palette("muted", n_colors=len(df.columns))
+    solver_classes = [RandomDecider, PolarityDecider, FsbDecider, SACDecider]
     
-    for idx, solver in enumerate(df.columns):
+    for idx, s in enumerate(solver_classes):
+        solver = s.__name__
         values = df[solver][df[solver] > 0].sort_values() # excluding unsolved instances (0)
         x = list(range(1, len(values) + 1))
         
@@ -163,6 +186,8 @@ if __name__ == '__main__':
     args = get_args()
     plot_cactus(args, metric='total_time')
     plot_cactus(args, metric='value')
+    plot_cactus(args, metric='active_neuron')
+    
     plot_bar_improvement(args, metric='iteration')
     # plot_bar_improvement(args, metric='value')
     plot_box(args, metric='value', showfliers=False)
