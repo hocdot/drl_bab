@@ -9,6 +9,13 @@ from heuristic.sac.sac import SACDecider
 from arguments import get_args
 
 
+SOLVER_TO_PLOT_NAME = {
+    'FsbDecider': 'FSB',
+    'PolarityDecider': 'Polarity',
+    'SACDecider': 'SAC',
+    'RandomDecider': 'Random',
+}
+
 def filter_invalid_instances(df, metric='value'):
     # keep only instances solved by at least one solver
     solved_episodes = df[df['done'] == True].groupby('episode').size()
@@ -16,9 +23,9 @@ def filter_invalid_instances(df, metric='value'):
     df = df[df['episode'].isin(valid_episodes)]
     
     # filter out invalid instances: implementation issue - scales produced by SAC are not normalized
-    fsb_data = df[df['solver'] == 'FsbDecider'][['episode', 'done', metric]].rename(
+    fsb_data = df[df['solver'] == SOLVER_TO_PLOT_NAME['FsbDecider']][['episode', 'done', metric]].rename(
         columns={'done': 'fsb_done', metric: 'fsb_value'})
-    sac_data = df[df['solver'] == 'SACDecider'][['episode', 'done', metric]].rename(
+    sac_data = df[df['solver'] == SOLVER_TO_PLOT_NAME['SACDecider']][['episode', 'done', metric]].rename(
         columns={'done': 'sac_done', metric: 'sac_value'})
     comparison = fsb_data.merge(sac_data, on='episode', how='inner')
     exclude_episodes = comparison[
@@ -51,7 +58,7 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
             path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}_top{args.decision_topk_test}.csv')
             
         df = pd.read_csv(path)
-        df['solver'] = solver_class.__name__
+        df['solver'] = SOLVER_TO_PLOT_NAME[solver_class.__name__]
         
         # Add network name for the first len(df) rows from test dataset
         df['network'] = df['episode'].apply(lambda ep: network_names[ep-1].split('_')[-1].split('.')[0]) #  if ep < len(network_names) else 'unknown'
@@ -81,10 +88,10 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
     # Add network column back after pivot
     df['network'] = df.index.map(episode_to_network)
     
-    print(df.head(), len(df))
+    # print(df.head(), len(df))
     # exit()
     for solver in solver_classes:
-        solved = len(df[df[solver.__name__] > 0])
+        solved = len(df[df[SOLVER_TO_PLOT_NAME[solver.__name__]] > 0])
         print(f'{solver.__name__}: {solved}')
         
     return df
@@ -100,7 +107,7 @@ def plot_cactus(args, metric='total_time'):
     solver_classes = [RandomDecider, PolarityDecider, FsbDecider, SACDecider]
     
     for idx, s in enumerate(solver_classes):
-        solver = s.__name__
+        solver = SOLVER_TO_PLOT_NAME[s.__name__]
         values = df[solver][df[solver] > 0].sort_values() # excluding unsolved instances (0)
         x = list(range(1, len(values) + 1))
         
@@ -134,10 +141,11 @@ def plot_bar_improvement(args, metric='value'):
     common_solved = df.copy()
     
     # Calculate improvement: SAC - FSB (positive = SAC is better/higher)
-    common_solved['improvement'] = common_solved['SACDecider'] - common_solved['FsbDecider']
+    common_solved['improvement'] = common_solved[SOLVER_TO_PLOT_NAME['SACDecider']] - common_solved[SOLVER_TO_PLOT_NAME['FsbDecider']]
     
     # Sort by improvement for better visualization
     common_solved = common_solved.sort_values('improvement')
+    print('sum of improvement:', metric, common_solved['improvement'].sum())
     
     # Create colors: muted red for negative (degradation), muted green for positive (improvement)
     muted_palette = sns.color_palette('muted')
@@ -145,7 +153,7 @@ def plot_bar_improvement(args, metric='value'):
     muted_green = muted_palette[2]  # green
     colors = [muted_red if x < 0 else muted_green for x in common_solved['improvement']]
     
-    plt.figure(figsize=(6, 3))
+    plt.figure(figsize=(4, 3))
     bars = plt.bar(range(len(common_solved)), common_solved['improvement'], color=colors, width=1.0)
     
     plt.axhline(y=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
@@ -176,7 +184,7 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     # Filter out unsolved instances (value = 0)
     df_long = df_long[df_long[metric] > 0]
     
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(4, 3))
     sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=showfliers, width=0.5)
     
     plt.xlabel('')
@@ -197,7 +205,8 @@ if __name__ == '__main__':
     plot_cactus(args, metric='active_neuron')
     
     plot_bar_improvement(args, metric='iteration')
-    # plot_bar_improvement(args, metric='value')
+    plot_bar_improvement(args, metric='value')
+    
     plot_box(args, metric='value', showfliers=False)
     plot_box(args, metric='active_neuron', filter_invalid=True, showfliers=True)
     # plot_box(args, metric='total_time')
