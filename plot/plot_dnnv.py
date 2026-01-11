@@ -54,7 +54,7 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
         df['solver'] = solver_class.__name__
         
         # Add network name for the first len(df) rows from test dataset
-        df['network'] = df['episode'].apply(lambda ep: network_names[ep].split('_')[-1].split('.')[0]) #  if ep < len(network_names) else 'unknown'
+        df['network'] = df['episode'].apply(lambda ep: network_names[ep-1].split('_')[-1].split('.')[0]) #  if ep < len(network_names) else 'unknown'
         
         dfs.append(df)
         # solved = len(df[df['done'] == True])
@@ -93,7 +93,7 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
 def plot_cactus(args, metric='total_time'):
     df = extract_data(args, metric)
     
-    plt.figure(figsize=(5, 3))
+    plt.figure(figsize=(4, 3))
     
     # Set color palette
     colors = sns.color_palette("muted", n_colors=len(df.columns))
@@ -176,7 +176,7 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     # Filter out unsolved instances (value = 0)
     df_long = df_long[df_long[metric] > 0]
     
-    plt.figure(figsize=(6, 3))
+    plt.figure(figsize=(5, 3))
     sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=showfliers, width=0.5)
     
     plt.xlabel('')
@@ -191,6 +191,7 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     
 if __name__ == '__main__':
     args = get_args()
+    args.figure_dir = '../../figure/evaluation'
     plot_cactus(args, metric='total_time')
     plot_cactus(args, metric='value')
     plot_cactus(args, metric='active_neuron')
