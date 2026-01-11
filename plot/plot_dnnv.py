@@ -191,7 +191,7 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     
 if __name__ == '__main__':
     args = get_args()
-    args.figure_dir = '../../figure/evaluation'
+    # args.figure_dir = '../../figure/evaluation'
     plot_cactus(args, metric='total_time')
     plot_cactus(args, metric='value')
     plot_cactus(args, metric='active_neuron')
