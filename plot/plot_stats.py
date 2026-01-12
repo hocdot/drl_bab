@@ -82,9 +82,9 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
     # Add network column back after pivot
     df['network'] = df.index.map(episode_to_network)
     
-    print(df.head(), len(df))
-    for network in df['network'].unique():
-        print(network, len(df[df['network'] == network]))
+    # print(df.head(), len(df))
+    # for network in df['network'].unique():
+        # print(network, len(df[df['network'] == network]))
     return df
 
 def get_parameters(net):
@@ -92,7 +92,22 @@ def get_parameters(net):
 
 if __name__ == '__main__':
     args = get_args()
-    df = extract_data(args, filter_invalid=False, filter_unknown=False)
+    metric = 'value'
+    get_timeout = True
+    solver_classes = [RandomDecider, PolarityDecider, FsbDecider, SACDecider]
+    # solver_name = solver_classes[0].__name__
+    df_all = extract_data(args, metric=metric, filter_invalid=False, filter_unknown=False)
+    df = extract_data(args, metric=metric, filter_invalid=get_timeout, filter_unknown=True)
+    print(df)
+    for solver in solver_classes:
+        solver_name = solver.__name__
+        for network in df['network'].unique():
+            total_network = len(df_all[df_all['network'] == network])
+            metric_df = df[df['network'] == network][df[solver_name] > 0]
+            total_metric = metric_df[solver_name].sum()
+            print(solver_name, network, total_network, len(metric_df), (1-len(metric_df)/total_network)*100, total_metric)
+        print('-'*100)
+        # print(network, len(df[df['network'] == network]))
     
     # net = nn.Sequential(
     #     nn.Linear(784, 256),
