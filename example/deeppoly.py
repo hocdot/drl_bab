@@ -33,13 +33,19 @@ class Abstraction(nn.Module):
     def __call__(self, lower, upper):
         bounds = (lower, upper)
         hidden_params = []
+        layer_to_layer_params = []
         for layer in self.layers:
             # print('[+] processing:', layer)
             bounds, params = layer(bounds)
             if params is not None:
                 # assert all([_.shape[0] == 2 for _ in params]), f'{layer} has invalid params: {[_.shape for _ in params]}'
                 hidden_params.append(params)
-        return (bounds[..., 0].transpose(0, 1), bounds[..., 1].transpose(0, 1)), hidden_params
+            # Get layer-to-layer params if this layer has a preceding layer
+            if hasattr(layer, 'get_layer_to_layer_params'):
+                l2l_params = layer.get_layer_to_layer_params()
+                if l2l_params is not None:
+                    layer_to_layer_params.append(l2l_params)
+        return (bounds[..., 0].transpose(0, 1), bounds[..., 1].transpose(0, 1)), hidden_params, layer_to_layer_params
 
 
 class BatchInputTransformer(nn.Module):
@@ -52,6 +58,10 @@ class BatchInputTransformer(nn.Module):
     def forward(self, bounds):
         self.bounds = torch.stack([bounds[0], bounds[1]], dim=2).transpose(0, 1) # H x B x 2
         return self.bounds, None
+
+    def get_layer_to_layer_params(self):
+        """Input layer has no preceding layer"""
+        return None
 
     def __str__(self):
         return 'Input'
@@ -134,6 +144,26 @@ class BatchLinearTransformer(nn.Module):
                 output = torch.stack([lower.transpose(0, 1), upper.transpose(0, 1)], dim=2) # H x B x 2
                 return output, params # H x B x 2
 
+    def get_layer_to_layer_params(self):
+        """Return linear bounds from preceding layer to this layer"""
+        if self.last is None or isinstance(self.last, BatchInputTransformer):
+            return None
+        # For a linear layer: y = Wx + b
+        # Lower bound: y_L = W_plus @ x_L + W_minus @ x_U + b
+        # Upper bound: y_U = W_plus @ x_U + W_minus @ x_L + b
+        # So the bounds are simply the weight matrix and bias
+        W_L = self.weight.data  # H_out x H_in
+        W_U = self.weight.data  # H_out x H_in
+        b_L = self.bias.data    # H_out
+        b_U = self.bias.data    # H_out
+        # Repeat for batch dimension to match the format
+        B = self.bounds.shape[1]
+        W_L_batch = W_L[None].repeat([B] + [1 for _ in range(W_L.ndim)])
+        W_U_batch = W_U[None].repeat([B] + [1 for _ in range(W_U.ndim)])
+        b_L_batch = b_L[None].repeat([B] + [1 for _ in range(b_L.ndim)])
+        b_U_batch = b_U[None].repeat([B] + [1 for _ in range(b_U.ndim)])
+        return (W_L_batch, W_U_batch, b_L_batch, b_U_batch)
+
     def __str__(self):
         return f'Linear {self.idx}'
 
@@ -178,6 +208,23 @@ class BatchReLUTransformer(nn.Module):
             self.back_sub(self.back_sub_steps)
 
         return self.bounds, None
+
+    def get_layer_to_layer_params(self):
+        """Return linear bounds from preceding layer to this layer (after ReLU)"""
+        if self.last is None or isinstance(self.last, BatchInputTransformer):
+            return None
+        # For ReLU, the relationship between input x and output y is:
+        # Lower bound: y_L = beta * x + 0 (where beta is 0 for inactive, 1 for active)
+        # Upper bound: y_U = lambda * x + mu (where lambda is the slope, mu is the offset)
+        # Return diagonal matrices for the slopes and the offsets
+        device = self.lmbda.device
+        B = self.bounds.shape[1]
+        # Create diagonal matrices for the linear transformations
+        W_L = torch.diag_embed(self.beta.transpose(0, 1))  # B x H x H (diagonal)
+        W_U = torch.diag_embed(self.lmbda.transpose(0, 1))  # B x H x H (diagonal)
+        b_L = torch.zeros_like(self.mu, device=device)  # H x B
+        b_U = self.mu  # H x B
+        return (W_L, W_U, b_L, b_U)
 
     def __str__(self):
         return f'Relu {self.idx}'
