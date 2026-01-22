@@ -1,4 +1,4 @@
-import net, spec, deeppoly
+import net, spec, deeppoly, util
 
 # create net
 net = net.create()
@@ -15,17 +15,21 @@ abstraction = deeppoly.Abstraction(net=net, input_shape=x_L.shape)
 
 # print intermediate bounds
 print('[+] intermediate bounds')
-intermediate_bounds = []
-for i, (W_L, W_U, b_L, b_U) in enumerate(hidden_params[:-1]):
-    # print(f'{W_L.shape=} {x_L.shape=} {b_L.shape=}')
-    z_L = W_L[0] @ x_L[0] + b_L[0]
-    z_U = W_U[0] @ x_U[0] + b_U[0]
+intermediate_bounds = util.get_intermediate_bounds(x_L, x_U, hidden_params)
+for i, (z_L, z_U) in enumerate(intermediate_bounds):
     print(f'{i=} {z_L=} {z_U=}')
-    intermediate_bounds.append((z_L, z_U))
+print()
 
 # print polarity score
-polarity_scores = []
-for i, (z_L, z_U) in enumerate(intermediate_bounds):
-    omega = (z_L + z_U) / (z_U - z_L)
+print('[+] polarity scores')
+polarity_scores = util.get_polarity_scores(intermediate_bounds)
+for i, omega in enumerate(polarity_scores):
     print(i, omega)
-    polarity_scores.append(omega)
+print()
+
+# print active mask
+print('[+] active masks')
+active_masks = util.get_active_masks(intermediate_bounds)
+for i, m in enumerate(active_masks):
+    print(i, m)
+print()
