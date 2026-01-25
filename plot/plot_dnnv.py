@@ -1,7 +1,9 @@
-import pandas as pd
-import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
+import numpy as np
+import matplotlib
+import os
 
 from heuristic.dnnv_baseline import FsbDecider, PolarityDecider
 from heuristic.milp_baseline import RandomDecider
@@ -9,11 +11,18 @@ from heuristic.sac.sac import SACDecider
 from arguments import get_args
 
 
+matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['font.size'] = 16
+
 SOLVER_TO_PLOT_NAME = {
-    'FsbDecider': 'FSB',
-    'PolarityDecider': 'Polarity',
-    'SACDecider': 'SAC',
-    'RandomDecider': 'Random',
+    'FsbDecider': r'\textsc{Fsb}',
+    'PolarityDecider': r'\textsc{Polarity}',
+    'SACDecider': r'\textsc{Rsb}',
+    'RandomDecider': r'\textsc{Random}',
 }
 
 def filter_invalid_instances(df, metric='value'):
@@ -100,7 +109,7 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
 def plot_cactus(args, metric='total_time'):
     df = extract_data(args, metric)
     
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(4, 4))
     
     # Set color palette
     colors = sns.color_palette("muted", n_colors=len(df.columns))
@@ -123,14 +132,14 @@ def plot_cactus(args, metric='total_time'):
             plt.plot(x, values.values, label=solver, linewidth=2, color=colors[idx])
     
     plt.xlabel('Solved Instances')
-    plt.ylabel(f'{metric.replace("_", " ").title()}')
-    plt.legend(fancybox=True, loc='upper center')
+    plt.ylabel(f'{metric.replace("_", " ").title()}' if metric != 'value' else 'Number of Branches')
+    plt.legend(fancybox=True, loc='upper center', fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
     # Save the plot
-    output_path = os.path.join(args.figure_dir, f'cactus_{args.dataset}_{metric}.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    output_path = os.path.join(args.figure_dir, f'cactus_{args.dataset}_{metric}.pdf')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', format='pdf')
     print(f'[+] saved {output_path=}')
     
 def plot_bar_improvement(args, metric='value'):
@@ -153,18 +162,19 @@ def plot_bar_improvement(args, metric='value'):
     muted_green = muted_palette[2]  # green
     colors = [muted_red if x < 0 else muted_green for x in common_solved['improvement']]
     
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(4, 4))
     bars = plt.bar(range(len(common_solved)), common_solved['improvement'], color=colors, width=1.0)
     
     plt.axhline(y=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
     plt.xlabel('Instance')
-    plt.ylabel(f'{metric.replace("_", " ").title()} Improvement')
+    plt.ylabel(f'{metric.replace("_", " ").title()} Improvement' if metric != 'value' else 'Branch Improvement')
     plt.grid(True, alpha=0.3, axis='y')
+    plt.xticks(np.arange(0, 310, 100))
     plt.tight_layout()
     
     # Save the plot
-    output_path = os.path.join(args.figure_dir, f'bar_improvement_{args.dataset}_{metric}.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    output_path = os.path.join(args.figure_dir, f'bar_improvement_{args.dataset}_{metric}.pdf')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', format='pdf')
     print(f'[+] saved {output_path=}')
     
     # Print statistics
@@ -184,22 +194,22 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     # Filter out unsolved instances (value = 0)
     df_long = df_long[df_long[metric] > 0]
     
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(4, 4))
     sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=showfliers, width=0.5)
-    
+    plt.xticks(rotation=30)
     plt.xlabel('')
-    plt.ylabel(f'{metric.replace("_", " ").title()}')
+    plt.ylabel(f'{metric.replace("_", " ").title()}' if metric != 'value' else 'Number of Branches')
     plt.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
     
     # Save the plot
-    output_path = os.path.join(args.figure_dir, f'box_{args.dataset}_{metric}.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    output_path = os.path.join(args.figure_dir, f'box_{args.dataset}_{metric}.pdf')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', format='pdf')
     print(f'[+] saved {output_path=}')
     
 if __name__ == '__main__':
     args = get_args()
-    # args.figure_dir = '../../figure/evaluation'
+    args.figure_dir = '../../figure/evaluation'
     plot_cactus(args, metric='total_time')
     plot_cactus(args, metric='value')
     plot_cactus(args, metric='active_neuron')
