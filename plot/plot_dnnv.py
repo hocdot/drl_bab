@@ -138,6 +138,8 @@ def plot_cactus(args, metric='total_time'):
     plt.xticks(np.arange(0, 310, 100))
     if metric == 'value':
         plt.yticks(np.arange(0, 5001, 1000))
+    else:
+        plt.yticks(np.arange(0, 41, 10))
     plt.tight_layout()
     
     # Save the plot
@@ -175,6 +177,8 @@ def plot_bar_improvement(args, metric='value'):
     plt.xticks(np.arange(0, 310, 100))
     if metric == 'value':
         plt.yticks(np.arange(-4000, 6000, 1000))
+    else:
+        plt.yticks(np.arange(-40, 81, 20))
     plt.tight_layout()
     
     # Save the plot
@@ -207,6 +211,8 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     plt.grid(True, alpha=0.3, axis='y')
     if metric == 'value':
         plt.yticks(np.arange(0, 5001, 1000))
+    else:
+        plt.yticks(np.arange(0, 0.25, 0.05))
     plt.tight_layout()
     
     # Save the plot
