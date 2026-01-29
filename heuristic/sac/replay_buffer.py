@@ -45,28 +45,8 @@ class TrainingData:
         
         assert self.prev_action.shape[0] == self.action.shape[0] == self.done.shape[0] == self.reward.shape[0] == self.observation.shape[0] == self.next_observation.shape[0]
         
-        # # filter out batch where all neurons are split on all branch
-        # m1 = self.next_observation[:, 0][:, :, -1]
-        # m2 = self.next_observation[:, 1][:, :, -1]
-        # active_m = (m1.sum(dim=1) > 0) & (m2.sum(dim=1) > 0) # not all neurons are split on all branch
-        # print(f'{m1.shape=} {m2.shape=} {active_m.shape=} {self.next_observation.shape=}')
-        # self.prev_action = self.prev_action[active_m]
-        # self.action = self.action[active_m]
-        # self.done = self.done[active_m]
-        # self.reward = self.reward[active_m]
-        # self.observation = self.observation[active_m]
-        # self.next_observation = self.next_observation[active_m]
-        
-        # if args.verbose:
-        #     if (active_m == 0).any():
-        #         print(f'    ! filtered out all neurons are split: {m1.shape[0]} => {self.next_observation.shape[0]}')
-        
         if not args.save_offline_data and args.dataset == 'dnnv':
             self.reward = self.reward / args.n_max_visited_subproblem
-            # if not reward_scaler.fitted:
-            #     self.reward = reward_scaler.fit_transform(self.reward) / 1000
-            # else:
-            #     self.reward = reward_scaler.transform(self.reward) / 1000
 
         assert self.prev_action.shape[0] == self.action.shape[0] == self.done.shape[0] == self.reward.shape[0] == self.observation.shape[0] == self.next_observation.shape[0]
 

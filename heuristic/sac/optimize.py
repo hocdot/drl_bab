@@ -5,38 +5,8 @@ import os
 from .replay_buffer import TrainingData
 
 def print_gradients(self, network_name, networks):
-    """Print gradient statistics to check for vanishing/exploding gradients."""
     return
 
-    if self.global_step % 5000 or self.global_step == 0:
-        return
-    
-    print(f"\n=== {network_name} Gradient Stats (Step {self.global_step}) ===")
-    for i, network in enumerate(networks):
-        network_suffix = f"_{i+1}" if len(networks) > 1 else ""
-        print(f"{network_name}{network_suffix}:")
-        
-        grad_norms = []
-        for name, param in network.named_parameters():
-            if param.grad is not None:
-                grad_norm = param.grad.norm().item()
-                grad_norms.append(grad_norm)
-                if grad_norm < 1e-6:
-                    print(f"  {name}: {grad_norm:.2e} (VANISHING)")
-                elif grad_norm > 10.0:
-                    print(f"  {name}: {grad_norm:.2e} (EXPLODING)")
-                else:
-                    print(f"  {name}: {grad_norm:.6f}")
-            else:
-                print(f"  {name}: None (no gradient)")
-        
-        if grad_norms:
-            mean_grad = sum(grad_norms) / len(grad_norms)
-            max_grad = max(grad_norms)
-            min_grad = min(grad_norms)
-            print(f"  Summary - Mean: {mean_grad:.6f}, Max: {max_grad:.6f}, Min: {min_grad:.6f}")
-        print()
-        
 def optimize_qf(self, data, n_grad_accum=1, accum_step=0):
     # train
     with torch.no_grad():

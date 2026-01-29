@@ -1,54 +1,47 @@
 # DRL-based Decision Heuristic for DNN Verification
 
-### Pretrain GNN Embedding
+### 1. Installation
 
 ```bash
-python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 5000 --clean
-python3 -m prepare.prepare_io --dataset dnnv --use_attack
-python3 -m prepare.prepare_hard_instances --dataset dnnv
-python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32
-python3 -m prepare.split_train_test --dataset dnnv
+pip install -r requirements.txt
 ```
 
-### Create offline data
+### 2. Pretrain GNN Embedding
 
-```bash
-python3 train.py --mode train --config config/dnnv_create_offline_data
-```
+- Generate random instances from existing ONNX at `data/dataset/dnnv/onnx`:
+    ```bash
+    python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 5000 --clean
+    ```
 
-### Train Offline
+- Filter out easy SAT instances:
+    ```bash
+    python3 -m prepare.prepare_io --dataset dnnv --use_attack
+    ```
 
-```bash
-python3 train.py --mode train_offline --config config/dnnv.yaml
-```
+- Filter out easy UNSAT instances:
+    ```bash
+    python3 -m prepare.prepare_hard_instances --dataset dnnv
+    ```
 
-### Train
+- Train GCN and extract embeddings:
+    ```bash
+    python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32
+    ```
 
-```bash
-python3 train.py --mode train --config config/milp_10_10.yaml
-python3 train.py --mode train --config config/milp_10_10_scale.yaml
-```
+- Split train and test sets:
+    ```bash
+    python3 -m prepare.split_train_test --dataset dnnv
+    ```
+
+### 3. Train RSB heuristic
 
 ```bash
 python3 train.py --mode train --config config/dnnv.yaml
-python3 train.py --mode train --config config/dnnv_debug.yaml
 ```
 
 
-### Test
+### 4. Test RSB/FSB/Polarity/Random heuristics
 
 ```bash
-python3 infer.py --config config/milp_10_10.yaml
-python3 infer.py --config config/milp_10_10_scale.yaml
 python3 infer.py --config config/dnnv.yaml
 ```
-
-```bash
-python3 -m dnnv_solver.main --net data/dataset/dnnv/onnx/mnist-net_256x2.onnx --spec data/dataset/dnnv/vnnlib/prop_1_0.03.vnnlib --disable_attack --disable_restart --disable_stabilize
-```
-
-### TODO
-
-- [ ] Constrastive loss
-- [ ] Action weight * FSB score
-- [ ] Train no embedding
