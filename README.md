@@ -1,4 +1,4 @@
-# DRL-based Decision Heuristic for DNN Verification
+# RSB: RL-Guided Smart Branching for Efficient Neural Network Verification
 
 Formal verification can play a key role in ensuring the reliability of Deep Neural Networks (DNN) deployed in safety-critical systems. Modern DNN verifiers employ branch-and-bound framework, which alternates between bounding (to prune subproblems) and branching (to split into smaller subproblems), to efficiently explore the verification space. However, existing branching heuristics make locally greedy decisions based on static scoring functions without anticipating long-term efficiency, and do not leverage the growing availability of verification data to improve performance.
 
