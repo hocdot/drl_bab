@@ -1,7 +1,6 @@
 data_test/
 data_embed/
 data/
-rac/
 
 # Ignore __pycache__ folder recursively
 **/__pycache__

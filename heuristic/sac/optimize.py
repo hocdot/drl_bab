@@ -10,12 +10,12 @@ def print_gradients(self, network_name, networks):
 
     if self.global_step % 5000 or self.global_step == 0:
         return
-    
+
     print(f"\n=== {network_name} Gradient Stats (Step {self.global_step}) ===")
     for i, network in enumerate(networks):
         network_suffix = f"_{i+1}" if len(networks) > 1 else ""
         print(f"{network_name}{network_suffix}:")
-        
+
         grad_norms = []
         for name, param in network.named_parameters():
             if param.grad is not None:
@@ -29,14 +29,14 @@ def print_gradients(self, network_name, networks):
                     print(f"  {name}: {grad_norm:.6f}")
             else:
                 print(f"  {name}: None (no gradient)")
-        
+
         if grad_norms:
             mean_grad = sum(grad_norms) / len(grad_norms)
             max_grad = max(grad_norms)
             min_grad = min(grad_norms)
             print(f"  Summary - Mean: {mean_grad:.6f}, Max: {max_grad:.6f}, Min: {min_grad:.6f}")
         print()
-        
+
 def optimize_qf(self, data, n_grad_accum=1, accum_step=0):
     # train
     with torch.no_grad():
@@ -67,17 +67,17 @@ def optimize_qf(self, data, n_grad_accum=1, accum_step=0):
     qf1_loss = F.mse_loss(qv1_a, next_qv)
     qf2_loss = F.mse_loss(qv2_a, next_qv)
     qf_loss = (qf1_loss + qf2_loss) / n_grad_accum
-    
+
     if accum_step == 0:
         self.q_optimizer.zero_grad()
-    
+
     qf_loss.backward()
-    
+
     if accum_step == n_grad_accum - 1:
         # print grad to check gradient vanishing/exploding
         self.print_gradients("Q-Networks", [self.qf1, self.qf2])
         self.q_optimizer.step()
-    
+
     return qf_loss.item()
 
 def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
@@ -91,18 +91,18 @@ def optimize_actor(self, data, n_grad_accum=1, accum_step=0):
     actor_loss = (action_probs * ((self.alpha * log_prob) - min_qv)).mean() / n_grad_accum
     # print(f'{action_probs.shape=} {min_qv.shape=}')
     # actor_loss = (action_probs * (- min_qv)).mean()
-    
+
     if accum_step == 0:
         self.actor_optimizer.zero_grad()
-    
+
     self.actor_scaler.scale(actor_loss).backward()
-    
+
     if accum_step == n_grad_accum - 1:
         self.actor_scaler.step(self.actor_optimizer)
         self.actor_scaler.update()
         # print grad to check gradient vanishing/exploding
         self.print_gradients("Actor", [self.actor])
-        
+
     if self.args.autotune_entropy:
         # reuse action probabilities for temperature loss
         alpha_loss = (action_probs.detach() * (-self.log_alpha.exp() * (log_prob + self.target_entropy).detach())).mean()
@@ -123,11 +123,10 @@ def update_target(self):
 def sample_batch(self):
     transitions = self.replay_buffer.sample(self.args.batch_size)
     data = TrainingData(transitions, self.reward_scaler, self.args)
-    
+
     if self.args.save_offline_data:
         offline_data_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'offline_data')
-        # offline_data_dir = os.path.join('/media/hai/offline_data')
-        
+
         os.makedirs(offline_data_dir, exist_ok=True)
         data.export(os.path.join(offline_data_dir, f'step_{self.global_step}_batch_{self.args.batch_size}.pt'))
     return data
@@ -153,7 +152,7 @@ def optimize(self, n_qf_optimize=1, n_grad_accum=1):
                 qf_batch_loss += self.optimize_qf(data, n_grad_accum, accum_step)
             qf_loss += qf_batch_loss
         qf_loss /= n_qf_optimize
-        
+
         # train Actor
         actor_batch_loss = 0.0
         alpha_batch_loss = 0.0
@@ -164,8 +163,7 @@ def optimize(self, n_qf_optimize=1, n_grad_accum=1):
             alpha_batch_loss += alpha_step_loss
         actor_loss = actor_batch_loss
         alpha_loss = alpha_batch_loss
-        
+
     if self.global_step % self.args.n_target_update == 0:
         self.update_target()
     return actor_loss, qf_loss, alpha_loss
-
