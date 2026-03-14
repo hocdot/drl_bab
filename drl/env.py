@@ -58,7 +58,8 @@ class Env:
                 # load observation embedding
                 embed_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'embed')
                 embed_path = os.path.join(embed_dir, f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
-                self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
+                if os.path.exists(embed_path):
+                    self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
         return solver
     
     @beartype
@@ -217,4 +218,7 @@ class Env:
             (self.n_visited_subproblem >= self.args.n_max_visited_subproblem) or
             (self.n_step >= self.args.n_max_step)
         )
+        
+        if self.args.verbose:
+            print(f'    + step={self.n_step:<5d} visited={self.n_visited_subproblem:<5d} remaining={self.solver.remaining_subproblem:<5d} reward={reward:<5d} bound={self.solver.minimum_lowers:.4f}')
         return remaining_next_observation, reward, done, early_stop, train_data

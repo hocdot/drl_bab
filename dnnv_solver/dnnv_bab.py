@@ -40,6 +40,10 @@ class DnnvBabSolver:
     def remaining_subproblem(self):
         return len(self.queue)
     
+    @property
+    def minimum_lowers(self):
+        return self.queue.minimum_lowers
+    
     
     def initialize(self, objective) -> DomainsList | list:
         # check attacked
