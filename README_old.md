@@ -46,9 +46,3 @@ python3 infer.py --config config/dnnv.yaml
 ```bash
 python3 -m dnnv_solver.main --net data/dataset/dnnv/onnx/mnist-net_256x2.onnx --spec data/dataset/dnnv/vnnlib/prop_1_0.03.vnnlib --disable_attack --disable_restart --disable_stabilize
 ```
-
-### TODO
-
-- [ ] Constrastive loss
-- [ ] Action weight * FSB score
-- [ ] Train no embedding
