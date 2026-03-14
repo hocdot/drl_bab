@@ -1,4 +1,0 @@
-[submodule "core/neuralsat"]
-	path = core/neuralsat
-	url = https://github.com/dynaroars/neuralsat.git
-	branch = heuristic
