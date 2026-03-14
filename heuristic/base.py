@@ -152,3 +152,10 @@ class Base:
 
     def save(self):
         raise NotImplementedError
+
+    def solve_one_instance(self, onnx, vnnlib):
+        assert self.args.mode == 'test', f'{self.args.mode=}'
+        self.load()
+        self.env.loader = iter([{'onnx': [onnx], 'vnnlib': [vnnlib]}])
+        info = self.test_instance()
+        return info
