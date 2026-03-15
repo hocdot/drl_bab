@@ -58,8 +58,7 @@ class Env:
                 # load observation embedding
                 embed_dir = os.path.join(self.args.dataset_dir, self.args.dataset, 'embed')
                 embed_path = os.path.join(embed_dir, f'{os.path.basename(onnx)}____{os.path.basename(vnnlib)}.pt')
-                if os.path.exists(embed_path):
-                    self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
+                self.observation_embedding = torch.load(embed_path) # (n_active_neuron, n_embed)
         return solver
     
     @beartype

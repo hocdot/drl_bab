@@ -26,7 +26,7 @@ def instance_generator(csv_name,args):
     for i, (onnx, vnnlib) in tqdm.tqdm(df.iterrows(), total=len(df), desc=f'{csv_name}'):
         yield os.path.join(root_dir, onnx), os.path.join(root_dir, vnnlib)
         
-def seperate_vnnlib(args, input_csv_name, output_csv_name):
+def separate_vnnlib(args, input_csv_name, output_csv_name):
     output_dir = os.path.join(args.dataset_dir, args.dataset)
     if os.path.exists(os.path.join(output_dir, output_csv_name)):
         return
@@ -106,13 +106,13 @@ def prepare_io(args):
     graph_dir = os.path.join(args.dataset_dir, args.dataset, 'graph')
     os.makedirs(graph_dir, exist_ok=True)
     # form a torch geometric dataset from hard instances list
-    print(f'[+] seperate vnnlibs')
-    seperate_vnnlib(args, input_csv_name='instances_raw.csv', output_csv_name='instances_seperated.csv')
+    print(f'[+] separate vnnlibs')
+    separate_vnnlib(args, input_csv_name='instances_raw.csv', output_csv_name='instances_separated.csv')
     
     print(f'[+] processing onnxs and vnnlibs')
     output_path = os.path.join(args.dataset_dir, args.dataset, 'instances_processed.csv')
     os.system(f'rm -rf {output_path}')
-    for (onnx, vnnlib) in instance_generator('instances_seperated.csv', args):
+    for (onnx, vnnlib) in instance_generator('instances_separated.csv', args):
         if process_instance(onnx, vnnlib, args):
             line = f'onnx/{os.path.basename(onnx)},vnnlib_processed/{os.path.basename(vnnlib)}'
             with open(output_path, 'a') as f:

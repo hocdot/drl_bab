@@ -195,7 +195,7 @@ class SACDecider(Base):
         path = self.checkpoint_path
         if os.path.exists(path):
             print(f'[+] loading {path}')
-            data = torch.load(path)
+            data = torch.load(path, map_location=self.args.device)
             self.actor.load_state_dict(data['actor'])
             self.qf1.load_state_dict(data['qf1'])
             self.qf2.load_state_dict(data['qf2'])

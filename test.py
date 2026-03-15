@@ -4,16 +4,20 @@ from arguments import get_args
 
 
 def test(args):
-    solver = FsbDecider(args)
-    # solver_classes = SACDecider
-    onnx = 'data/dataset/dnnv/onnx/simple_cnn_3x21.onnx'
-    vnnlib = 'data/dataset/dnnv/vnnlib_cnn_small/spec_simple_cnn_3x21_idx_2_eps_0.03825_0.vnnlib'
+    # solver = FsbDecider(args)
+    # solver = SACDecider(args)
+    solvers = [FsbDecider(args), SACDecider(args)]
+    onnx = 'data/dnnv_cnn/dnnv/onnx/simple_cnn_3x21.onnx'
+    vnnlib = 'data/dnnv_cnn/dnnv/vnnlib_processed/spec_simple_cnn_3x21_idx_2_eps_0.03825_0_output_8.vnnlib'
     
-    info = solver.solve_one_instance(onnx, vnnlib)
-    print(info)
+    for solver in solvers:
+        info = solver.solve_one_instance(onnx, vnnlib)
+        print(f'{solver}: {info}')
     
 '''
-CUDA_VISIBLE_DEVICES= python3 test.py --config config/dnnv.yaml --verbose
+python3 -m prepare.prepare_io --use_attack --config config/dnnv_cnn.yaml
+python3 -m prepare.prepare_gnn_embedding --config config/dnnv_cnn.yaml
+CUDA_VISIBLE_DEVICES= python3 test.py --config config/dnnv_cnn.yaml --verbose
 '''
 
 if __name__ == '__main__':
