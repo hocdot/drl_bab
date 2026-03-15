@@ -57,9 +57,7 @@ class SACDecider(Base):
             return
         a = self.transform(a)
         e = self.actor.embedding(x)
-        z = self.decoder_state
-        z = self.actor.decoder.gather_z(e, a)
-        self.decoder_state = z
+        self.decoder_state = self.actor.decoder.gather_z(e, a)
 
     @beartype
     def select_action(self, observation: torch.Tensor) -> list[int]:
