@@ -12,6 +12,7 @@ n_grad_accum: 8
 
 n_input: 4
 n_max_step: 500
+n_max_active_neuron: 25
 
 use_attack: false
 dnnv_solver_batch: 500

@@ -10,7 +10,7 @@ def test(args):
     onnx = 'data/dnnv_cnn/dnnv/onnx/simple_cnn_3x21.onnx'
     vnnlib = 'data/dnnv_cnn/dnnv/vnnlib_processed/spec_simple_cnn_3x21_idx_2_eps_0.03825_0_output_8.vnnlib'
     
-    for solver in solvers:
+    for solver in solvers[1:]:
         info = solver.solve_one_instance(onnx, vnnlib)
         print(f'{solver}: {info}')
     

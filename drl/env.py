@@ -79,6 +79,17 @@ class Env:
             self.active_neuron_index = torch.where(init_mask == 1)[1] # (n_active_neuron, )
             self.reverse_active_neuron_index = {int(v): idx for idx, v in enumerate(self.active_neuron_index)}
             self.scale_index = self.active_neuron_index - np.prod(self.solver.input_shape)
+            
+            # reduce number of active neurons
+            self.reduced_active_neuron_index = None
+            if 0 < self.args.n_max_active_neuron < len(self.active_neuron_index):
+                _, fsb_scores = self.solver.get_observation(return_fsb_score=True)
+                assert fsb_scores.shape[0] == 1, f'{fsb_scores.shape=}'
+                assert fsb_scores.shape[1] == init_mask.shape[1], f'{fsb_scores.shape=} {init_mask.shape=}'
+                active_fsb_scores = fsb_scores[..., 0][:, self.active_neuron_index] # (1, n_active_neuron)
+                topk_active_fsb_scores = active_fsb_scores.topk(self.args.n_max_active_neuron, dim=-1)
+                self.reduced_active_neuron_index = sorted(topk_active_fsb_scores.indices[0].tolist()) # (n_reduced_active_neuron, )
+
             # filter the embedding
             if self.observation_embedding is not None:
                 assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
@@ -166,13 +177,13 @@ class Env:
     @beartype
     def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool, list[dict]]:
         self.n_step += 1
-        # convert to active neuron format for dnnv
+        # convert to raw neuron format for dnnv
         raw_action = self._convert_action_to_raw_action(action)
         
         # bound
         double_raw_actions, double_raw_next_observations, double_dones, double_rewards = self.solver.branch_and_bound(raw_action) # 2 x subproblems
         
-        # convert to active neuron format for dnnv
+        # convert to active neuron format for drl
         double_next_observations = self._concat_observation_embedding_3d(double_raw_next_observations)
         double_actions = self._convert_raw_action_to_action(double_raw_actions)
 
@@ -201,11 +212,11 @@ class Env:
         # get remaining subproblems
         remaining_raw_next_observation, remaining_raw_prev_actions = self.solver.get_observation(batch=self.args.dnnv_solver_batch) # remaining subproblems
         
-        # convert to active neuron format for dnnv
+        # convert to active neuron format for drl
         remaining_next_observation = self._concat_observation_embedding_2d(remaining_raw_next_observation)
         remaining_prev_actions = self._convert_raw_action_to_action(remaining_raw_prev_actions)
         
-        # last info
+        # last iteration info
         self.prev_actions = remaining_prev_actions # (n_subproblem,) 
         self.prev_observations = remaining_next_observation # (n_subproblem, n_var, n_feature)
         

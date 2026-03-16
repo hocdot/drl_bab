@@ -67,6 +67,7 @@ def get_args():
     parser.add_argument('--dnnv_skip_lower_bound', type=float, default=-10)
     parser.add_argument('--save_offline_data', action='store_true')
     parser.add_argument('--n_start_save_offline_data', type=int, default=1000)
+    parser.add_argument('--n_max_active_neuron', type=int, default=-1) # -1: no limit
     
     parser.add_argument('--decision_topk_test', type=int, default=10)
     parser.add_argument('--decision_topk_train', type=int, default=30)

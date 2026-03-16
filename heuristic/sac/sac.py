@@ -58,18 +58,35 @@ class SACDecider(Base):
         a = self.transform(a)
         e = self.actor.embedding(x)
         self.decoder_state = self.actor.decoder.gather_z(e, a)
+        
+    @beartype
+    def _convert_observation(self, x: torch.Tensor) -> torch.Tensor:
+        if self.env.reduced_active_neuron_index is not None:
+            return x[:, self.env.reduced_active_neuron_index]
+        return x
 
+    @beartype
+    def _convert_action_probs(self, action_probs: torch.Tensor) -> torch.Tensor:
+        if self.env.reduced_active_neuron_index is not None:
+            # TODO: initializing with 0.0 might not be the best idea
+            new_action_probs = torch.zeros(action_probs.shape[0], len(self.env.active_neuron_index), device=action_probs.device)
+            batched_index = torch.tensor(self.env.reduced_active_neuron_index, device=action_probs.device).unsqueeze(0).expand(action_probs.shape[0], -1)
+            new_action_probs.scatter_(1, batched_index, action_probs)
+            return new_action_probs
+        return action_probs
+    
     @beartype
     def select_action(self, observation: torch.Tensor) -> list[int]:
         x = self.transform(observation)
+        x = self._convert_observation(x) # reduce number of active neurons
         z = self.decoder_state
         if self.args.use_scale_action:
             _, _, action_probs = self.actor.get_action(x, z)
+            action_probs = self._convert_action_probs(action_probs) # add back to number of active neurons
             if self.args.dataset == 'milp':
                 action = select_cost_based_action(observation, scale=action_probs)
             else:
                 action = self.env._get_fsb_action(scale=action_probs)
-            return action
         else:
             if self.args.mode == 'train':
                 action, _, _ = self.actor.get_action(x, z)
@@ -78,7 +95,8 @@ class SACDecider(Base):
                 action = torch.argmax(logits, dim=1)
             else:
                 raise NotImplementedError
-            return action.tolist()
+            action = action.tolist()
+        return action
     
     @beartype
     def select_heuristic_action(self, observation: torch.Tensor) -> list[int]:
