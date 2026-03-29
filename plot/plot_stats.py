@@ -16,6 +16,8 @@ def filter_invalid_instances(df, metric='value'):
     valid_episodes = solved_episodes.index
     df = df[df['episode'].isin(valid_episodes)]
     
+    df = df[df['total_time'] < 30.0]
+    
     # filter out invalid instances: implementation issue - scales produced by SAC are not normalized
     fsb_data = df[df['solver'] == 'FsbDecider'][['episode', 'done', metric]].rename(
         columns={'done': 'fsb_done', metric: 'fsb_value'})

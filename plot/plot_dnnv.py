@@ -16,7 +16,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 plt.rcParams['font.family'] = 'Times New Roman'
-plt.rcParams['font.size'] = 20
+plt.rcParams['font.size'] = 19
 
 SOLVER_TO_PLOT_NAME = {
     'FsbDecider': r'\textsc{Fsb}',
@@ -109,7 +109,7 @@ def extract_data(args, metric='total_time', filter_invalid=True, filter_unknown=
 def plot_cactus(args, metric='total_time'):
     df = extract_data(args, metric)
     
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(4, 4))
     
     # Set color palette
     colors = sns.color_palette("muted", n_colors=len(df.columns))
@@ -133,7 +133,7 @@ def plot_cactus(args, metric='total_time'):
     
     plt.xlabel('Solved Instances')
     plt.ylabel(f'{metric.replace("_", " ").title()}' if metric != 'value' else 'Explored Branches')
-    plt.legend(fancybox=True, loc='upper center', fontsize=16)
+    plt.legend(fancybox=True, loc='upper center', fontsize=15, bbox_to_anchor=(0.42, 1.0))
     plt.grid(True, alpha=0.3)
     plt.xticks(np.arange(0, 310, 100))
     if metric == 'value':
@@ -171,14 +171,14 @@ def plot_bar_improvement(args, metric='value'):
     bars = plt.bar(range(len(common_solved)), common_solved['improvement'], color=colors, width=1.0)
     
     plt.axhline(y=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
-    plt.xlabel('Instance')
-    plt.ylabel(f'{metric.replace("_", " ").title()} Improvement' if metric != 'value' else 'Branch Improvement')
+    plt.xlabel('Instance', fontsize=24)
+    plt.ylabel(f'{metric.replace("_", " ").title()} Improvement' if metric != 'value' else 'Branch Improvement', fontsize=24)
     plt.grid(True, alpha=0.3, axis='y')
-    plt.xticks(np.arange(0, 310, 100))
+    plt.xticks(np.arange(0, 310, 100), fontsize=24)
     if metric == 'value':
-        plt.yticks(np.arange(-4000, 6000, 1000))
+        plt.yticks(np.arange(-4000, 6000, 1000), fontsize=24)
     else:
-        plt.yticks(np.arange(-40, 81, 20))
+        plt.yticks(np.arange(-40, 81, 20), fontsize=24)
     plt.tight_layout()
     
     # Save the plot
@@ -203,9 +203,9 @@ def plot_box(args, metric='value', filter_invalid=False, filter_unknown=True, sh
     # Filter out unsolved instances (value = 0)
     df_long = df_long[df_long[metric] > 0]
     
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(4, 4))
     sns.boxplot(data=df_long, x='solver', y=metric, palette='muted', showfliers=showfliers, width=0.5)
-    plt.xticks(rotation=15)
+    plt.xticks(rotation=30)
     plt.xlabel('')
     plt.ylabel(f'{metric.replace("_", " ").title()}' if metric != 'value' else 'Explored Branches')
     plt.grid(True, alpha=0.3, axis='y')
