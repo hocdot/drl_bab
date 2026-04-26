@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-import torch.nn as nn
-import seaborn as sns
 import pandas as pd
 import numpy as np
 import copy
@@ -10,26 +7,11 @@ import re
 
 
 
+from .utils import BENCHMARK_TO_CONFIG, METRIC_COLS, EASY_THRESHOLD, TIMEOUT_THRESHOLD, INSTANCES_PER_BENCHMARK, CSV_EXPORT_DIR
+from arguments import get_args, load_yaml_config, update_args_from_yaml, create_folders
 from heuristic.dnnv_baseline import FsbDecider, UpbDecider, PolarityDecider
 from heuristic.milp_baseline import RandomDecider
 from heuristic.sac.sac import SACDecider
-from arguments import get_args, load_yaml_config, update_args_from_yaml, create_folders
-
-BENCHMARK_TO_CONFIG = {
-    'fnn': 'config/dnnv_fnn.yaml',
-    'cnn': 'config/dnnv_cnn.yaml',
-    'sigmoid': 'config/dnnv_distshift.yaml',
-}
-
-METRIC_COLS = ['value', 'done', 'decision_time', 'iteration', 'total_time', 'active_neuron']
-
-EASY_THRESHOLD = -1000
-TIMEOUT_THRESHOLD = -float('inf')
-INSTANCES_PER_BENCHMARK = 50
-
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_EXPORT_DIR = os.path.join(CURRENT_DIR, 'csv')
-os.makedirs(CSV_EXPORT_DIR, exist_ok=True)
 
 def eps_from_vnnlib(vnnlib_path) -> float:
     name = os.path.basename(str(vnnlib_path))

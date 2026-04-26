@@ -1,51 +1,33 @@
 from typing import List, Optional
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import random
-import tqdm
 import os
 
-# BENCHMARK_TYPES = ('fnn', 'cnn', 'sigmoid')
-from .extract_csv import CURRENT_DIR, CSV_EXPORT_DIR, BENCHMARK_TO_CONFIG, sample_csv, sample_csv_v2, extract_csv
+from .utils import CSV_EXPORT_DIR, BENCHMARK_TO_CONFIG, SOLVER_DISPLAY, FIGURE_DIR, PANEL_TITLE, BENCHMARK_PANELS
+from .extract_csv import sample_csv_v2, extract_csv
 from arguments import get_args
-
-SOLVER_DISPLAY = (
-    # ('RandomDecider', 'Random'),
-    ('PolarityDecider', 'Polarity'),
-    ('UpbDecider', 'UPB'),
-    ('FsbDecider', 'FSB'),
-    ('SACDecider', 'RSB'),
-)
-
-FIGURE_DIR = os.path.join(CURRENT_DIR, 'figure')
-os.makedirs(FIGURE_DIR, exist_ok=True)
-
-BENCHMARK_PANELS = (
-    ('all', None),
-    *[(k, k) for k in BENCHMARK_TO_CONFIG],
-)
-
-PANEL_TITLE = {
-    'all': 'All',
-    'fnn': 'FNN',
-    'cnn': 'CNN',
-    'sigmoid': 'Sigmoid',
-}
 
 
 def _ylabel_for_metric(metric: str) -> str:
     if metric == 'value':
         return 'Explored branches'
     if metric == 'total_time':
-        return 'Total time (s)'
+        return 'Runtime (s)'
     if metric == 'decision_time':
+        return 'Decision time (s)'
+    if metric == 'decision_time_per_iteration':
         return 'Decision time (s)'
     if metric == 'iteration':
         return 'Iterations'
     return metric.replace('_', ' ').title()
 
+
+
+def _done_mask(series: pd.Series) -> pd.Series:
+    return series.eq(True) | (series.astype(str).str.lower() == 'true')
 
 def load_merged_sampled() -> pd.DataFrame:
     parts = []
@@ -58,9 +40,6 @@ def load_merged_sampled() -> pd.DataFrame:
         parts.append(df)
     return pd.concat(parts, ignore_index=True)
 
-
-def _done_mask(series: pd.Series) -> pd.Series:
-    return series.eq(True) | (series.astype(str).str.lower() == 'true')
 
 
 def count_solved_by_solver(df: pd.DataFrame) -> dict:
@@ -101,6 +80,7 @@ def _series_for_cactus(df: pd.DataFrame, done_mask: pd.Series, metric_col: str, 
 
 
 def _plot_cactus_axes(ax, df: pd.DataFrame, solvers, colors, metric: str, title: Optional[str] = None):
+    max_y = 0.0
     for idx, (solver_cls_name, plot_name) in enumerate(solvers):
         done_col = f'done_{solver_cls_name}'
         metric_col = f'{metric}_{solver_cls_name}'
@@ -110,6 +90,7 @@ def _plot_cactus_axes(ax, df: pd.DataFrame, solvers, colors, metric: str, title:
             continue
         x = np.arange(1, len(metrics) + 1, dtype=float)
         y = metrics.to_numpy()
+        max_y = max(max_y, float(np.max(y)))
         if len(metrics) == 1:
             sns.scatterplot(
                 x=x, y=y, label=plot_name, s=55, zorder=3, color=colors[idx], ax=ax
@@ -117,8 +98,24 @@ def _plot_cactus_axes(ax, df: pd.DataFrame, solvers, colors, metric: str, title:
         else:
             ax.plot(x, y, label=plot_name, linewidth=2, color=colors[idx])
     ax.set_xlabel('Solved instances')
+    if len(metrics) > 100:
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+    else:
+        ax.xaxis.set_major_locator(MultipleLocator(10))
     ax.set_ylabel(_ylabel_for_metric(metric))
-    ax.legend(fancybox=True, fontsize=8)
+    ax.legend(fancybox=True, fontsize=14)
+    if metric == 'total_time':
+        ax.set_ylim(0, 120)
+        ax.yaxis.set_major_locator(MultipleLocator(20))
+    elif metric == 'value':
+            ymax = max_y * 1.1
+            ax.set_ylim(0, ymax)
+            for step in (20_000, 50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000):
+                if ymax / step <= 10:
+                    ax.yaxis.set_major_locator(MultipleLocator(step))
+                    break
+    else:
+        raise ValueError(f'Unknown metric: {metric}')
     ax.grid(True, alpha=0.3)
     if title:
         ax.set_title(title)

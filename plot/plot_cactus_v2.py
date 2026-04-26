@@ -23,14 +23,14 @@ def plot_cactus_v2(
         seen_df = df_all[df_all['suite'] == SEEN_SUITE]
         unseen_df = df_all[df_all['suite'].isin(UNSEEN_SUITES)]
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-        _plot_cactus_axes(ax, seen_df, solvers, colors, metric=metric, title='Seen networks')
+        _plot_cactus_axes(ax, seen_df, solvers, colors, metric=metric)
         fig.tight_layout()
         path_seen = os.path.join(FIGURE_DIR, f'{output_stem}_{metric}_seen.{fmt}')
         fig.savefig(path_seen, dpi=300, bbox_inches='tight', format=fmt)
         plt.close(fig)
         written.append(path_seen)
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
-        _plot_cactus_axes(ax, unseen_df, solvers, colors, metric=metric, title='Unseen networks')
+        _plot_cactus_axes(ax, unseen_df, solvers, colors, metric=metric)
         fig.tight_layout()
         path_unseen = os.path.join(FIGURE_DIR, f'{output_stem}_{metric}_unseen.{fmt}')
         fig.savefig(path_unseen, dpi=300, bbox_inches='tight', format=fmt)
@@ -45,4 +45,4 @@ if __name__ == '__main__':
     args.seed = 9750
     extract_csv(args)
     sample_csv_v2(args, n_sample, verbose=True)
-    plot_cactus_v2(output_stem=f'cactus', fmt='png')
+    plot_cactus_v2(output_stem=f'cactus', fmt='pdf')
