@@ -125,6 +125,7 @@ def _prepare_input(nx_graph, input_shape, node_to_id):
 def prepare_graph(net, input_shape, objective):
     G = nx.DiGraph()
     node_to_id = {}
+    net.cpu()
 
     # process input layer
     layer_node_labels = _prepare_input(G, input_shape, node_to_id=node_to_id)
@@ -138,7 +139,7 @@ def prepare_graph(net, input_shape, objective):
         post = layer(pre)
         if isinstance(layer, torch.nn.Linear):
             if layer == list(net.modules())[-1]:
-                cs = objective.cs
+                cs = objective.cs.cpu()
                 # print(f'{cs=} {cs.shape=}')
                 
             layer_node_labels = _prepare_linear(
@@ -163,7 +164,7 @@ def prepare_graph(net, input_shape, objective):
                 offset_node_id=len(node_to_id),
                 node_to_id=node_to_id,
             )
-        elif isinstance(layer, torch.nn.ReLU):
+        elif isinstance(layer, (torch.nn.ReLU, torch.nn.Sigmoid)):
             pass
         elif isinstance(layer, torch.nn.Flatten):
             layer_node_labels = layer_node_labels.reshape(1, -1)

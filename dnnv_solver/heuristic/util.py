@@ -18,15 +18,26 @@ if typing.TYPE_CHECKING:
 
     
 @beartype
-def compute_masks(lower_bounds: dict, upper_bounds: dict, device: str, non_blocking: bool = True) -> dict:
+def compute_masks(lower_bounds: dict, upper_bounds: dict, device: str, split_activations: dict, non_blocking: bool = True) -> dict:
     # TODO: shifted relu should not use 0.0, e.g., max(x, 1.0)
-    new_masks = {
-        j: torch.logical_and(
-            lower_bounds[j] < 0, 
-            upper_bounds[j] > 0
-        ).flatten(start_dim=1).to(torch.get_default_dtype()).to(device=device, non_blocking=non_blocking)
-        for j in lower_bounds
-    }
+    new_masks = {}
+    
+    for name in lower_bounds:
+        if name not in split_activations:
+            logger.debug(f'[!] Skip {name} not in {split_activations}')
+            continue
+        if split_activations[name] == 'BoundRelu':
+            mask_ = torch.logical_and(lower_bounds[name] < 0, upper_bounds[name] > 0)
+        elif split_activations[name] == 'BoundSigmoid':
+            # FIXME: enable this for general activation
+            # mask_ = torch.logical_and(lower_bounds[name] < 0, upper_bounds[name] > 0)
+            # mask_ = torch.ones_like(lower_bounds[name])
+            # mask_ = torch.zeros_like(lower_bounds[name])
+            # mask = 1 if upper - lower > 0.5 else 0
+            mask_ = torch.where(upper_bounds[name] - lower_bounds[name] > 0.5, torch.ones_like(lower_bounds[name]), torch.zeros_like(lower_bounds[name]))
+        else:
+            raise NotImplementedError(f'{split_activations[name]} is not supported')
+        new_masks[name] = mask_.flatten(start_dim=1).to(torch.get_default_dtype()).to(device=device, non_blocking=non_blocking)
     return new_masks
 
 
@@ -72,6 +83,62 @@ def _compute_babsr_scores(abstractor,
         # (batch, neuron)
         score_candidate = score_candidate.abs().view(batch, number_bounds, -1) * this_layer_mask
         score.insert(0, score_candidate.mean(1)) 
+    return score, intercept_tb
+
+def _upb_learned_slope_weight(slopes: dict, layer_name: str, pre_act_name: str, dual: torch.Tensor) -> torch.Tensor:
+    """Scale UPB duals by mean learned ReLU slopes when present (see get_slope / proxlp ub_slope role)."""
+    lyr = slopes.get(layer_name)
+    if not lyr or pre_act_name not in lyr:
+        return dual
+    alpha = lyr[pre_act_name] # (2, spec, batch, *neuron_spatial)
+    if alpha.ndim >= 1 and alpha.shape[0] >= 2:
+        w = alpha[:2].mean(dim=0) # average the two relaxation coefficients
+    else:
+        w = alpha
+    try:
+        return dual * w
+    except RuntimeError:
+        return dual
+
+
+@beartype
+def _compute_upb_scores(abstractor, 
+                        lower_bounds: dict, upper_bounds: dict, 
+                        lAs: dict, masks: dict, 
+                        reduce_op: Callable, 
+                        batch: int, number_bounds: int) -> tuple[list, list]:
+    score = []
+    intercept_tb = []
+    first_layer_name = abstractor.net.split_nodes[0].name
+    device = lower_bounds[first_layer_name].device
+    slopes = abstractor.get_slope(half=False, device=str(device))
+
+    for layer in reversed(abstractor.net.split_nodes):
+        assert len(abstractor.net.split_activations[layer.name]) == 1
+        pre_act_layer = abstractor.net.split_activations[layer.name][0][0]
+        assert len(pre_act_layer.inputs) == 1
+        ratio = lAs[pre_act_layer.name]
+
+        # Intercept table for top-k backup (same construction as _compute_babsr_scores).
+        ratio_temp_0, ratio_temp_1 = _compute_ratio(lower_bounds[layer.name], upper_bounds[layer.name])
+        intercept_temp = torch.clamp(ratio, max=0)
+        intercept_candidate = intercept_temp * ratio_temp_1.unsqueeze(1)
+        this_layer_mask = masks[layer.name].unsqueeze(1)
+        reshaped_intercept_candidate = intercept_candidate.view(batch, number_bounds, -1) * this_layer_mask
+        intercept_tb.insert(0, reshaped_intercept_candidate.mean(1))
+
+        clbs = lower_bounds[layer.name]
+        cubs = upper_bounds[layer.name]
+        denom = (cubs - clbs).clamp(min=1e-20)
+        cmask = torch.logical_and(cubs > 0, clbs < 0)
+        bias = -((clbs * cubs) / denom).masked_fill(~cmask, 0)
+
+        dual = ratio.clamp(min=0)
+        dual = _upb_learned_slope_weight(slopes, layer.name, pre_act_layer.name, dual)
+        score_candidate = dual * bias.unsqueeze(1)
+
+        score_candidate = score_candidate.view(batch, number_bounds, -1) * this_layer_mask
+        score.insert(0, score_candidate.mean(1))
     return score, intercept_tb
 
 

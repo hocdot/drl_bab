@@ -40,7 +40,7 @@ def new_slopes(slopes: dict, keep_name: str) -> dict:
 
 @beartype
 def _to_device(tensor: torch.Tensor, device: str = 'cpu', half: bool = False) -> torch.Tensor:
-    assert device in ['cpu', 'cuda'] and isinstance(half, bool)
+    assert isinstance(half, bool), f'{device=} {half=}'
     if half:
         tensor = tensor.half()
     if device:
@@ -191,6 +191,10 @@ def update_histories(self, histories: list[dict], decisions: list[list]) -> list
     for i, h in enumerate(double_histories):
         bi = i % batch
         n_name, n_id, n_point = decisions[bi]
+        if n_point is None:
+            # FIXME: fix for general activation
+            print(f'[!] Skip {n_name=} {n_id=} {n_point=}')
+            continue
         # check repeated decisions for relu only
         # TODO: enable this
         # if (n_id in h[n_name][0]) and (n_point == 0):
@@ -237,8 +241,9 @@ def set_beta(self, betas: list, histories: list[dict]) -> list[dict]:
 @beartype
 @torch.no_grad()
 def hidden_split_idx(self, lower_bounds: dict, upper_bounds: dict, 
-                     decisions: list[list]) -> dict:
+                     decisions: list[list]) -> tuple[dict, list[list]]:
     batch = len(decisions)
+    new_decisions = []
     splitting_indices_batch = {k: [] for k in lower_bounds}
     splitting_indices_neuron = {k: [] for k in lower_bounds}
     splitting_points = {k: [] for k in lower_bounds}
@@ -250,7 +255,11 @@ def hidden_split_idx(self, lower_bounds: dict, upper_bounds: dict,
         n_name, n_id, n_point = decisions[i]
         splitting_indices_batch[n_name].append(i)
         splitting_indices_neuron[n_name].append(n_id)
+        # TODO: general activation
+        if n_point is None:
+            n_point = float((lower_bounds[n_name][i][n_id] + upper_bounds[n_name][i][n_id]) / 2.0)
         splitting_points[n_name].append(n_point)
+        new_decisions.append([n_name, n_id, n_point])
     
     # convert to tensor
     splitting_indices_batch = {k: torch.as_tensor(v).to(device=self.device, non_blocking=True) for k, v in splitting_indices_batch.items()}
@@ -276,7 +285,8 @@ def hidden_split_idx(self, lower_bounds: dict, upper_bounds: dict,
         new_intermediate_layer_bounds[key] = [double_lower_bounds[key], double_upper_bounds[key]]
             
     assert all([_[0].shape[0] == _[1].shape[0] == 2 * batch for _ in new_intermediate_layer_bounds.values()])
-    return new_intermediate_layer_bounds
+    assert len(new_decisions) == len(decisions)
+    return new_intermediate_layer_bounds, new_decisions
 
 
 @beartype

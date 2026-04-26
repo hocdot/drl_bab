@@ -350,7 +350,7 @@ class NetworkAbstractor:
             assert torch.all(double_input_lowers <= double_input_uppers)
         
         # update hidden bounds with new decisions (perform splitting)
-        new_intermediate_layer_bounds = self.hidden_split_idx(
+        new_intermediate_layer_bounds, new_decisions = self.hidden_split_idx(
             lower_bounds=domain_params.lower_bounds, 
             upper_bounds=domain_params.upper_bounds, 
             decisions=decisions
@@ -387,7 +387,7 @@ class NetworkAbstractor:
         double_sat_solvers = domain_params.sat_solvers * 2 if domain_params.sat_solvers is not None else None
          
         # update new decisions
-        double_histories = self.update_histories(histories=domain_params.histories, decisions=decisions)
+        double_histories = self.update_histories(histories=domain_params.histories, decisions=new_decisions)
         double_betas = domain_params.betas * 2
         num_splits = self.set_beta(betas=double_betas, histories=double_histories)
         

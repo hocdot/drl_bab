@@ -81,8 +81,11 @@ class SACDecider(Base):
         x = self._convert_observation(x) # reduce number of active neurons
         z = self.decoder_state
         if self.args.use_scale_action:
-            _, _, action_probs = self.actor.get_action(x, z)
-            action_probs = self._convert_action_probs(action_probs) # add back to number of active neurons
+            if self.args.n_test_fallback > 0 and self.args.mode == 'test' and self.env.n_step % self.args.n_test_fallback == 0:
+                action_probs = None
+            else:
+                _, _, action_probs = self.actor.get_action(x, z)
+                action_probs = self._convert_action_probs(action_probs) # add back to number of active neurons
             if self.args.dataset == 'milp':
                 action = select_cost_based_action(observation, scale=action_probs)
             else:
@@ -199,6 +202,15 @@ class SACDecider(Base):
     def save(self):
         # save model
         path = self.checkpoint_path
+        
+        count = 0
+        while os.path.exists(f'{path[:-3]}_{count}.pt'):
+            count += 1
+        
+        backup_path = f'{path[:-3]}_{count}.pt'
+        os.system(f'cp "{path}" "{backup_path}"')
+        print(f'[+] backup {backup_path}')
+        
         data = {
             'actor': self.actor.state_dict(),
             'qf1': self.qf1.state_dict(),

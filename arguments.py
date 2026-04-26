@@ -41,6 +41,7 @@ def get_args():
     parser.add_argument('--device', type=str, default='cuda')
     
     # train
+    parser.add_argument('--input_dataset', type=str, default='mnist')
     parser.add_argument('--n_train_epoch', type=int, default=100)
     parser.add_argument('--n_train_instance', type=int, default=100)
     parser.add_argument('--n_test_instance', type=int, default=1000)
@@ -68,10 +69,13 @@ def get_args():
     parser.add_argument('--save_offline_data', action='store_true')
     parser.add_argument('--n_start_save_offline_data', type=int, default=1000)
     parser.add_argument('--n_max_active_neuron', type=int, default=-1) # -1: no limit
+    parser.add_argument('--n_test_fallback', type=int, default=-1) # -1: no fallback
     
+    parser.add_argument('--max_runtime', type=float, default=3600.0) # 1 hour
     parser.add_argument('--decision_topk_test', type=int, default=10)
     parser.add_argument('--decision_topk_train', type=int, default=30)
     parser.add_argument('--checkpoint_postfix', type=str, default='')
+    parser.add_argument('--use_early_stop', action='store_true')
     
     # sac parameter
     parser.add_argument('--use_scale_action', action='store_true')
@@ -134,5 +138,5 @@ def get_args():
 
     # create folders
     create_folders(args)
-    random.seed(args.seed)
+    # random.seed(args.seed)
     return args

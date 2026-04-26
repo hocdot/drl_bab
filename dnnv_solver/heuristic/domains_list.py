@@ -97,7 +97,7 @@ class DomainsList:
         self.all_lAs = {k: TensorStorage(v[remain_idx].cpu()) for k, v in lAs.items()} if len(lAs) else None
         
         if self.input_split:
-            self.all_lower_bounds = self.all_upper_bounds = self.all_histories = self.all_betas = self.all_prev_actions = None
+            self.all_lower_bounds = self.all_upper_bounds = self.all_histories = self.all_betas = self.all_prev_actions = self.split_activations = None
             if Settings.use_save_reasoning_step:
                 # hidden bounds
                 self.all_lower_bounds = {k: TensorStorage(v[remain_idx].cpu()) for k, v in lower_bounds.items() if k != self.final_name}
@@ -111,6 +111,7 @@ class DomainsList:
             self.all_betas = [all_betas[_] for _ in remain_idx]
             # prev actions
             self.all_prev_actions = [all_prev_actions[_] for _ in remain_idx]
+            self.split_activations = {k: v[0][0].__class__.__name__ for k, v in self.net.split_activations.items()}
             
         # proof
         if Settings.use_save_reasoning_step:
@@ -251,6 +252,7 @@ class DomainsList:
                 lower_bounds=new_lower_bounds, 
                 upper_bounds=new_upper_bounds, 
                 device=device,
+                split_activations=self.split_activations,
             )
             
             assert len(new_betas) == len(new_histories) == batch
@@ -464,6 +466,7 @@ class DomainsList:
             lower_bounds=new_lower_bounds, 
             upper_bounds=new_upper_bounds, 
             device=device,
+            split_activations=self.split_activations,
         )
         
         # prev actions
@@ -532,6 +535,7 @@ class DomainsList:
             lower_bounds={k: v.data for k, v in self.all_lower_bounds.items()}, 
             upper_bounds={k: v.data for k, v in self.all_upper_bounds.items()}, 
             device='cpu',
+            split_activations=self.split_activations,
         )
         # print(len(self), [_.shape for _ in new_masks.values()])
         n_unstable = sum([_.sum() for _ in new_masks.values()]).int()

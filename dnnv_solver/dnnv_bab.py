@@ -71,14 +71,11 @@ class DnnvBabSolver:
             return []
         # print(f'    + saved: lower_bound={ret.output_lbs.item()}')
         
-        # compute neuron index mapping
-        self._compute_neuron_index_mapping(ret)
-        
         # full slopes uses too much memory
         slopes = ret.slopes if self.input_split else new_slopes(ret.slopes, self.abstractor.net.final_name)
 
         # remaining domains
-        return DomainsList(
+        domain_list =  DomainsList(
             net=self.abstractor.net,
             objective_ids=ret.objective_ids,
             output_lbs=ret.output_lbs,
@@ -96,6 +93,12 @@ class DnnvBabSolver:
             prev_actions=[-1],
         )
 
+        # compute neuron index mapping
+        self._compute_neuron_index_mapping(ret, domain_list.split_activations)
+        
+        return domain_list
+    
+    
     @beartype
     def branch_and_bound(self, action) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         # convert DRL action format to DNNV decision format
@@ -153,7 +156,12 @@ class DnnvBabSolver:
         # 2. hidden features
         ordered_names = [_.name for _ in self.abstractor.net.split_nodes]
         # extract mask
-        masks = compute_masks(domain_params.lower_bounds, domain_params.upper_bounds, device='cpu')
+        masks = compute_masks(
+            lower_bounds=domain_params.lower_bounds,
+            upper_bounds=domain_params.upper_bounds,
+            device='cpu',
+            split_activations=self.queue.split_activations,
+        )
         # extract hidden
         for name in ordered_names:
             lb = domain_params.lower_bounds[name].cpu()
@@ -169,8 +177,9 @@ class DnnvBabSolver:
             else:
                 raise NotImplementedError
             mask = masks[name].view(lb.shape) 
-            assert (lb[torch.where(mask == 1)] < 0).all()
-            assert (ub[torch.where(mask == 1)] > 0).all()
+            if name == 'BoundRelu':
+                assert (lb[torch.where(mask == 1)] < 0).all()
+                assert (ub[torch.where(mask == 1)] > 0).all()
             x = torch.stack([
                 lb.flatten(1),
                 ub.flatten(1),
@@ -208,6 +217,7 @@ class DnnvBabSolver:
             lower_bounds=domain_params.lower_bounds,
             upper_bounds=domain_params.upper_bounds,
             device=self.device,
+            split_activations=self.queue.split_activations,
             non_blocking=False,
         )
 
@@ -238,14 +248,21 @@ class DnnvBabSolver:
         action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action
     
-    def get_babsr_action(self) -> torch.Tensor:
+    def get_upb_action(self) -> torch.Tensor:
         subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
-        decisions = self.fsb_heuristic.babsr_hidden_branching(self.abstractor, subproblems)
+        decisions = self.fsb_heuristic.upb_hidden_branching(self.abstractor, subproblems)
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action
     
-    def _compute_neuron_index_mapping(self, domain_params: AbstractResults) -> None:
+    def get_gnn_action(self) -> torch.Tensor:
+        subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
+        decisions = self.fsb_heuristic.gnn_hidden_branching(self.abstractor, subproblems)
+        # convert DNNV decision format to DRL action format
+        action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
+        return action
+    
+    def _compute_neuron_index_mapping(self, domain_params: AbstractResults, split_activations: dict) -> None:
         self.neuron_index_mapping = {}
         ordered_names = [_.name for _ in self.abstractor.net.split_nodes]
         count = np.prod(self.input_shape)
@@ -253,9 +270,17 @@ class DnnvBabSolver:
         for name in ordered_names:
             assert domain_params.lower_bounds[name].shape[0] == 1
             n_hiddens = domain_params.lower_bounds[name].numel()
-            self.neuron_index_mapping.update(
-                {int(count + i): (name, i, 0.0) for i in range(n_hiddens)}
-            )
+            # TODO: handle non-relu activation (name, i, None)
+            if split_activations[name] == 'BoundRelu':
+                self.neuron_index_mapping.update(
+                    {int(count + i): (name, i, 0.0) for i in range(n_hiddens)}
+                )
+            elif split_activations[name] == 'BoundSigmoid':
+                self.neuron_index_mapping.update(
+                    {int(count + i): (name, i, None) for i in range(n_hiddens)}
+                )
+            else:
+                raise NotImplementedError(f'{split_activations[name]} is not supported')
             count += n_hiddens
             self.n_hiddens += n_hiddens
         self.reverse_neuron_index_mapping = {v: k for k, v in self.neuron_index_mapping.items()}

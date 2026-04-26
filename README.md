@@ -50,3 +50,50 @@ python3 train.py --mode train --config config/dnnv.yaml
 ```bash
 python3 infer.py --config config/dnnv.yaml
 ```
+
+
+
+
+```bash
+python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 500 --clean --config config/dnnv_cnn.yaml --clean
+python3 -m prepare.prepare_io --dataset dnnv --config config/dnnv_cnn.yaml
+python3 -m prepare.prepare_hard_instances --dataset dnnv --config config/dnnv_cnn.yaml
+python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32 --config config/dnnv_cnn.yaml
+python3 infer.py --config config/dnnv_cnn.yaml
+```
+
+
+```bash
+python3 -m prepare.generate_raw_instances --dataset dnnv --n_vnnlib_per_onnx 200 --clean --config config/dnnv_cnn_3.yaml --clean
+python3 -m prepare.prepare_io --dataset dnnv --config config/dnnv_cnn_3.yaml
+python3 -m prepare.prepare_hard_instances --dataset dnnv --config config/dnnv_cnn_3.yaml
+python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32 --config config/dnnv_cnn_3.yaml
+python3 infer.py --config config/dnnv_cnn_3.yaml
+```
+
+```bash
+python3 -m prepare.generate_raw_distshift --dataset dnnv --n_vnnlib_per_onnx 500 --clean --config config/dnnv_distshift.yaml --clean
+python3 -m prepare.prepare_io --dataset dnnv --config config/dnnv_distshift.yaml
+python3 -m prepare.prepare_hard_instances --dataset dnnv --config config/dnnv_distshift.yaml
+python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32 --config config/dnnv_distshift.yaml
+python3 infer.py --config config/dnnv_distshift.yaml
+```
+
+
+```bash
+python3 infer.py --config config/dnnv_runtime.yaml
+```
+
+```bash
+python3 train.py --mode train --config config/dnnv.yaml --load_checkpoint
+```
+
+
+
+```bash
+python3 -m prepare.generate_raw_tinyimagenet --dataset dnnv --n_vnnlib_per_onnx 100 --clean --config config/dnnv_tinyimagenet.yaml --clean
+python3 -m prepare.prepare_io --dataset dnnv --config config/dnnv_tinyimagenet.yaml
+python3 -m prepare.prepare_hard_instances --dataset dnnv --config config/dnnv_tinyimagenet.yaml
+python3 -m prepare.prepare_gnn_embedding --dataset dnnv --gcn_embed_batch_size 32 --config config/dnnv_tinyimagenet.yaml
+python3 infer.py --config config/dnnv_tinyimagenet.yaml
+```

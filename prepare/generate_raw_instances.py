@@ -15,6 +15,8 @@ if __name__ == '__main__':
     
     args = get_args()
     assert args.dataset == 'dnnv', f'{args.dataset=}'
+    
+    print(f'[+] {args.dataset_dir=} {args.dataset=}')
         
     if args.clean:
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/io')
@@ -24,18 +26,33 @@ if __name__ == '__main__':
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/vnnlib_processed')
         os.system(f'rm -rf {args.dataset_dir}/{args.dataset}/instances_*.csv')
-        
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
     
-    dataset = torchvision.datasets.MNIST(
-        root=args.dataset_dir,
-        train=False,
-        transform=transform,
-        download=True,
-    )
+    if args.input_dataset == 'mnist':
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,))
+        ])
+        
+        dataset = torchvision.datasets.MNIST(
+            root=args.dataset_dir,
+            train=False,
+            transform=transform,
+            download=True,
+        )
+    elif args.input_dataset == 'cifar10':
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        
+        dataset = torchvision.datasets.CIFAR10(
+            root=args.dataset_dir,
+            train=False,
+            transform=transform,
+            download=True,
+        )
+    else:
+        raise NotImplementedError(f'{args.input_dataset=}')
     
     root_dir = os.path.join(args.dataset_dir, args.dataset)
     onnx_dir = os.path.join(root_dir, 'onnx')
@@ -48,6 +65,7 @@ if __name__ == '__main__':
             onnx_path = os.path.join(onnx_dir, onnx_name)
             model, input_shape, _ = parse_onnx(onnx_path)
             count = 0
+            seed += args.seed
             torch.manual_seed(seed)
             loader = DataLoader(dataset, batch_size=1, shuffle=True)
             for i, (x, label) in enumerate(loader):
@@ -68,5 +86,6 @@ if __name__ == '__main__':
                     )
                 print(f'onnx/{onnx_name},vnnlib/{vnnlib_name}', file=f)
                 count += 1
+                print(f'[+] {count=} {onnx_name=} {vnnlib_name=}')
                 if count >= args.n_vnnlib_per_onnx:
                     break

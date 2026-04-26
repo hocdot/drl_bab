@@ -57,6 +57,9 @@ class Base:
         
         # step loop
         while not done:
+            if time.time() - start_time > self.args.max_runtime:
+                break
+            
             try:
                 with torch.no_grad():
                     decision_start_time = time.time()

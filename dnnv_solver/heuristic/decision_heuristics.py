@@ -7,7 +7,8 @@ import torch
 import tqdm
 import os
 
-from .util import _compute_babsr_scores
+from .util import _compute_babsr_scores, _compute_upb_scores
+from .gnn_heuristic.gnn_decider import GnnDecider
 from ..helper.misc.result import AbstractResults
 from ..helper.misc.logger import logger
 
@@ -23,6 +24,7 @@ class DecisionHeuristic:
         self.decision_method = decision_method
         self.decision_reduceop = torch.max
         self.use_random_topk = use_random_topk
+        self.gnn_decider = None
 
     @beartype
     @torch.no_grad()
@@ -119,10 +121,12 @@ class DecisionHeuristic:
                     else: # stable neuron
                         # # skip the rest of topk if neurons are selected
                         skip = True
-                        # print(f'Skip at {k=} {batch_idx=}')
+                        # print(f'\t\t- Decision max skip at {k=} {batch_idx=}')
                         break
                 else: # general activation
-                    raise NotImplementedError
+                    # layer_split_point = (domain_params.lower_bounds[layer_name][batch_idx][neuron_idx] + domain_params.upper_bounds[layer_name][batch_idx][neuron_idx]) / 2.0
+                    # print(f'{layer_split_point=}')
+                    decision_max.append([layer_name, neuron_idx, None])
                 
             # skip the rest of topk if neurons are selected
             if skip:
@@ -144,7 +148,9 @@ class DecisionHeuristic:
                         # reuse decision_max
                         decision_min.append(decision_max[batch_idx])
                 else: # general activation
-                    raise NotImplementedError
+                    # layer_split_point = (domain_params.lower_bounds[layer_name][batch_idx][neuron_idx] + domain_params.upper_bounds[layer_name][batch_idx][neuron_idx]) / 2.0
+                    # print(f'{layer_split_point=}')
+                    decision_min.append([layer_name, neuron_idx, None])
             
             # top-k candidates
             topk_decisions.append(decision_max + decision_min)
@@ -223,6 +229,8 @@ class DecisionHeuristic:
             score_length=score_length, 
             topk=topk,
         )
+        # print(f'\t\t- {topk_output_lbs=}')
+        # print(f'\t\t- {topk_decisions=}')
         final_decision = [[] for b in range(batch)]
     
         if not len(topk_output_lbs):
@@ -231,12 +239,8 @@ class DecisionHeuristic:
                 selected = False
                 for layer in np.random.choice(split_node_names, len(split_node_names), replace=False):
                     if (len(mask_item[layer].nonzero(as_tuple=False)) != 0) or (split_node_points[layer] is None):
-                        if split_node_points[layer] is not None: # relu
-                            final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
-                            mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
-                        else:
-                            # TODO: general activation
-                            raise NotImplementedError
+                        final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
+                        mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
                         selected = True
                         break
                 assert selected
@@ -255,42 +259,39 @@ class DecisionHeuristic:
                 if max(best_output_lbs[b], best_output_lbs[b + batch]) > -LARGE:
                     n_name, n_id, n_point = all_topk_decisions[b] if best_output_lbs[b] > best_output_lbs[b + batch] else all_topk_decisions[b + batch]
                     if n_point is not None: # relu
-                        if mask_item[n_name][n_id] != 0: # unstable relu # TODO: torch compile
+                        if mask_item[n_name][n_id] != 0: # unstable neuron
                             final_decision[b].append([n_name, n_id, n_point])
                             mask_item[n_name][n_id] = 0
                     else:
-                        assert n_point is None
-                        # TODO: general activation
-                        raise NotImplementedError
+                        final_decision[b].append([n_name, n_id, None])
+                        mask_item[n_name][n_id] = 0
+                        
                 # invalid scores
                 if len(final_decision[b]) == 0: 
                     # use random decisions 
                     selected = False
                     for layer in np.random.choice(split_node_names, len(split_node_names), replace=False):
                         if (len(mask_item[layer].nonzero(as_tuple=False)) != 0) or (split_node_points[layer] is None):
-                            if split_node_points[layer] is not None: # relu
-                                final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
-                                mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
-                            else:
-                                # TODO: general activation
-                                raise NotImplementedError
+                            final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
+                            mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
                             selected = True
                             break
                     assert selected
             
         final_decision = sum(final_decision, [])
+        # print(f'\t\t- {final_decision=}')
         return final_decision
 
     # hidden branching
     @beartype
-    def babsr_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults) -> list[list]:
+    def upb_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults) -> list[list]:
         batch = len(domain_params.input_lowers)
-        topk = 1
+        topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
         split_node_names = [_.name for _ in abstractor.net.split_nodes]
         split_node_points = {k: abstractor.net.split_activations[k][0][0].get_split_point() for k in split_node_names}
         
         # babsr scores
-        scores, backup_scores = _compute_babsr_scores(
+        scores, backup_scores = _compute_upb_scores(
             abstractor=abstractor, 
             lower_bounds=domain_params.lower_bounds, 
             upper_bounds=domain_params.upper_bounds, 
@@ -329,13 +330,12 @@ class DecisionHeuristic:
             if max(best_output_lbs[b], best_output_lbs[b + batch]) > -LARGE:
                 n_name, n_id, n_point = all_topk_decisions[b] if best_output_lbs[b] > best_output_lbs[b + batch] else all_topk_decisions[b + batch]
                 if n_point is not None: # relu
-                    if mask_item[n_name][n_id] != 0: # unstable relu # TODO: torch compile
+                    if mask_item[n_name][n_id] != 0: # unstable neuron
                         final_decision[b].append([n_name, n_id, n_point])
                         mask_item[n_name][n_id] = 0
                 else:
-                    assert n_point is None
-                    # TODO: general activation
-                    raise NotImplementedError
+                    final_decision[b].append([n_name, n_id, None])
+                    mask_item[n_name][n_id] = 0
             # invalid scores
             if len(final_decision[b]) == 0: 
                 # use random decisions 
@@ -603,3 +603,12 @@ class DecisionHeuristic:
 
         final_decisions = sum(final_decisions, [])
         return final_decisions
+    
+    
+    def gnn_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults) -> list[list]:
+        if self.gnn_decider is None:
+            self.gnn_decider = GnnDecider(device=domain_params.input_lowers.device)
+            
+        decisions = self.gnn_decider(abstractor, domain_params)
+        return decisions
+    

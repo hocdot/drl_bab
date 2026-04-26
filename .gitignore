@@ -1,6 +1,7 @@
 data_test/
 data_embed/
 data/
+ref/
 
 # Ignore __pycache__ folder recursively
 **/__pycache__

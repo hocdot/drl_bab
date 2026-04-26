@@ -2,8 +2,8 @@ import pandas as pd
 import random
 import torch
 import tqdm
-import os
 import gc
+import os
 
 from dnnv_solver.helper.spec.write_vnnlib import write_vnnlib_classify_single
 from dnnv_solver.helper.misc.torch_cuda_memory import gc_cuda
@@ -132,5 +132,5 @@ def split_train_test(all_lines, args, train_ratio=0.8):
 if __name__ == '__main__':
     from arguments import get_args
     args = get_args()
-    args.device = 'cpu'
+    # args.device = 'cpu'
     prepare_io(args)

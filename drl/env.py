@@ -65,7 +65,7 @@ class Env:
     def reset(self) -> tuple[torch.Tensor | None, bool]:
         # load new instance
         self.episode += 1
-        self.n_step = 1
+        self.n_step = 0
         self.n_visited_subproblem = 0
         self.solver = self.reset_solver()
         done = self.solver.remaining_subproblem <= 0
@@ -166,13 +166,20 @@ class Env:
         return action
     
     @beartype
-    def _get_babsr_action(self) -> list[int]:
+    def _get_upb_action(self) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        action = self.solver.get_babsr_action()
+        action = self.solver.get_upb_action()
         # convert to active neuron index
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
         
+    @beartype
+    def _get_gnn_action(self) -> list[int]:
+        assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
+        action = self.solver.get_gnn_action()
+        # convert to active neuron index
+        action = [self.reverse_active_neuron_index[int(a)] for a in action]
+        return action
     
     @beartype
     def step(self, action: list[int]) -> tuple[torch.Tensor, int, bool, bool, list[dict]]:
@@ -223,11 +230,14 @@ class Env:
         # get info
         done = self.solver.remaining_subproblem <= 0
         self.n_visited_subproblem += self.solver.remaining_subproblem
-        early_stop = (
-            (self.solver.remaining_subproblem >= self.args.n_max_remaining_subproblem) or 
-            (self.n_visited_subproblem >= self.args.n_max_visited_subproblem) or
-            (self.n_step >= self.args.n_max_step)
-        )
+        if self.args.use_early_stop:
+            early_stop = (
+                (self.solver.remaining_subproblem >= self.args.n_max_remaining_subproblem) or 
+                (self.n_visited_subproblem >= self.args.n_max_visited_subproblem) or
+                (self.n_step >= self.args.n_max_step)
+            )
+        else:
+            early_stop = False
         
         if self.args.verbose:
             print(f'    + step={self.n_step:<5d} visited={self.n_visited_subproblem:<5d} remaining={self.solver.remaining_subproblem:<5d} reward={reward:<5d} bound={self.solver.minimum_lowers:.4f}')

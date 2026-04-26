@@ -1,0 +1,41 @@
+dataset: dnnv
+dataset_dirname: dnnv_tinyimagenet
+csv_dirname: csv_tinyimagenet
+input_dataset: tinyimagenet
+
+seed: 3736
+
+batch_size: 512
+actor_lr: 0.0004
+q_lr: 0.0004
+# device: cuda:0
+n_save_checkpoint: 10000
+n_grad_accum: 8
+
+n_input: 4
+n_max_step: 500
+n_max_active_neuron: 100
+
+use_attack: true
+dnnv_solver_batch: 500
+dnnv_skip_lower_bound: -10
+n_max_remaining_subproblem: 3000
+n_max_visited_subproblem: 5000
+
+n_train_epoch: 10000
+n_train_instance: 200
+n_test_instance: 42
+n_start_learning: 1000
+
+enc_dec_type: lstm
+n_enc_dec_layer: 1
+n_hidden: 256
+n_buffer: 100000
+
+n_qf_optimize: 2
+
+use_embedding: true
+use_scale_action: true
+use_early_stop: true
+
+save_csv: true

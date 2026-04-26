@@ -1,0 +1,243 @@
+EASY_THRESHOLD = -2000
+
+[+] seed=723109595
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 26, 'FsbDecider': 55, 'SACDecider': 62}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 85, 'FsbDecider': 85, 'SACDecider': 86}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 16, 'UpbDecider': 33, 'FsbDecider': 29, 'SACDecider': 34}
+
+
+
+EASY_THRESHOLD = -100
+
+[+] seed=166916784
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 4, 'UpbDecider': 86, 'FsbDecider': 124, 'SACDecider': 131}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 170, 'FsbDecider': 170, 'SACDecider': 171}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 26, 'UpbDecider': 87, 'FsbDecider': 83, 'SACDecider': 88}
+
+
+[+] seed=1425764304
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 4, 'UpbDecider': 86, 'FsbDecider': 124, 'SACDecider': 131}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 171, 'FsbDecider': 171, 'SACDecider': 172}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 24, 'UpbDecider': 93, 'FsbDecider': 92, 'SACDecider': 97}
+
+
+[+] seed=1278686289
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 4, 'UpbDecider': 86, 'FsbDecider': 124, 'SACDecider': 131}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 174, 'FsbDecider': 174, 'SACDecider': 175}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 29, 'UpbDecider': 86, 'FsbDecider': 81, 'SACDecider': 87}
+
+
+[+] seed=1416710444
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 4, 'UpbDecider': 86, 'FsbDecider': 124, 'SACDecider': 131}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 169, 'FsbDecider': 169, 'SACDecider': 170}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 24, 'UpbDecider': 91, 'FsbDecider': 89, 'SACDecider': 94}
+
+
+EASY_THRESHOLD = -500
+
+[+] seed=1642424346
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 2, 'UpbDecider': 51, 'FsbDecider': 88, 'SACDecider': 95}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 121, 'FsbDecider': 121, 'SACDecider': 122}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 22, 'UpbDecider': 60, 'FsbDecider': 53, 'SACDecider': 61}
+
+EASY_THRESHOLD = -1000
+
+[+] seed=1547848683
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 13, 'UpbDecider': 42, 'FsbDecider': 37, 'SACDecider': 43}
+
+[+] seed=8654353
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 46, 'FsbDecider': 38, 'SACDecider': 47}
+
+[+] seed=1566978884
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 16, 'UpbDecider': 50, 'FsbDecider': 43, 'SACDecider': 52}
+
+[+] seed=227374290
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 50, 'FsbDecider': 42, 'SACDecider': 51}
+
+[+] seed=1782429107
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 19, 'UpbDecider': 49, 'FsbDecider': 43, 'SACDecider': 50}
+
+[+] seed=287344441
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 15, 'UpbDecider': 50, 'FsbDecider': 42, 'SACDecider': 51}
+
+[+] seed=1120226495
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 18, 'UpbDecider': 45, 'FsbDecider': 43, 'SACDecider': 48}
+
+[+] seed=2086126190
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 101, 'FsbDecider': 101, 'SACDecider': 102}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 18, 'UpbDecider': 49, 'FsbDecider': 41, 'SACDecider': 51}
+
+[+] seed=122822935
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 15, 'UpbDecider': 45, 'FsbDecider': 36, 'SACDecider': 46}
+
+[+] seed=1995276487
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 100, 'FsbDecider': 100, 'SACDecider': 101}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 18, 'UpbDecider': 47, 'FsbDecider': 45, 'SACDecider': 49}
+
+[+] seed=683072133
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 19, 'UpbDecider': 47, 'FsbDecider': 41, 'SACDecider': 49}
+
+[+] seed=334988506
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 18, 'UpbDecider': 51, 'FsbDecider': 44, 'SACDecider': 55}
+
+[+] seed=1602861475
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 99, 'FsbDecider': 99, 'SACDecider': 100}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 50, 'FsbDecider': 45, 'SACDecider': 52}
+
+[+] seed=1678954934
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 96, 'FsbDecider': 96, 'SACDecider': 97}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 43, 'FsbDecider': 40, 'SACDecider': 46}
+
+[+] seed=1788602563
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 95, 'FsbDecider': 95, 'SACDecider': 96}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 22, 'UpbDecider': 50, 'FsbDecider': 44, 'SACDecider': 51}
+
+[+] seed=1376470611
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 98, 'FsbDecider': 98, 'SACDecider': 99}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 51, 'FsbDecider': 43, 'SACDecider': 55}
+
+[+] seed=492
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 18, 'UpbDecider': 49, 'FsbDecider': 43, 'SACDecider': 50}
+
+[+] seed=9049
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 95, 'FsbDecider': 95, 'SACDecider': 96}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 52, 'FsbDecider': 47, 'SACDecider': 54}
+
+[+] seed=9570
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 97, 'FsbDecider': 97, 'SACDecider': 98}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 17, 'UpbDecider': 45, 'FsbDecider': 40, 'SACDecider': 46}
+
+[+] seed=3398
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 35, 'FsbDecider': 68, 'SACDecider': 75}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 99, 'FsbDecider': 99, 'SACDecider': 100}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 14, 'UpbDecider': 46, 'FsbDecider': 41, 'SACDecider': 49}
+
+[+] seed=2623
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 24, 'FsbDecider': 44, 'SACDecider': 50}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 60, 'FsbDecider': 60, 'SACDecider': 61}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 9, 'UpbDecider': 29, 'FsbDecider': 30, 'SACDecider': 34}
+
+[+] seed=9300
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 27, 'FsbDecider': 49, 'SACDecider': 53}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 65, 'FsbDecider': 65, 'SACDecider': 66}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 10, 'UpbDecider': 31, 'FsbDecider': 29, 'SACDecider': 34}
+
+[+] seed=2248
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 26, 'FsbDecider': 48, 'SACDecider': 53}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 65, 'FsbDecider': 65, 'SACDecider': 66}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 12, 'UpbDecider': 30, 'FsbDecider': 27, 'SACDecider': 34}
+
+[+] seed=2953
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 24, 'FsbDecider': 45, 'SACDecider': 51}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 61, 'FsbDecider': 61, 'SACDecider': 62}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 12, 'UpbDecider': 38, 'FsbDecider': 35, 'SACDecider': 42}
+
+[+] seed=9831
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 23, 'FsbDecider': 43, 'SACDecider': 50}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 68, 'FsbDecider': 68, 'SACDecider': 69}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 11, 'UpbDecider': 34, 'FsbDecider': 34, 'SACDecider': 38}
+
+[+] seed=9750
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 23, 'FsbDecider': 43, 'SACDecider': 50}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 71, 'FsbDecider': 71, 'SACDecider': 72}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 10, 'UpbDecider': 39, 'FsbDecider': 34, 'SACDecider': 43}
+
+[+] seed=1822
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 25, 'FsbDecider': 46, 'SACDecider': 54}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 66, 'FsbDecider': 66, 'SACDecider': 67}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 11, 'UpbDecider': 29, 'FsbDecider': 27, 'SACDecider': 33}
+
+[+] seed=9380
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+        [+] mnist-net_256x4 picked 100 instances
+        [+] mnist-net_256x6 picked 100 instances
+        [+] cifar_base_kw picked 56 instances
+        [+] cifar_deep_kw picked 100 instances
+        [+] cifar_wide_kw picked 100 instances
+        [+] mnist_concat picked 200 instances
+    fnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 1, 'UpbDecider': 25, 'FsbDecider': 44, 'SACDecider': 51}
+    cnn solved counts: {'RandomDecider': 0, 'PolarityDecider': 0, 'UpbDecider': 67, 'FsbDecider': 67, 'SACDecider': 68}
+    sigmoid solved counts: {'RandomDecider': 0, 'PolarityDecider': 13, 'UpbDecider': 31, 'FsbDecider': 27, 'SACDecider': 36}

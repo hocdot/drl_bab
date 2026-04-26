@@ -1,5 +1,10 @@
 dataset: dnnv
-dataset_dirname: dnnv_cnn
+dataset_dirname: dnnv_cnn_new
+csv_dirname: csv_cnn_new
+input_dataset: cifar10
+
+n_test_fallback: 4
+checkpoint_postfix: 11
 
 seed: 3636
 
@@ -12,17 +17,17 @@ n_grad_accum: 8
 
 n_input: 4
 n_max_step: 500
-n_max_active_neuron: 25
+n_max_active_neuron: 100
 
-use_attack: false
+use_attack: true
 dnnv_solver_batch: 500
 dnnv_skip_lower_bound: -10
-n_max_remaining_subproblem: 2000
+n_max_remaining_subproblem: 3000
 n_max_visited_subproblem: 5000
 
 n_train_epoch: 10000
 n_train_instance: 200
-n_test_instance: 1500
+n_test_instance: 500
 n_start_learning: 1000
 
 enc_dec_type: lstm
@@ -34,5 +39,8 @@ n_qf_optimize: 2
 
 use_embedding: true
 use_scale_action: true
+
+use_early_stop: false
+max_runtime: 120.0
 
 save_csv: true
