@@ -15,7 +15,7 @@ from .plot_cactus import load_merged_sampled, _done_mask, _ylabel_for_metric
 from arguments import get_args
 
 N_SEEDS = 5
-
+FIG_SIZE = (4, 3)
 
 def new_seed(base_seed: int, i: int) -> int:
     return int(base_seed) + i * 4
@@ -119,7 +119,7 @@ def plot_box_solved_counts(
 ) -> str:
     df_long = collect_solved_counts_long(args, n_seeds=n_seeds, n_sample=n_sample)
     order = [lbl for _, lbl in SOLVER_DISPLAY if lbl in set(df_long['solver'])]
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=FIG_SIZE)
     sns.boxplot(
         data=df_long,
         x='solver',
@@ -130,6 +130,7 @@ def plot_box_solved_counts(
         showfliers=showfliers,
     )
     plt.xlabel('')
+    plt.tick_params(axis='x', labelsize=14)
     plt.ylabel('Solved instances')
     plt.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
@@ -152,7 +153,7 @@ def plot_box_metric(
     df_long = collect_metric_long(args, metric, n_seeds=n_seeds, n_sample=n_sample)
     df_long.to_csv(os.path.join(CSV_EXPORT_DIR, f'df_box_{metric}.csv'), index=False)
     order = [lbl for _, lbl in SOLVER_DISPLAY if lbl in set(df_long['solver'])]
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=FIG_SIZE)
     sns.boxplot(
         data=df_long,
         x='solver',
@@ -163,6 +164,8 @@ def plot_box_metric(
         showfliers=showfliers,
     )
     plt.xlabel('')
+    plt.tick_params(axis='x', labelsize=14)
+    plt.tick_params(axis='y', labelsize=14)
     plt.ylabel(_ylabel_for_metric(metric))
     plt.grid(True, alpha=0.3, axis='y')
     if metric == 'value':
