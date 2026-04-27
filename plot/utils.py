@@ -1,6 +1,8 @@
-import matplotlib.pyplot as plt
-import matplotlib
 import os
+
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
 
 matplotlib.rcParams['text.usetex'] = True
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -8,6 +10,8 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['font.size'] = 16
+
+N_INSTANCES_PER_BENCHMARK = 200
 
 SOLVER_DISPLAY = (
     # ('RandomDecider', 'Random'),
@@ -52,3 +56,15 @@ PANEL_TITLE = {
     'cnn': 'CNN',
     'sigmoid': 'Sigmoid',
 }
+
+
+def at_least_one_solved_mask(df: pd.DataFrame) -> pd.Series:
+    """True for rows where any solver in :data:`SOLVER_DISPLAY` has ``done`` true."""
+    m = pd.Series(False, index=df.index)
+    for cls, _ in SOLVER_DISPLAY:
+        dcol = f'done_{cls}'
+        if dcol not in df.columns:
+            continue
+        s = df[dcol]
+        m |= s.eq(True) | (s.astype(str).str.lower() == 'true')
+    return m

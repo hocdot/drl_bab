@@ -8,7 +8,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from .utils import INSTANCES_PER_BENCHMARK, CSV_EXPORT_DIR, SOLVER_DISPLAY, FIGURE_DIR
+from .utils import (
+    INSTANCES_PER_BENCHMARK,
+    CSV_EXPORT_DIR,
+    FIGURE_DIR,
+    SOLVER_DISPLAY,
+    at_least_one_solved_mask,
+)
 from .extract_csv import sample_csv_v2
 from .plot_cactus import load_merged_sampled, _done_mask, _ylabel_for_metric
 
@@ -18,16 +24,11 @@ N_SEEDS = 5
 FIG_SIZE = (4, 3)
 
 def new_seed(base_seed: int, i: int) -> int:
-    return int(base_seed) + i * 4
+    return int(base_seed) + i
 
 
 def merge_df_at_least_one_solved(df: pd.DataFrame) -> pd.DataFrame:
-    """Keep rows where at least one solver has ``done`` true (instance in the pooled evaluation set)."""
-    m = pd.Series(False, index=df.index)
-    for cls, _ in SOLVER_DISPLAY:
-        dcol = f'done_{cls}'
-        if dcol in df.columns:
-            m = m | _done_mask(df[dcol])
+    m = at_least_one_solved_mask(df)
     return df.loc[m].reset_index(drop=True)
 
 
@@ -41,10 +42,6 @@ def collect_solved_counts_long(
     n_seeds: int = N_SEEDS,
     n_sample: int = INSTANCES_PER_BENCHMARK,
 ) -> pd.DataFrame:
-    """
-    For each seed, subsample, merge to instances solved by ≥1 tool, then record each solver's
-    count of solved instances in that subset (one row per solver per seed).
-    """
     base_seed = args.seed
     records: List[dict] = []
     try:

@@ -5,9 +5,16 @@ import math
 import os
 import re
 
-
-
-from .utils import BENCHMARK_TO_CONFIG, METRIC_COLS, EASY_THRESHOLD, TIMEOUT_THRESHOLD, INSTANCES_PER_BENCHMARK, CSV_EXPORT_DIR
+from .utils import (
+    BENCHMARK_TO_CONFIG,
+    CSV_EXPORT_DIR,
+    EASY_THRESHOLD,
+    INSTANCES_PER_BENCHMARK,
+    METRIC_COLS,
+    TIMEOUT_THRESHOLD,
+    N_INSTANCES_PER_BENCHMARK,
+    at_least_one_solved_mask,
+)
 from arguments import get_args, load_yaml_config, update_args_from_yaml, create_folders
 from heuristic.dnnv_baseline import FsbDecider, UpbDecider, PolarityDecider
 from heuristic.milp_baseline import RandomDecider
@@ -68,6 +75,24 @@ def filter_early_abort_instances(df: pd.DataFrame, solver_classes, max_total_tim
     for sc in solver_classes:
         bad |= _solver_early_abort(df, sc.__name__, max_total_time)
     return df.loc[~bad].reset_index(drop=True)
+
+
+def _trim_dataframe_if_over_cap(df: pd.DataFrame, cap: int) -> pd.DataFrame:
+    if len(df) <= cap:
+        return df
+    sub = df.reset_index(drop=True)
+    ok = at_least_one_solved_mask(sub)
+    idx_g = np.flatnonzero(ok.to_numpy())
+    idx_b = np.flatnonzero(~ok.to_numpy())
+    if len(idx_g) == 0:
+        take = np.arange(min(cap, len(sub)))
+    elif len(idx_g) >= cap:
+        take = idx_g[:cap]
+    else:
+        need = cap - len(idx_g)
+        extra = idx_b[:need]
+        take = np.concatenate([idx_g, extra])
+    return sub.iloc[np.sort(take)].reset_index(drop=True)
 
 
 def get_output_csv_path(args, solver_class):
@@ -177,7 +202,6 @@ def sample_csv(args, n_sample: int = INSTANCES_PER_BENCHMARK):
 
 
 def sample_csv_v2(args, n_sample: int = INSTANCES_PER_BENCHMARK, verbose: bool = False):
-    """Sample up to ``n_sample`` rows per ``network`` (all eps pooled per network)."""
     rng = np.random.default_rng(args.seed)
     for benchmark in BENCHMARK_TO_CONFIG:
         src = os.path.join(CSV_EXPORT_DIR, f'{benchmark}.csv')
@@ -191,14 +215,15 @@ def sample_csv_v2(args, n_sample: int = INSTANCES_PER_BENCHMARK, verbose: bool =
             pick = rng.choice(len(g), size=n if benchmark != 'sigmoid' else n * 2, replace=False)
             if verbose:
                 print(f'\t[+] {network} picked {len(pick)} instances')
-            chunks.append(g.iloc[np.sort(pick)])
+            chunks.append(g.iloc[pick])
         out = pd.concat(chunks, ignore_index=True)
+        out = _trim_dataframe_if_over_cap(out, N_INSTANCES_PER_BENCHMARK)
         out.to_csv(out_path, index=False)
-        # if verbose:
-            # print(f'[+] {benchmark}: {len(df)} rows -> {len(out)} rows -> {out_path}')
+        if verbose:
+            print(f'[+] {benchmark}: {len(df)} rows -> {len(out)} rows -> {out_path}')
 
 
 if __name__ == '__main__':
     args = get_args()
     extract_csv(args)
-    sample_csv(args)
+    sample_csv_v2(args, n_sample=100, verbose=True)
