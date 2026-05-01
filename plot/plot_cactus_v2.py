@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from typing import List, Tuple
+from typing import Tuple
 import seaborn as sns
 import os
 
@@ -26,9 +26,8 @@ def plot_cactus_v2(
     output_stem: str = 'cactus_v2',
     metrics: Tuple[str, ...] = V2_METRICS,
     fmt: str = 'pdf',
-) -> List[str]:
+) -> None:
     df_all = load_merged_sampled()
-    written: List[str] = []
     for metric in metrics:
         solvers = _solvers_for_df(df_all, metric)
         if not solvers:
@@ -40,17 +39,16 @@ def plot_cactus_v2(
         _plot_cactus_axes(ax, seen_df, solvers, colors, metric=metric)
         finalize_cactus_v2_figure(fig)
         path_seen = os.path.join(FIGURE_DIR, f'{output_stem}_{metric}_seen.{fmt}')
+        print(f'[+] saved → {path_seen}')
         fig.savefig(path_seen, dpi=300, format=fmt)
         plt.close(fig)
-        written.append(path_seen)
         fig, ax = plt.subplots(1, 1, figsize=CACTUS_V2_FIGSIZE_INCHES)
         _plot_cactus_axes(ax, unseen_df, solvers, colors, metric=metric)
         finalize_cactus_v2_figure(fig)
         path_unseen = os.path.join(FIGURE_DIR, f'{output_stem}_{metric}_unseen.{fmt}')
+        print(f'[+] saved → {path_unseen}')
         fig.savefig(path_unseen, dpi=300, format=fmt)
         plt.close(fig)
-        written.append(path_unseen)
-    return written
 
 
 if __name__ == '__main__':
