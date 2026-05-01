@@ -1,6 +1,6 @@
 from typing import List, Optional
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, FuncFormatter
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -11,9 +11,20 @@ from .extract_csv import sample_csv_v2, extract_csv
 from arguments import get_args
 
 
+
+def _format_branches_times_1e3(x: float, _pos: int) -> str:
+    """Show raw branch counts as ×10³ via axis label; ticks are values / 1000."""
+    if abs(x) < 1e-9:
+        return '0'
+    v = x / 1000.0
+    if abs(v - round(v)) < 1e-5:
+        return f'{int(round(v))}'
+    return f'{v:g}'
+
+
 def _ylabel_for_metric(metric: str) -> str:
     if metric == 'value':
-        return 'Explored branches'
+        return r'Explored branches ($\times 10^3$)'
     if metric == 'total_time':
         return 'Runtime (s)'
     if metric == 'decision_time':
@@ -79,6 +90,21 @@ def _series_for_cactus(df: pd.DataFrame, done_mask: pd.Series, metric_col: str, 
     return raw.sort_values()
 
 
+def _annotate_branches_yaxis_scale(ax) -> None:
+    """Draw the x10^3 multiplier above the y-axis (ticks show value / 1000)."""
+    ax.annotate(
+        r'$\times 10^{3}$',
+        xy=(0.0, 1.0),
+        xycoords='axes fraction',
+        xytext=(10, 4),
+        textcoords='offset points',
+        ha='right',
+        va='bottom',
+        fontsize=14,
+        clip_on=False,
+    )
+
+
 def _plot_cactus_axes(ax, df: pd.DataFrame, solvers, colors, metric: str, title: Optional[str] = None):
     max_y = 0.0
     for idx, (solver_cls_name, plot_name) in enumerate(solvers):
@@ -96,24 +122,30 @@ def _plot_cactus_axes(ax, df: pd.DataFrame, solvers, colors, metric: str, title:
                 x=x, y=y, label=plot_name, s=55, zorder=3, color=colors[idx], ax=ax
             )
         else:
-            ax.plot(x, y, label=plot_name, linewidth=2, color=colors[idx])
+            ax.plot(x, y, label=plot_name, linewidth=2.5, color=colors[idx])
     ax.set_xlabel('Solved instances')
     if len(metrics) > 100:
         ax.xaxis.set_major_locator(MultipleLocator(20))
     else:
         ax.xaxis.set_major_locator(MultipleLocator(10))
     ax.set_ylabel(_ylabel_for_metric(metric))
-    ax.legend(fancybox=True, fontsize=14)
+    ax.legend(fancybox=True, fontsize=16)
+    if metric == 'total_time':
+        # set legend to None
+        ax.get_legend().remove()
+    # ax.legend(fancybox=True, fontsize=13, bbox_to_anchor=(0.5, 1), ncol=2, loc='lower center',)
     if metric == 'total_time':
         ax.set_ylim(0, 120)
         ax.yaxis.set_major_locator(MultipleLocator(20))
     elif metric == 'value':
             ymax = max_y * 1.1
             ax.set_ylim(0, ymax)
-            for step in (20_000, 50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000):
+            for step in (20_000, 40_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000):
                 if ymax / step <= 10:
                     ax.yaxis.set_major_locator(MultipleLocator(step))
                     break
+            ax.yaxis.set_major_formatter(FuncFormatter(_format_branches_times_1e3))
+            # _annotate_branches_yaxis_scale(ax)
     else:
         raise ValueError(f'Unknown metric: {metric}')
     ax.grid(True, alpha=0.3)

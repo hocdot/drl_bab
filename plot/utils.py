@@ -9,7 +9,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 plt.rcParams['font.family'] = 'Times New Roman'
-plt.rcParams['font.size'] = 16
+plt.rcParams['font.size'] = 22
 
 N_INSTANCES_PER_BENCHMARK = 200
 
