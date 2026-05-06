@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 - Remove the exiting `data/` foler
 
-- Download generated [data.tar.xz](#)
+- Download generated [data.tar.xz](https://drive.google.com/file/d/1d0SPdAdsfDg3hXDjiJSeTGpJsdxpXcwF/view?usp=drive_link)
 
 - Extract `data.tar.xz` to create new `data/` folder
 
