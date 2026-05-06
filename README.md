@@ -66,6 +66,7 @@ python3 -m prepare.generate_raw_instances --n_vnnlib_per_onnx 500 --clean --conf
 python3 -m prepare.prepare_io --config config/dnnv_cnn.yaml
 python3 -m prepare.prepare_hard_instances --config config/dnnv_cnn.yaml --use_early_stop
 python3 -m prepare.prepare_gnn_embedding --gcn_embed_batch_size 32 --config config/dnnv_cnn.yaml
+cp data/dnnv_cnn_new/dnnv/instances_hard.csv data/dnnv_cnn_new/dnnv/instances_test.csv
 python3 infer.py --config config/dnnv_cnn.yaml
 ```
 
@@ -76,6 +77,7 @@ python3 -m prepare.generate_raw_distshift --n_vnnlib_per_onnx 500 --clean --conf
 python3 -m prepare.prepare_io --config config/dnnv_distshift.yaml
 python3 -m prepare.prepare_hard_instances --config config/dnnv_distshift.yaml --use_early_stop
 python3 -m prepare.prepare_gnn_embedding --gcn_embed_batch_size 32 --config config/dnnv_distshift.yaml
+cp data/dnnv_distshift/dnnv/instances_hard.csv data/dnnv_distshift/dnnv/instances_test.csv
 python3 infer.py --config config/dnnv_distshift.yaml
 ```
 
