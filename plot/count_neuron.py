@@ -42,15 +42,4 @@ if __name__ == "__main__":
         for onnx_path, input_shape in instances:
             count(onnx_path, input_shape)
         print('-' * 100)
-    # files = []
-    # for file in recursive_walk('/home/roars/decomposition/benchmarks/'):
-    #     if not file.endswith('.onnx'):
-    #         continue
-
-    #     if file.endswith('_bak.onnx'):
-    #         continue
-    #     files.append(file)
-    #     # break
-    
-    # # file = files[4]
-    #     count(file)
+ 
