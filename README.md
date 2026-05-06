@@ -1,18 +1,18 @@
 # RSB: RL-Guided Smart Branching for Efficient Neural Network Verification
 
-    Formal verification can play a key role in ensuring the reliability of Deep Neural Networks (DNNs) deployed in safety-critical systems.
-    Modern DNN verifiers employ a branch-and-bound framework,
-    which alternates between branching (splitting into smaller subproblems) and
-    bounding (pruning subproblems) to efficiently explore the verification space.
-    However, existing branching heuristics make greedy decisions based on static scoring functions.
-    They do not anticipate long-term efficiency or leverage the growing availability of verification data to improve performance.
+Formal verification can play a key role in ensuring the reliability of Deep Neural Networks (DNNs) deployed in safety-critical systems.
+Modern DNN verifiers employ a branch-and-bound framework,
+which alternates between branching (splitting into smaller subproblems) and
+bounding (pruning subproblems) to efficiently explore the verification space.
+However, existing branching heuristics make greedy decisions based on static scoring functions.
+They do not anticipate long-term efficiency or leverage the growing availability of verification data to improve performance.
 
-    This work introduces RSB, a reinforcement learning framework that learns to refine baseline branching heuristics.
-    It trains an actor-critic architecture to maximize cumulative future rewards rather than immediate scores.
-    The actor generates attention weights from observations of raw neuron features and learned graph embeddings,
-    which rescale baseline heuristic scores to guide neuron branching.
-    Evaluation on 600 challenging instances demonstrates that RSB consistently outperforms state-of-the-art branching heuristics,
-    solving 11% more instances while reducing branch exploration by 50%.
+This work introduces RSB, a reinforcement learning framework that learns to refine baseline branching heuristics.
+It trains an actor-critic architecture to maximize cumulative future rewards rather than immediate scores.
+The actor generates attention weights from observations of raw neuron features and learned graph embeddings,
+which rescale baseline heuristic scores to guide neuron branching.
+Evaluation on 600 challenging instances demonstrates that RSB consistently outperforms state-of-the-art branching heuristics,
+solving 11% more instances while reducing branch exploration by 50%.
 
 ### 1. Installation
 
