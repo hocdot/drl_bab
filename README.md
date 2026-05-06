@@ -20,7 +20,7 @@ solving 11% more instances while reducing branch exploration by 50%.
 pip install -r requirements.txt
 ```
 
-### 2. Reproduce results
+### 2. Reproduce results from generated data
 
 - Remove the exiting `data/` foler
 
@@ -42,7 +42,9 @@ python3 -m plot.plot_cactus_v2
 python3 -m plot.plot_box
 ```
 
-### 2. Generating FNN-based Instances & Pretrain GNN Embedding
+### 3. Reproduce results from scratch
+
+1. Generating FNN-based Instances & Pretrain GNN Embedding
 
 - Generate random instances from existing ONNX at `data/dataset/dnnv/onnx`:
 ```bash
@@ -69,20 +71,17 @@ python3 -m prepare.prepare_gnn_embedding --gcn_embed_batch_size 32 --config conf
 python3 -m prepare.split_train_test --config config/dnnv_fnn.yaml
 ```
 
-### 3. Train RSB
-
+2. Train RSB
 ```bash
 python3 train.py --mode train --config config/dnnv_fnn.yaml --use_early_stop
 ```
 
-### 4. Evaluate RSB/FSB/UPB/Polarity
-
+3. Evaluate RSB/FSB/UPB/Polarity
 ```bash
 python3 infer.py --config config/dnnv_fnn.yaml
 ```
 
-### 3. Generating CNN-based Instances & Evaluating RSB/FSB/UPB/Polarity
-
+4. Generating CNN-based Instances & Evaluating RSB/FSB/UPB/Polarity
 ```bash
 python3 -m prepare.generate_raw_instances --n_vnnlib_per_onnx 500 --clean --config config/dnnv_cnn.yaml
 python3 -m prepare.prepare_io --config config/dnnv_cnn.yaml
@@ -92,8 +91,7 @@ cp data/dnnv_cnn_new/dnnv/instances_hard.csv data/dnnv_cnn_new/dnnv/instances_te
 python3 infer.py --config config/dnnv_cnn.yaml
 ```
 
-### 4. Generating Sigmoid-based Instances & Evaluating RSB/FSB/UPB/Polarity
-
+5. Generating Sigmoid-based Instances & Evaluating RSB/FSB/UPB/Polarity
 ```bash
 python3 -m prepare.generate_raw_distshift --n_vnnlib_per_onnx 500 --clean --config config/dnnv_distshift.yaml
 python3 -m prepare.prepare_io --config config/dnnv_distshift.yaml
@@ -103,3 +101,9 @@ cp data/dnnv_distshift/dnnv/instances_hard.csv data/dnnv_distshift/dnnv/instance
 python3 infer.py --config config/dnnv_distshift.yaml
 ```
 
+6. Plot results
+```bash
+python3 -m plot.create_table
+python3 -m plot.plot_cactus_v2
+python3 -m plot.plot_box
+```
