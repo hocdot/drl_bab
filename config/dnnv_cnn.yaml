@@ -40,7 +40,7 @@ n_qf_optimize: 2
 use_embedding: true
 use_scale_action: true
 
-use_early_stop: false
+# use_early_stop: false
 max_runtime: 120.0
 
 save_csv: true

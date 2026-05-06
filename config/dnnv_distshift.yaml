@@ -3,11 +3,10 @@ dataset_dirname: dnnv_distshift
 csv_dirname: csv_distshift
 input_dataset: mnist
 
-
 n_test_fallback: 4
 checkpoint_postfix: 11
 
-seed: 3736
+seed: 3636
 
 batch_size: 512
 actor_lr: 0.0004
@@ -28,7 +27,7 @@ n_max_visited_subproblem: 5000
 
 n_train_epoch: 10000
 n_train_instance: 200
-n_test_instance: 1280
+n_test_instance: 500
 n_start_learning: 1000
 
 enc_dec_type: lstm
@@ -41,7 +40,7 @@ n_qf_optimize: 2
 use_embedding: true
 use_scale_action: true
 
-use_early_stop: false
+# use_early_stop: false
 max_runtime: 120.0
 
 save_csv: true
