@@ -1,4 +1,4 @@
-# RSB: RL-Guided Smart Branching for Efficient Neural Network Verification
+# Verifying Neural Networks with Reinforcement Learning
 
 Formal verification can play a key role in ensuring the reliability of Deep Neural Networks (DNNs) deployed in safety-critical systems.
 Modern DNN verifiers employ a branch-and-bound framework,
