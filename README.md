@@ -20,6 +20,28 @@ solving 11% more instances while reducing branch exploration by 50%.
 pip install -r requirements.txt
 ```
 
+### 2. Reproduce results
+
+- Remove the exiting `data/` foler
+
+- Download generated [data.tar.xz](#)
+
+- Extract `data.tar.xz` to create new `data/` folder
+
+- Evaluate RSB/FSB/UPB/Polarity
+```bash
+python3 infer.py --config config/dnnv_fnn.yaml
+python3 infer.py --config config/dnnv_cnn.yaml
+python3 infer.py --config config/dnnv_distshift.yaml
+```
+
+- Plot results
+```bash
+python3 -m plot.create_table
+python3 -m plot.plot_cactus_v2
+python3 -m plot.plot_box
+```
+
 ### 2. Generating FNN-based Instances & Pretrain GNN Embedding
 
 - Generate random instances from existing ONNX at `data/dataset/dnnv/onnx`:
