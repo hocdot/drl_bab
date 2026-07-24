@@ -74,12 +74,16 @@ def get_args():
     parser.add_argument('--max_runtime', type=float, default=3600.0) # 1 hour
     parser.add_argument('--decision_topk_test', type=int, default=10)
     parser.add_argument('--decision_topk_train', type=int, default=30)
+    parser.add_argument('--decision_heuristic', type=str, default='fsb', choices=['fsb', 'babsr', 'upb'],
+                        help='Baseline decision heuristic backend: fsb (default), babsr, or upb')
     parser.add_argument('--checkpoint_postfix', type=str, default='')
     parser.add_argument('--use_early_stop', action='store_true')
     
     # sac parameter
     parser.add_argument('--use_scale_action', action='store_true')
     parser.add_argument('--use_embedding', action='store_true')
+    parser.add_argument('--use_zero_embedding', action='store_true',
+                        help='Keep use_embedding architecture but feed zero GCN embeddings')
     parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
     parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
     

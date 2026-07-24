@@ -75,6 +75,17 @@ class SACDecider(Base):
             return new_action_probs
         return action_probs
     
+    def _get_baseline_action(self, scale=None) -> list[int]:
+        heuristic = getattr(self.args, 'decision_heuristic', 'fsb')
+        getters = {
+            'fsb': self.env._get_fsb_action,
+            'babsr': self.env._get_babsr_action,
+            'upb': self.env._get_upb_action,
+        }
+        if heuristic not in getters:
+            raise ValueError(f'Unknown decision_heuristic: {heuristic}')
+        return getters[heuristic](scale=scale)
+
     @beartype
     def select_action(self, observation: torch.Tensor) -> list[int]:
         x = self.transform(observation)
@@ -89,7 +100,7 @@ class SACDecider(Base):
             if self.args.dataset == 'milp':
                 action = select_cost_based_action(observation, scale=action_probs)
             else:
-                action = self.env._get_fsb_action(scale=action_probs)
+                action = self._get_baseline_action(scale=action_probs)
         else:
             if self.args.mode == 'train':
                 action, _, _ = self.actor.get_action(x, z)
@@ -116,7 +127,7 @@ class SACDecider(Base):
             if n == 0:
                 action = select_random_action(observation)
             else:
-                action = self.env._get_fsb_action()
+                action = self._get_baseline_action()
         return action
 
     def train_instance(self):

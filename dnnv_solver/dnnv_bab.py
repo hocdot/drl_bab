@@ -247,10 +247,17 @@ class DnnvBabSolver:
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action
-    
-    def get_upb_action(self) -> torch.Tensor:
+
+    def get_babsr_action(self, scale=None) -> torch.Tensor:
         subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
-        decisions = self.fsb_heuristic.upb_hidden_branching(self.abstractor, subproblems)
+        decisions = self.fsb_heuristic.babsr_hidden_branching(self.abstractor, subproblems, scale=scale)
+        # convert DNNV decision format to DRL action format
+        action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
+        return action
+    
+    def get_upb_action(self, scale=None) -> torch.Tensor:
+        subproblems = self.queue.get_all_domains(device=self.device, batch=self.args.dnnv_solver_batch)
+        decisions = self.fsb_heuristic.upb_hidden_branching(self.abstractor, subproblems, scale=scale)
         # convert DNNV decision format to DRL action format
         action = [self.reverse_neuron_index_mapping[*d] for d in decisions]
         return action

@@ -284,7 +284,8 @@ class DecisionHeuristic:
 
     # hidden branching
     @beartype
-    def upb_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults) -> list[list]:
+    def upb_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults,
+                             scale: torch.Tensor | None = None) -> list[list]:
         batch = len(domain_params.input_lowers)
         topk = min(self.decision_topk, int(sum([i.sum() for (_, i) in domain_params.masks.items()]).item()))
         split_node_names = [_.name for _ in abstractor.net.split_nodes]
@@ -301,6 +302,13 @@ class DecisionHeuristic:
             reduce_op=self.decision_reduceop, 
             number_bounds=domain_params.cs.shape[1]
         )
+
+        if scale is not None:
+            count = 0
+            for si in range(len(scores)):
+                scores[si] = scores[si] * scale[:, count:count + scores[si].shape[1]]
+                count += scores[si].shape[1]
+            assert count == scale.shape[1], f'{count=} {scale.shape[1]=}'
         
         # convert an index to its layer and offset
         score_length = np.insert(np.cumsum([len(scores[i][0]) for i in range(len(scores))]), 0, 0)
@@ -356,6 +364,62 @@ class DecisionHeuristic:
         return final_decision
 
 
+    @beartype
+    def babsr_hidden_branching(self: 'DecisionHeuristic', abstractor, domain_params: AbstractResults,
+                               scale: torch.Tensor | None = None) -> list[list]:
+        """Pure BaBSR: pick argmax BaBSR score (no FSB top-k forward filtering)."""
+        batch = len(domain_params.input_lowers)
+        split_node_names = [_.name for _ in abstractor.net.split_nodes]
+        split_node_points = {k: abstractor.net.split_activations[k][0][0].get_split_point() for k in split_node_names}
+        scores, backup_scores = _compute_babsr_scores(
+            abstractor=abstractor,
+            lower_bounds=domain_params.lower_bounds,
+            upper_bounds=domain_params.upper_bounds,
+            lAs=domain_params.lAs,
+            batch=batch,
+            masks=domain_params.masks,
+            reduce_op=self.decision_reduceop,
+            number_bounds=domain_params.cs.shape[1],
+        )
+        if scale is not None:
+            count = 0
+            for si in range(len(scores)):
+                scores[si] = scores[si] * scale[:, count:count + scores[si].shape[1]]
+                count += scores[si].shape[1]
+            assert count == scale.shape[1], f'{count=} {scale.shape[1]=}'
+        score_length = np.insert(np.cumsum([len(scores[i][0]) for i in range(len(scores))]), 0, 0)
+        best = torch.cat(scores, dim=1).topk(1)
+        backup = torch.cat(backup_scores, dim=1).topk(1, largest=False)
+        final_decision = []
+        for b in range(batch):
+            mask_item = {k: domain_params.masks[k][b].clone().cpu() for k in split_node_names}
+            if best.values[b, 0] > SMALL:
+                idx = best.indices[b, 0].item()
+            elif backup.values[b, 0] < -SMALL:
+                idx = backup.indices[b, 0].item()
+            else:
+                idx = None
+            selected = False
+            if idx is not None:
+                layer_idx = np.searchsorted(score_length, idx, side='right') - 1
+                layer_name = abstractor.net.split_nodes[layer_idx].name
+                neuron_idx = int(idx - score_length[layer_idx])
+                point = split_node_points[layer_name]
+                if point is not None:
+                    if mask_item[layer_name][neuron_idx] != 0:
+                        final_decision.append([layer_name, neuron_idx, point])
+                        selected = True
+                else:
+                    final_decision.append([layer_name, neuron_idx, None])
+                    selected = True
+            if not selected:
+                for layer in np.random.choice(split_node_names, len(split_node_names), replace=False):
+                    if (len(mask_item[layer].nonzero(as_tuple=False)) != 0) or (split_node_points[layer] is None):
+                        final_decision.append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
+                        selected = True
+                        break
+                assert selected
+        return final_decision
 
     @beartype
     def naive_input_branching(self: 'DecisionHeuristic', abstractor, 

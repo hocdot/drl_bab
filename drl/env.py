@@ -90,6 +90,13 @@ class Env:
                 topk_active_fsb_scores = active_fsb_scores.topk(self.args.n_max_active_neuron, dim=-1)
                 self.reduced_active_neuron_index = sorted(topk_active_fsb_scores.indices[0].tolist()) # (n_reduced_active_neuron, )
 
+            # keep use_embedding model shape, but feed zeros instead of loaded GCN embeds
+            if self.args.use_embedding and self.args.use_zero_embedding:
+                self.observation_embedding = torch.zeros(
+                    observation.shape[1], self.args.gcn_embed_n_hidden,
+                    dtype=observation.dtype, device=observation.device,
+                )
+
             # filter the embedding
             if self.observation_embedding is not None:
                 assert self.observation_embedding.shape[0] == observation.shape[1], f'{self.observation_embedding.shape=} {observation.shape=}'
@@ -141,35 +148,33 @@ class Env:
         action = torch.tensor(action).view(orig_shape)
         return action
     
+    def _convert_scale_to_raw(self, scale: torch.Tensor) -> torch.Tensor:
+        batched_scale_index = self.scale_index.unsqueeze(0).expand(scale.shape[0], -1).to(scale.device)
+        raw_scale = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
+        raw_scale.scatter_(1, batched_scale_index, scale)
+        return raw_scale
+
     @beartype
     def _get_fsb_action(self, scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        # raw action
-        if scale is not None:
-            # # method 1: slow
-            # raw_scale = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
-            # for b in range(scale.shape[0]):
-            #     for i, nidx in enumerate(self.scale_index):
-            #         raw_scale[b, nidx] = scale[b, i]
-            #         print(f'set raw_scale[{b}, {nidx}] = scale[{b}, {i}] = {scale[b, i]}')
-            
-            # # method 2: fast
-            batched_scale_index = self.scale_index.unsqueeze(0).expand(scale.shape[0], -1).to(scale.device)
-            raw_scale_quick = torch.zeros(scale.shape[0], self.solver.n_hiddens, device=scale.device)
-            raw_scale_quick.scatter_(1, batched_scale_index, scale)
-            # assert torch.equal(raw_scale, raw_scale_quick), f'{torch.norm(raw_scale - raw_scale_quick)=}'
-            action = self.solver.get_fsb_action(scale=raw_scale_quick)
-        else:
-            action = self.solver.get_fsb_action(scale=None)
-        # convert to active neuron index
+        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        action = self.solver.get_fsb_action(scale=raw_scale)
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
     
     @beartype
-    def _get_upb_action(self) -> list[int]:
+    def _get_babsr_action(self, scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        action = self.solver.get_upb_action()
-        # convert to active neuron index
+        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        action = self.solver.get_babsr_action(scale=raw_scale)
+        action = [self.reverse_active_neuron_index[int(a)] for a in action]
+        return action
+
+    @beartype
+    def _get_upb_action(self, scale=None) -> list[int]:
+        assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
+        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        action = self.solver.get_upb_action(scale=raw_scale)
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
         

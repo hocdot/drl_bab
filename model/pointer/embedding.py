@@ -17,6 +17,8 @@ class Embedding(nn.Module):
         if self.args.use_embedding:
             x_emb  = x[..., :-self.args.n_input]
             x_proj = x[..., -self.args.n_input:]
+            if self.args.use_zero_embedding:
+                assert torch.all(x_emb == 0), f'expected zero embeddings, got {x_emb.abs().max()=}'
             x_proj = self.projection(x_proj)
             x = torch.cat([x_emb, x_proj], dim=-1)
         z = self.embedding(x)
