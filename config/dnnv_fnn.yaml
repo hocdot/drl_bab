@@ -38,7 +38,7 @@ n_buffer: 100000
 n_qf_optimize: 2
 
 use_embedding: true
-use_zero_embedding: true
+use_zero_embedding: false
 use_scale_action: true
 
 # use_early_stop: false
