@@ -325,41 +325,50 @@ class DecisionHeuristic:
             topk=topk,
         )
         final_decision = [[] for b in range(batch)]
-    
-        best = topk_output_lbs.topk(1, 0)
-        best_output_lbs = best.values.cpu().numpy()[0]
-        best_output_lbs_indices = best.indices.cpu().numpy()[0]
-        
-        # align decisions
-        all_topk_decisions = [topk_decisions[best_output_lbs_indices[ii]][ii] for ii in range(batch * 2)]
-        for b in range(batch):
-            mask_item = {k: domain_params.masks[k][b].clone().cpu() for k in split_node_names}
-            # valid scores
-            if max(best_output_lbs[b], best_output_lbs[b + batch]) > -LARGE:
-                n_name, n_id, n_point = all_topk_decisions[b] if best_output_lbs[b] > best_output_lbs[b + batch] else all_topk_decisions[b + batch]
-                if n_point is not None: # relu
-                    if mask_item[n_name][n_id] != 0: # unstable neuron
-                        final_decision[b].append([n_name, n_id, n_point])
-                        mask_item[n_name][n_id] = 0
-                else:
-                    final_decision[b].append([n_name, n_id, None])
-                    mask_item[n_name][n_id] = 0
-            # invalid scores
-            if len(final_decision[b]) == 0: 
-                # use random decisions 
+
+        # Same empty-candidate fallback as smart_hidden_branching (FSB).
+        # get_topk_scores returns [] when no candidate improves the bound.
+        if not len(topk_output_lbs):
+            for b in range(batch):
+                mask_item = {k: domain_params.masks[k][b].clone().cpu() for k in split_node_names}
                 selected = False
                 for layer in np.random.choice(split_node_names, len(split_node_names), replace=False):
                     if (len(mask_item[layer].nonzero(as_tuple=False)) != 0) or (split_node_points[layer] is None):
-                        if split_node_points[layer] is not None: # relu
-                            final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
-                            mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
-                        else:
-                            # TODO: general activation
-                            raise NotImplementedError
+                        final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
+                        mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
                         selected = True
                         break
                 assert selected
-        
+        else:
+            best = topk_output_lbs.topk(1, 0)
+            best_output_lbs = best.values.cpu().numpy()[0]
+            best_output_lbs_indices = best.indices.cpu().numpy()[0]
+
+            # align decisions
+            all_topk_decisions = [topk_decisions[best_output_lbs_indices[ii]][ii] for ii in range(batch * 2)]
+            for b in range(batch):
+                mask_item = {k: domain_params.masks[k][b].clone().cpu() for k in split_node_names}
+                # valid scores
+                if max(best_output_lbs[b], best_output_lbs[b + batch]) > -LARGE:
+                    n_name, n_id, n_point = all_topk_decisions[b] if best_output_lbs[b] > best_output_lbs[b + batch] else all_topk_decisions[b + batch]
+                    if n_point is not None:  # relu
+                        if mask_item[n_name][n_id] != 0:  # unstable neuron
+                            final_decision[b].append([n_name, n_id, n_point])
+                            mask_item[n_name][n_id] = 0
+                    else:
+                        final_decision[b].append([n_name, n_id, None])
+                        mask_item[n_name][n_id] = 0
+                # invalid scores → random (same as FSB; supports general activations)
+                if len(final_decision[b]) == 0:
+                    selected = False
+                    for layer in np.random.choice(split_node_names, len(split_node_names), replace=False):
+                        if (len(mask_item[layer].nonzero(as_tuple=False)) != 0) or (split_node_points[layer] is None):
+                            final_decision[b].append([layer, mask_item[layer].nonzero(as_tuple=False)[0].item(), split_node_points[layer]])
+                            mask_item[final_decision[b][-1][0]][final_decision[b][-1][1]] = 0
+                            selected = True
+                            break
+                    assert selected
+
         final_decision = sum(final_decision, [])
         return final_decision
 

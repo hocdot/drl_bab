@@ -154,26 +154,33 @@ class Env:
         raw_scale.scatter_(1, batched_scale_index, scale)
         return raw_scale
 
+    def _resolve_raw_scale(self, scale=None, raw_scale=None):
+        if raw_scale is not None:
+            return raw_scale
+        if scale is not None:
+            return self._convert_scale_to_raw(scale)
+        return None
+
     @beartype
-    def _get_fsb_action(self, scale=None) -> list[int]:
+    def _get_fsb_action(self, scale=None, raw_scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        raw_scale = self._resolve_raw_scale(scale=scale, raw_scale=raw_scale)
         action = self.solver.get_fsb_action(scale=raw_scale)
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
     
     @beartype
-    def _get_babsr_action(self, scale=None) -> list[int]:
+    def _get_babsr_action(self, scale=None, raw_scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        raw_scale = self._resolve_raw_scale(scale=scale, raw_scale=raw_scale)
         action = self.solver.get_babsr_action(scale=raw_scale)
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action
 
     @beartype
-    def _get_upb_action(self, scale=None) -> list[int]:
+    def _get_upb_action(self, scale=None, raw_scale=None) -> list[int]:
         assert self.args.dataset == 'dnnv', f'{self.args.dataset=}'
-        raw_scale = self._convert_scale_to_raw(scale) if scale is not None else None
+        raw_scale = self._resolve_raw_scale(scale=scale, raw_scale=raw_scale)
         action = self.solver.get_upb_action(scale=raw_scale)
         action = [self.reverse_active_neuron_index[int(a)] for a in action]
         return action

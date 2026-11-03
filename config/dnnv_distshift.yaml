@@ -27,7 +27,7 @@ n_max_visited_subproblem: 5000
 
 n_train_epoch: 10000
 n_train_instance: 200
-n_test_instance: 1280
+n_test_instance: 200
 n_start_learning: 1000
 
 enc_dec_type: lstm

@@ -5,7 +5,9 @@ from ..base import Base
 class FsbDecider(Base):
 
     def __init__(self, args):
-        super().__init__(args)
+        new_args = copy.deepcopy(args)
+        new_args.use_embedding = False
+        super().__init__(new_args)
 
     def select_action(self, observation):
         # action in active neuron index format

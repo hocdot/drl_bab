@@ -84,6 +84,8 @@ def get_args():
     parser.add_argument('--use_embedding', action='store_true')
     parser.add_argument('--use_zero_embedding', action='store_true',
                         help='Keep use_embedding architecture but feed zero GCN embeddings')
+    parser.add_argument('--use_one_shot_inference', action='store_true',
+                        help='Compute actor scores only at the first decision and reuse them')
     parser.add_argument('--n_max_remaining_subproblem', type=int, default=1000)
     parser.add_argument('--n_max_visited_subproblem', type=int, default=2000)
     

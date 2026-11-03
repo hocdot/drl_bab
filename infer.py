@@ -16,7 +16,7 @@ def infer(args):
         solver_classes = [FsbDecider, UpbDecider, GnnDecider]
         
     solver_classes = [SACDecider]
-    solver_classes = [GnnDecider]
+    # solver_classes = [GnnDecider]
     for solver_class in solver_classes:
         base_path = os.path.join(args.csv_dir, args.mode, f'{base_label}_{solver_class.__name__}')
         postfix = ''
@@ -36,6 +36,8 @@ def infer(args):
                     postfix += f'_fallback_{args.n_test_fallback}'
                 if args.use_zero_embedding:
                     postfix += f'_zeroemb'
+                if args.use_one_shot_inference:
+                    postfix += f'_oneshot'
         else:
             raise NotImplementedError(f'{solver_class.__name__} is not supported')
         

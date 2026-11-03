@@ -15,6 +15,7 @@ class SACDecider(Base):
         super().__init__(args)
         self.create_model()
         self.global_step = 0
+        self._one_shot_raw_scale = None
 
     def create_model(self):
         args = self.args
@@ -45,12 +46,15 @@ class SACDecider(Base):
 
     @beartype
     def init_hook(self, observation: torch.Tensor):
+        self._one_shot_raw_scale = None
         x = self.transform(observation)
         self.decoder_state = self.actor.decoder.get_z0(x)
 
 
     @beartype
     def step_hook(self, next_observation: torch.Tensor):
+        if getattr(self.args, 'use_one_shot_inference', False):
+            return  # scores are frozen; no need to update decoder state
         x = self.transform(next_observation)
         a = self.env.prev_actions
         if len(a) == 0:
@@ -74,8 +78,13 @@ class SACDecider(Base):
             new_action_probs.scatter_(1, batched_index, action_probs)
             return new_action_probs
         return action_probs
+
+    def _expand_raw_scale(self, raw_scale: torch.Tensor, n_batch: int) -> torch.Tensor:
+        if raw_scale.shape[0] == n_batch:
+            return raw_scale
+        return raw_scale[:1].expand(n_batch, -1).contiguous()
     
-    def _get_baseline_action(self, scale=None) -> list[int]:
+    def _get_baseline_action(self, scale=None, raw_scale=None) -> list[int]:
         heuristic = getattr(self.args, 'decision_heuristic', 'fsb')
         getters = {
             'fsb': self.env._get_fsb_action,
@@ -84,7 +93,7 @@ class SACDecider(Base):
         }
         if heuristic not in getters:
             raise ValueError(f'Unknown decision_heuristic: {heuristic}')
-        return getters[heuristic](scale=scale)
+        return getters[heuristic](scale=scale, raw_scale=raw_scale)
 
     @beartype
     def select_action(self, observation: torch.Tensor) -> list[int]:
@@ -92,6 +101,15 @@ class SACDecider(Base):
         x = self._convert_observation(x) # reduce number of active neurons
         z = self.decoder_state
         if self.args.use_scale_action:
+            use_one_shot = getattr(self.args, 'use_one_shot_inference', False)
+            if use_one_shot and self.args.dataset != 'milp':
+                if self._one_shot_raw_scale is None:
+                    _, _, action_probs = self.actor.get_action(x, z)
+                    action_probs = self._convert_action_probs(action_probs)
+                    self._one_shot_raw_scale = self.env._convert_scale_to_raw(action_probs).detach()
+                raw_scale = self._expand_raw_scale(self._one_shot_raw_scale, observation.shape[0])
+                return self._get_baseline_action(raw_scale=raw_scale)
+
             if self.args.n_test_fallback > 0 and self.args.mode == 'test' and self.env.n_step % self.args.n_test_fallback == 0:
                 action_probs = None
             else:
