@@ -18,7 +18,10 @@ SOLVER_DISPLAY = (
     ('PolarityDecider', r'\textsc{Polarity}'),
     ('UpbDecider', r'\textsc{Upb}'),
     ('FsbDecider', r'\textsc{Fsb}'),
+    ('GnnDecider', r'\textsc{Gnn}'),
     ('SACDecider', r'\textsc{Rsb}'),
+    ('SACDeciderUpb', r'\textsc{Rsb}$_{\mathrm{upb}}$'),
+    ('SACDeciderZeroEmb', r'\textsc{Rsb}$_{-\mathrm{emb}}$'),
 )
 
 
@@ -42,7 +45,11 @@ os.makedirs(CSV_EXPORT_DIR, exist_ok=True)
 
 FIGURE_DIR = os.path.join(CURRENT_DIR, 'figure')
 FIGURE_DIR = '../../figure/evaluation/'
-os.makedirs(FIGURE_DIR, exist_ok=True)
+try:
+    os.makedirs(FIGURE_DIR, exist_ok=True)
+except OSError:
+    FIGURE_DIR = os.path.join(CURRENT_DIR, 'figure')
+    os.makedirs(FIGURE_DIR, exist_ok=True)
 
 
 BENCHMARK_PANELS = (
@@ -58,10 +65,16 @@ PANEL_TITLE = {
 }
 
 
+# Shown in tables/plots but not used for instance-pool selection (joined post-hoc).
+POOL_EXCLUDE_SOLVERS = frozenset({'GnnDecider', 'SACDeciderUpb', 'SACDeciderZeroEmb'})
+
+
 def at_least_one_solved_mask(df: pd.DataFrame) -> pd.Series:
-    """True for rows where any solver in :data:`SOLVER_DISPLAY` has ``done`` true."""
+    """True for rows where any non-excluded solver in :data:`SOLVER_DISPLAY` has ``done`` true."""
     m = pd.Series(False, index=df.index)
     for cls, _ in SOLVER_DISPLAY:
+        if cls in POOL_EXCLUDE_SOLVERS:
+            continue
         dcol = f'done_{cls}'
         if dcol not in df.columns:
             continue
